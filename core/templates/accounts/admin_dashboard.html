@@ -1,0 +1,57 @@
+{% extends 'layouts/base-admin.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col">
+    <h2 class="mb-4">👤 User Account Management</h2>
+
+    <div class="card shadow">
+      <div class="card-header border-0">
+        <h3 class="mb-0">Registered Users</h3>
+      </div>
+      <div class="table-responsive">
+        <table class="table align-items-center table-flush">
+          <thead class="thead-light">
+            <tr>
+              <th scope="col">User ID</th>
+              <th scope="col">Email</th>
+              <th scope="col">Role</th>
+              <th scope="col">Premium</th>
+              <th scope="col">Created At</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+            <tr>
+              <td>{{ user.user_id }}</td>
+              <td>{{ user.email }}</td>
+              <td>{{ user.role }}</td>
+              <td>
+                {% if user.is_premium %}
+                  <span class="badge badge-success">Yes</span>
+                {% else %}
+                  <span class="badge badge-secondary">No</span>
+                {% endif %}
+              </td>
+              <td>{{ user.created_at|date:"Y-m-d H:i" }}</td>
+              <td>
+                <a href="#" class="btn btn-sm btn-info">Upgrade</a>
+                <a href="#" class="btn btn-sm btn-danger">Delete</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="text-center text-muted">No users found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

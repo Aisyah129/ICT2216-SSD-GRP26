@@ -7,6 +7,8 @@ Copyright (c) 2019 - present AppSeed.us
 import os
 from decouple import config
 from unipath import Path
+import pymysql
+pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -29,7 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'app'  # Enable the inner app 
+    'authentication',  # Enable the authentication app
 ]
 
 MIDDLEWARE = [
@@ -70,10 +72,18 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': config('DB_NAME'),         # ssd_db
+        'USER': config('DB_USER'),         # root
+        'PASSWORD': config('DB_PASSWORD'), # your password
+        'HOST': config('DB_HOST', default='127.0.0.1'),
+        'PORT': config('DB_PORT', default='3306'),
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        }
     }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -119,3 +129,7 @@ STATIC_ROOT = PROJECT_DIR.child('core').child('staticfiles')
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "core/static"),
 )
+
+AUTH_USER_MODEL = 'authentication.User'
+
+LOGOUT_REDIRECT_URL = 'login'

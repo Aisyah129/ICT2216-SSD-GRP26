@@ -1,47 +1,36 @@
-    <!-- Navbar -->
-    <nav class="navbar navbar-top navbar-horizontal navbar-expand-md navbar-dark">
-      <div class="container px-4">
-        <a class="navbar-brand" href="/">
-          <img src="/static/assets/img/brand/white.png" />
-        </a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapse-main" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbar-collapse-main">
-          <!-- Collapse header -->
-          <div class="navbar-collapse-header d-md-none">
-            <div class="row">
-              <div class="col-6 collapse-brand">
-                <a href="../index.html">
-                  <img src="/static/assets/img/brand/blue.png">
-                </a>
-              </div>
-              <div class="col-6 collapse-close">
-                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse-main" aria-controls="sidenav-main" aria-expanded="false" aria-label="Toggle sidenav">
-                  <span></span>
-                  <span></span>
-                </button>
-              </div>
-            </div>
-          </div>
-          <!-- Navbar items -->
-          <ul class="navbar-nav ml-auto">
+<!-- Navbar -->
+<nav class="navbar navbar-expand-md navbar-light bg-white border-bottom py-3 shadow-sm">
+  <div class="container">
+    
+    <!-- Brand -->
+    <a class="navbar-brand font-weight-bold text-primary" href="/">
+      💘 YourDatingApp
+    </a>
 
-            <li class="nav-item">
-              <a class="nav-link nav-link-icon" href="https://github.com/app-generator/django-boilerplate">
-                <i class="ni ni-ui-04"></i>
-                <span class="nav-link-inner--text">Source Code</span>
-              </a>
-            </li>
+    <!-- Toggle for mobile -->
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapse-main"
+      aria-controls="navbar-collapse-main" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
 
-            <li class="nav-item">
-              <a class="nav-link nav-link-icon" href="https://appseed.us/apps">
-                <i class="ni ni-spaceship"></i>
-                <span class="nav-link-inner--text">More Apps</span>
-              </a>
-            </li>
+    <!-- Nav links -->
+    <div class="collapse navbar-collapse" id="navbar-collapse-main">
+      <ul class="navbar-nav ml-auto align-items-center">
 
-          </ul>
-        </div>
-      </div>
-    </nav>
+        <li class="nav-item">
+          <a class="nav-link" href="#about">About</a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'login' %}">Sign In</a>
+        </li>
+
+        <li class="nav-item">
+          <a class="btn btn-primary btn-sm ml-md-3" href="{% url 'register' %}">Sign Up</a>
+        </li>
+
+      </ul>
+    </div>
+
+  </div>
+</nav>

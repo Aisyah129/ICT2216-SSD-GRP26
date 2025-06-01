@@ -1,0 +1,36 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Browse Matches{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+  <div class="col text-center">
+    <h1 class="display-4">Welcome, {{ user.email }}!</h1>
+    <p class="lead">Browse your potential matches below 💘</p>
+  </div>
+</div>
+
+<div class="row">
+  {% for match in matches %}
+  <div class="col-md-4 mb-4">
+    <div class="card shadow-sm">
+      <img src="{{ match.profile_pic.url }}" class="card-img-top" alt="Match profile photo">
+
+      <div class="card-body">
+        <h5 class="card-title">{{ match.name }}, {{ match.age }}</h5>
+        <p class="card-text text-muted">{{ match.location }}</p>
+
+        <div class="d-flex justify-content-between align-items-center">
+          <button class="btn btn-outline-primary btn-sm">💘 Like</button>
+          <a href="#" class="btn btn-sm btn-link">View Profile</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col text-center text-muted">
+    <p>No matches available at the moment. Check back later!</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

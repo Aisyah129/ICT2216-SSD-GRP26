@@ -1,0 +1,19 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Likes {% endblock %}
+
+{% block content %}
+<h1 class="mb-4">💖 Likes</h1>
+
+<p>This is where you will display:</p>
+<ul>
+  <li>People who liked the user (incoming likes)</li>
+  <li>People the user liked (outgoing likes)</li>
+</ul>
+
+<!-- Later, we can loop through users/cards here -->
+<div class="card p-3 border shadow-sm mt-4">
+  <h5>Sample Like</h5>
+  <p>User XYZ liked you on 1 June 2025.</p>
+</div>
+{% endblock %}
