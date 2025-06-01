@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Django Admin | {% block title %}YourDatingApp{% endblock %}</title>
+
+  <link href="/static/assets/js/plugins/nucleo/css/nucleo.css" rel="stylesheet" />
+  <link href="/static/assets/js/plugins/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet" />
+  <link href="/static/assets/css/argon-dashboard.css?v=1.1.0" rel="stylesheet" />
+</head>
+
+<body>
+  <div class="main-content">
+
+    <!-- ✅ Top Nav for Admin -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-3 px-4">
+      <div class="d-flex justify-content-between w-100 align-items-center">
+        <a class="navbar-brand font-weight-bold text-primary" href="{% url 'admin_dashboard' %}">
+          💘 YourDatingApp Admin
+        </a>
+        <a class="btn btn-outline-danger btn-sm" href="{% url 'logout' %}">Logout</a>
+      </div>
+    </nav>
+
+    <!-- Page Content -->
+    <div class="container-fluid mt-4">
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+
+  {% block javascripts %}{% endblock %}
+</body>
+</html>
