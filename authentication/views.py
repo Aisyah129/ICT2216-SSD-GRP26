@@ -56,3 +56,4 @@ def admin_dashboard(request):
     User = get_user_model()
     users = User.objects.exclude(role='admin')  # Only show non-admins
     return render(request, 'accounts/admin_dashboard.html', {'users': users})
+  
