@@ -1,28 +1,30 @@
 {% extends "layouts/base.html" %}
-
 {% block title %}Browse Matches{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-  <div class="col text-center">
-    <h1 class="display-4">Welcome, {{ user.email }}!</h1>
-    <p class="lead">Browse your potential matches below 💘</p>
+<div class="row mb-5 text-center">
+  <div class="col">
+    <h1 class="display-4 fw-bold">💘 Welcome, {{ user.email }}!</h1>
+    <p class="text-muted fs-5">Browse your potential matches below</p>
   </div>
 </div>
 
 <div class="row">
   {% for match in matches %}
-  <div class="col-md-4 mb-4">
-    <div class="card shadow-sm">
-      <img src="{{ match.profile_pic.url }}" class="card-img-top" alt="Match profile photo">
-
+  <div class="col-md-6 col-lg-4 mb-5">
+    <div class="card border-0 shadow match-card">
+      <div class="position-relative">
+        <img src="{{ match.profile_pic.url }}" class="card-img-top object-fit-cover" style="height: 250px;" alt="Match photo">
+        <span class="position-absolute top-0 end-0 bg-primary text-white rounded-pill px-3 py-1 m-2 fs-6">{{ match.match_percent }}%</span>
+      </div>
       <div class="card-body">
-        <h5 class="card-title">{{ match.name }}, {{ match.age }}</h5>
-        <p class="card-text text-muted">{{ match.location }}</p>
-
-        <div class="d-flex justify-content-between align-items-center">
-          <button class="btn btn-outline-primary btn-sm">💘 Like</button>
-          <a href="#" class="btn btn-sm btn-link">View Profile</a>
+        <h4 class="card-title">{{ match.name }}, {{ match.age }}</h4>
+        <p class="card-text text-muted mb-3"><i class="ni ni-pin-3"></i> {{ match.location }}</p>
+        
+        <div class="d-flex justify-content-between">
+          <button class="btn btn-outline-secondary">❌ Pass</button>
+          <button class="btn btn-outline-danger">💖 Like</button>
+          <button class="btn btn-primary">💬 Intro</button>
         </div>
       </div>
     </div>

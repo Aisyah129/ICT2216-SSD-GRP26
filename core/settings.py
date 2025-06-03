@@ -76,7 +76,7 @@ DATABASES = {
         'NAME': config('DB_NAME'),         # ssd_db
         'USER': config('DB_USER'),         # root
         'PASSWORD': config('DB_PASSWORD'), # your password
-        'HOST': config('DB_HOST', default='127.0.0.1'),
+        'HOST': config('DB_HOST'),
         'PORT': config('DB_PORT', default='3306'),
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
@@ -130,6 +130,6 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "core/static"),
 )
 
-AUTH_USER_MODEL = 'authentication.User'
+# AUTH_USER_MODEL = 'authentication.User'
 
 LOGOUT_REDIRECT_URL = 'login'
