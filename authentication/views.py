@@ -1,59 +1,98 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.decorators import login_required
-from .forms import LoginForm, SignUpForm
-from django.contrib.auth import get_user_model
+# authentication/views.py
 
+from django.contrib.auth.hashers import make_password, check_password
+from authentication.models import User
+from .forms import LoginForm, SignUpForm
+import uuid
+from django.utils import timezone
+from django.shortcuts import render, redirect, get_object_or_404
+
+# To log in a user
 def login_view(request):
     form = LoginForm(request.POST or None)
-    msg = 'Sign in with credentials'
+    msg = None
 
     if request.method == "POST":
         if form.is_valid():
-            email = form.cleaned_data.get("email")
-            password = form.cleaned_data.get("password")
-            user = authenticate(request, email=email, password=password)
-            if user is not None:
-                login(request, user)
-                if user.role == 'admin':
-                    return redirect('admin_dashboard')
+            email = form.cleaned_data['email']
+            password = form.cleaned_data['password']
+
+            try:
+                user = User.objects.get(email=email)
+                if check_password(password, user.password_hash):
+                    request.session['user_id'] = user.user_id
+                    return redirect('browse' if user.role == 'user' else 'admin_dashboard')
                 else:
-                    return redirect('browse')
-            else:
-                msg = 'Invalid credentials'
+                    msg = "Invalid password"
+            except User.DoesNotExist:
+                msg = "User not found"
         else:
-            msg = 'Error validating the form'
+            msg = "Form not valid"
 
     return render(request, "accounts/login.html", {"form": form, "msg": msg})
 
-
+# To register a new user
 def register_user(request):
-    msg = 'Add your credentials'
+    form = SignUpForm(request.POST or None)
+    msg = None
 
     if request.method == "POST":
-        form = SignUpForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.role = 'user'
-            user.save()
-            login(request, user)
+            email = form.cleaned_data['email']
+            raw_password = form.cleaned_data['password']
+            hashed_password = make_password(raw_password)
+
+            user = User(
+                user_id=str(uuid.uuid4()),
+                email=email,
+                password_hash=hashed_password,
+                role='user',
+                is_premium=False,
+                created_at=timezone.now()
+            )
+            user.save(using='default')
+
+            request.session['user_id'] = user.user_id
             return redirect('user_dashboard')
         else:
-            msg = 'Form is not valid'
-    else:
-        form = SignUpForm()
+            msg = "Form not valid"
 
     return render(request, "accounts/register.html", {"form": form, "msg": msg})
 
 
-@login_required
 def user_dashboard(request):
-    return render(request, "accounts/user_dashboard.html")
+    if 'user_id' not in request.session:
+        return redirect('login')
+
+    try:
+        user = User.objects.get(user_id=request.session['user_id'])
+        print("✅ USER EMAIL:", user.email)
+    except User.DoesNotExist:
+        print("❌ User not found for ID:", request.session['user_id'])
+        return redirect('login')
+
+    # Temporary placeholder
+    matches = [
+        {
+            'name': 'Alex',
+            'age': 26,
+            'location': 'Singapore',
+            'profile_pic': {'url': 'https://via.placeholder.com/300x200'}
+        },
+        {
+            'name': 'Jamie',
+            'age': 24,
+            'location': 'Malaysia',
+            'profile_pic': {'url': 'https://via.placeholder.com/300x200'}
+        }
+    ]
+
+    return render(request, 'pages/browse.html', {
+        'user': user,
+        'matches': matches
+    })
 
 
-@login_required
 def admin_dashboard(request):
-    User = get_user_model()
-    users = User.objects.exclude(role='admin')  # Only show non-admins
+    users = User.objects.filter(role='user')  # only non-admins
     return render(request, 'accounts/admin_dashboard.html', {'users': users})
-  

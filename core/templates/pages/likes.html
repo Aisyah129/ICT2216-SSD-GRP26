@@ -3,17 +3,95 @@
 {% block title %} Likes {% endblock %}
 
 {% block content %}
-<h1 class="mb-4">💖 Likes</h1>
+<div class="container mt-4">
+  <h2 class="mb-4">💖 Likes</h2>
 
-<p>This is where you will display:</p>
-<ul>
-  <li>People who liked the user (incoming likes)</li>
-  <li>People the user liked (outgoing likes)</li>
-</ul>
+  <!-- Tabs -->
+  <ul class="nav nav-tabs mb-3" id="likesTab" role="tablist">
+    <li class="nav-item">
+      <a class="nav-link active" id="likes-you-tab" data-toggle="tab" href="#likes-you" role="tab">❤️ Likes You</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="intros-tab" data-toggle="tab" href="#intros" role="tab">✨ Intros</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="you-liked-tab" data-toggle="tab" href="#you-liked" role="tab">👍 You Liked</a>
+    </li>
+  </ul>
 
-<!-- Later, we can loop through users/cards here -->
-<div class="card p-3 border shadow-sm mt-4">
-  <h5>Sample Like</h5>
-  <p>User XYZ liked you on 1 June 2025.</p>
+  <!-- Tab Contents -->
+  <div class="tab-content" id="likesTabContent">
+    
+    <!-- Likes You Tab -->
+    <div class="tab-pane fade show active" id="likes-you" role="tabpanel">
+      <div class="row">
+        {% for user in incoming_likes %}
+        <div class="col-md-4 mb-3">
+          <div class="card shadow-sm text-center position-relative">
+            {% if not request.user.is_premium %}
+              <div class="blur-overlay position-absolute w-100 h-100" style="backdrop-filter: blur(6px); z-index: 1;"></div>
+            {% endif %}
+            <div class="card-body" style="z-index: 2; position: relative;">
+              <h5 class="card-title">{{ user.name }}</h5>
+              <p class="card-text text-muted">Liked you on {{ user.liked_date|date:"d M Y" }}</p>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <p class="text-muted ml-3">No one has liked you yet.</p>
+        {% endfor %}
+      </div>
+
+      {% if not request.user.is_premium %}
+        <div class="alert alert-warning mt-3 text-center">
+          <strong>Upgrade to Premium</strong> to see who liked you.
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Intros Tab -->
+    <div class="tab-pane fade" id="intros" role="tabpanel">
+      <div class="mt-3">
+        {% for intro in intros %}
+        <div class="card p-3 mb-2 shadow-sm">
+          <p><strong>{{ intro.name }}</strong> said: "{{ intro.message }}"</p>
+          <small class="text-muted">{{ intro.timestamp|date:"d M Y H:i" }}</small>
+        </div>
+        {% empty %}
+        <p class="text-muted">No intros yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- You Liked Tab -->
+    <div class="tab-pane fade" id="you-liked" role="tabpanel">
+      <div class="row mt-3">
+        {% for user in outgoing_likes %}
+        <div class="col-md-4 mb-3">
+          <div class="card shadow-sm text-center">
+            <div class="card-body">
+              <h5 class="card-title">{{ user.name }}</h5>
+              <p class="card-text text-muted">You liked them on {{ user.liked_date|date:"d M Y" }}</p>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <p class="text-muted ml-3">You haven't liked anyone yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
 </div>
+{% endblock %}
+
+{% block stylesheets %}
+<style>
+  .blur-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: rgba(255,255,255,0.6);
+  }
+</style>
 {% endblock %}
