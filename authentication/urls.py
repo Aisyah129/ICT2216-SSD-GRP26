@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import login_view, register_user, user_dashboard, admin_dashboard
+from .views import login_view, register_user, user_dashboard, admin_dashboard, profile_view
 from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
@@ -9,6 +9,8 @@ urlpatterns = [
     
     # ✅ Proper logout route
     path('logout/', LogoutView.as_view(next_page='login'), name="logout"),
+    # 🔥 profile page
+    path('profile/', profile_view, name="profile"),
     
     path('user/', user_dashboard, name="user_dashboard"),
     path('admin/', admin_dashboard, name="admin_dashboard"),
