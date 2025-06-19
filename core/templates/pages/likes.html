@@ -19,41 +19,52 @@
   <!-- Likes You Tab -->
   {% if active_tab == 'incoming' %}
     {% if not viewer.is_premium %}
-    <div class="cards-blurred-behind">
-    {% endif %}
+      {% if page_obj|length > 0 %}
+      <div class="cards-blurred-behind">
+        <div class="row">
+          {% for user in page_obj %}
+          <div class="col-md-4 mb-3">
+            <div class="card shadow-sm text-center">
+              <div class="card-body">
+                {% if user.image_url %}
+                <img src="{{ user.image_url }}" class="img-fluid rounded mb-2 blurred-image" style="max-height: 200px; object-fit: cover;" alt="Blurred Profile Picture">
+                {% endif %}
+                <div class="placeholder-bar name-bar mb-2"></div>
+                <div class="placeholder-bar date-bar"></div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
+      <p class="text-muted ml-3">No one has liked you yet.</p>
+      {% endif %}
 
+      <!-- Floating Banner -->
+      <div class="premium-overlay-message">
+        <div class="alert alert-warning text-center">
+          <strong>Upgrade to Premium</strong> to see who liked you.
+        </div>
+      </div>
+
+    {% else %}
     <div class="row">
       {% for user in page_obj %}
       <div class="col-md-4 mb-3">
         <div class="card shadow-sm text-center">
           <div class="card-body">
-            {% if user.name %}
-              {% if user.image_url %}
-              <img src="{{ user.image_url }}" class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: cover;" alt="Profile Picture">
-              {% endif %}
-              <h5 class="card-title">{{ user.name }}, {{ user.age }}</h5>
-              <p class="card-text text-muted">Liked you on {{ user.liked_date|date:"d M Y" }}</p>
-            {% else %}
-              {% if user.image_url %}
-              <img src="{{ user.image_url }}" class="img-fluid rounded mb-2 blurred-image" style="max-height: 200px; object-fit: cover;" alt="Blurred Profile Picture">
-              {% endif %}
-              <div class="placeholder-bar name-bar mb-2"></div>
-              <div class="placeholder-bar date-bar"></div>
+            {% if user.image_url %}
+            <img src="{{ user.image_url }}" class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: cover;" alt="Profile Picture">
             {% endif %}
+            <h5 class="card-title">{{ user.name }}, {{ user.age }}</h5>
+            <p class="card-text text-muted">Liked you on {{ user.liked_date|date:"d M Y" }}</p>
           </div>
         </div>
       </div>
       {% empty %}
       <p class="text-muted ml-3">No one has liked you yet.</p>
       {% endfor %}
-    </div>
-
-    {% if not viewer.is_premium %}
-    </div>
-    <div class="premium-overlay-message">
-      <div class="alert alert-warning text-center">
-        <strong>Upgrade to Premium</strong> to see who liked you.
-      </div>
     </div>
     {% endif %}
   {% endif %}
@@ -176,6 +187,7 @@
     bottom: 0;
     left: 0;
     right: 0;
+    background: transparent;
     padding: 10px 0;
     z-index: 1000;
   }
