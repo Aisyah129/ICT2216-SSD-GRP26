@@ -170,11 +170,11 @@ def likes_page(request):
                 continue
 
         paginator = Paginator(outgoing_likes, 6)
-        outgoing_page_obj = paginator.get_page(page_number)
+        page_obj = paginator.get_page(page_number)
 
         return render(request, 'pages/likes.html', {
             'viewer': user,
             'active_tab': 'outgoing',
-            'outgoing_page_obj': outgoing_page_obj,
+            'page_obj': page_obj,
         })
 
