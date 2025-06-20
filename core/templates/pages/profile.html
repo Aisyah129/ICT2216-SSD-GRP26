@@ -28,7 +28,10 @@
         <div class="card-profile-image">
           <a href="#">
             {% if primary_image %}
-              <img src="{{ primary_image.image_url }}" class="rounded-circle" alt="{{ profile.name }}">
+              <img src="{{ primary_image.image_url }}" 
+     class="rounded-circle shadow-lg"
+     style="object-fit: cover; width: 140px; height: 140px; margin-top: -30px; margin-bottom: 20px; border: 3px solid white;"
+     alt="{{ profile.name }}">
             {% else %}
               <img src="/static/assets/img/theme/default-avatar.png" class="rounded-circle" alt="avatar">
             {% endif %}
@@ -47,46 +50,62 @@
     <div class="card-body pt-0 pt-md-4">
       <div class="text-center">
         <h3>{{ request.user.username }}</h3>
-        <div class="h5 font-weight-300">{{ request.user.email }}</div>
-        <div class="h5 mt-4">
-          <i class="ni business_briefcase-24 mr-2"></i>Solution Manager - Creative Tim Officer
+        <div class="h1 mt-4">
+          <i class="ni business_briefcase-24 mr-2"></i>{{ profile.name }}
         </div>
-        <div><i class="ni education_hat mr-2"></i>University of Computer Science</div>
+        <div class="h3 font-weight-300">{{ request.user.email }}</div>
+        <div><i class="ni education_hat mr-2"></i>Education Level: {{profile.education_level}}</div>
+         <hr />
+      <div class="text-left px-3 pb-3">
+        <div class="row" id="galleryGrid">
+
+  {% if images|length < 6 %}
+ <div class="col-md-4 col-sm-6 mb-4" id="uploadCardContainer">
+  <div class="card shadow-sm upload-card h-100 d-flex justify-content-center align-items-center"
+       id="uploadTrigger" style="cursor: pointer;">
+    <div class="text-center">
+      <div class="upload-icon mb-2" style="font-size: 2.5rem; color: #888;">+</div>
+      <div class="text-muted" style="font-size: 0.9rem;">Add Photo</div>
+    </div>
+    <!-- 🔁 Moved inside -->
+    <input type="file" class="d-none" name="image" accept="image/*" required>
+    <input type="checkbox" class="d-none" name="is_primary" value="1">
+  </div>
+</div>
+
+<!-- Hidden actual file input + form -->
+<form id="uploadForm" enctype="multipart/form-data" class="d-none">
+  <input type="file" id="fileInput" name="image" accept="image/*" required>
+  <input type="checkbox" id="primaryCheck" name="is_primary" value="1">
+</form>
+
+  {% endif %}
+
+  {% for img in images %}
+  <div class="col-md-4 col-sm-6 mb-4 gallery-item" data-id="{{ img.image_id }}">
+    <div class="card shadow-sm position-relative h-100">
+      <img src="{{ img.image_url }}" class="card-img-top rounded-top" style="object-fit: cover; height: 250px;" alt="Profile image">
+      {% if img.is_primary %}
+        <span class="badge badge-success position-absolute" style="top: 10px; left: 10px; font-size: 0.75rem;">PRIMARY</span>
+      {% endif %}
+      <div class="card-body py-2 px-3 text-center">
+        <button class="btn btn-sm btn-outline-primary setPrimaryBtn mr-2">Set</button>
+        <button class="btn btn-sm btn-outline-danger deleteBtn">Del</button>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+</div>
+      </div> 
+
         <hr class="my-4" />
         <p>{{ profile.bio|default:"No bio yet." }}</p>
         <a href="#">Show more</a>
       </div>
 
       <!-- ⬇️ Upload Form + Gallery -->
-      <hr />
-      <div class="text-left px-3 pb-3">
-        <form id="uploadForm" enctype="multipart/form-data" class="form-inline mb-3">
-          <input id="fileInput" name="image" type="file" accept="image/*" class="form-control form-control-sm mr-2" required>
-          <div class="form-check mr-2">
-            <input type="checkbox" name="is_primary" class="form-check-input" id="primaryCheck">
-            <label class="form-check-label" for="primaryCheck">Primary</label>
-          </div>
-          <button type="submit" class="btn btn-sm btn-info">Upload</button>
-        </form>
-        <div id="uploadStatus" class="text-muted mb-3" style="font-size: 0.875rem;"></div>
-
-        <div class="row" id="galleryGrid">
-          {% for img in images %}
-          <div class="col-6 mb-2 gallery-item" data-id="{{ img.image_id }}">
-            <div class="position-relative">
-              <img src="{{ img.image_url }}" class="img-thumbnail rounded">
-              {% if img.is_primary %}
-                <span class="badge badge-success position-absolute" style="top:6px; left:6px;">Primary</span>
-              {% endif %}
-              <div class="position-absolute w-100 d-flex justify-content-center" style="bottom:6px;">
-                <button class="btn btn-sm btn-outline-primary btn-sm mr-1 setPrimaryBtn">Set</button>
-                <button class="btn btn-sm btn-outline-danger btn-sm deleteBtn">Del</button>
-              </div>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
+      
     </div>
   </div>
 </div>
@@ -277,50 +296,58 @@
 <!-- Specific JS goes HERE --> 
 {% block javascripts %}
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const form       = document.getElementById("profile-form");
-  const editBtn    = document.getElementById("editProfileBtn");
-  const saveBtn    = document.getElementById("saveProfileBtn");
-  const cancelBtn  = document.getElementById("cancelProfileBtn");
-  const inputs     = form.querySelectorAll("input, textarea");
+/* ─────────────────────────────────────────────────────────────
+   1.  PROFILE “EDIT / SAVE / CANCEL” TOGGLE
+   ────────────────────────────────────────────────────────────*/
+document.addEventListener('DOMContentLoaded', () => {
+  const form      = document.getElementById('profile-form');
+  const editBtn   = document.getElementById('editProfileBtn');
+  const saveBtn   = document.getElementById('saveProfileBtn');
+  const cancelBtn = document.getElementById('cancelProfileBtn');
+  const inputs    = form.querySelectorAll('input, textarea');
 
-  function setDisabled(state) {
-    inputs.forEach(el => state ? el.setAttribute("disabled","") : el.removeAttribute("disabled"));
-  }
+  const setDisabled = (state) => {
+    inputs.forEach(el => state
+      ? el.setAttribute('disabled', '')
+      : el.removeAttribute('disabled'));
+  };
 
-  // initial: read-only
+  /* start page in read-only mode */
   setDisabled(true);
 
-  editBtn.addEventListener("click", () => {
+  editBtn.addEventListener('click', () => {
     setDisabled(false);
-    editBtn.classList.add("d-none");
-    saveBtn.classList.remove("d-none");
-    cancelBtn.classList.remove("d-none");
+    editBtn.classList.add('d-none');
+    saveBtn.classList.remove('d-none');
+    cancelBtn.classList.remove('d-none');
   });
 
-  cancelBtn.addEventListener("click", () => {
-    form.reset();               // discard changes
+  cancelBtn.addEventListener('click', () => {
+    form.reset();                 // discard unsaved edits
     setDisabled(true);
-    saveBtn.classList.add("d-none");
-    cancelBtn.classList.add("d-none");
-    editBtn.classList.remove("d-none");
+    saveBtn.classList.add('d-none');
+    cancelBtn.classList.add('d-none');
+    editBtn.classList.remove('d-none');
   });
 });
 
-
-const uploadForm  = document.getElementById('uploadForm');
+/* ─────────────────────────────────────────────────────────────
+   2.  IMAGE UPLOAD (+), DELETE, SET-PRIMARY
+   ────────────────────────────────────────────────────────────*/
 const galleryGrid = document.getElementById('galleryGrid');
 const statusDiv   = document.getElementById('uploadStatus');
 const csrfToken   = '{{ csrf_token }}';
 
-uploadForm?.addEventListener('submit', async e => {
+/* 2-a  Upload (traditional form submit still present somewhere) */
+const uploadForm = document.getElementById('uploadForm');
+uploadForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const form = new FormData(uploadForm);
 
-  const resp = await fetch("{% url 'upload_profile_image' %}", {
-    method: 'POST',
+  const resp  = await fetch('{% url "upload_profile_image" %}', {
+    method : 'POST',
     headers: { 'X-CSRFToken': csrfToken },
-    body: form
+    body   : form,
   });
   const data = await resp.json();
 
@@ -329,47 +356,138 @@ uploadForm?.addEventListener('submit', async e => {
     uploadForm.reset();
     refreshGallery();
   } else {
-    statusDiv.textContent = '❌ ' + (data.error || 'Upload failed');
+    statusDiv.textContent = `❌ ${data.error || 'Upload failed'}`;
   }
 });
 
-galleryGrid?.addEventListener('click', async e => {
+/* 2-b  Delegated click handler for Set / Del buttons */
+galleryGrid?.addEventListener('click', async (e) => {
   const card = e.target.closest('.gallery-item');
   if (!card) return;
+
   const id = card.dataset.id;
 
+  /* delete image */
   if (e.target.classList.contains('deleteBtn')) {
     if (!confirm('Delete this image?')) return;
     await fetch(`/profile/image/${id}/delete/`, {
-      method: 'DELETE',
-      headers: { 'X-CSRFToken': csrfToken }
+      method : 'DELETE',
+      headers: { 'X-CSRFToken': csrfToken },
     });
     refreshGallery();
   }
 
+  /* set primary */
   if (e.target.classList.contains('setPrimaryBtn')) {
     await fetch(`/profile/image/${id}/set-primary/`, {
-      method: 'POST',
-      headers: { 'X-CSRFToken': csrfToken }
+      method : 'POST',
+      headers: { 'X-CSRFToken': csrfToken },
     });
     refreshGallery();
   }
 });
 
+/* ─────────────────────────────────────────────────────────────
+   3.  REFRESH GALLERY & AVATAR
+   ────────────────────────────────────────────────────────────*/
 async function refreshGallery() {
-  const resp = await fetch("{% url 'profile_images_json' %}");
+  const resp = await fetch('{% url "profile_images_json" %}');
   const imgs = await resp.json();
-  galleryGrid.innerHTML = imgs.map(img => `
-    <div class="col-6 mb-2 gallery-item" data-id="${img.image_id}">
-      <div class="position-relative">
-        <img src="${img.image_url}" class="img-thumbnail rounded">
-        ${img.is_primary ? '<span class="badge badge-success position-absolute" style="top:6px;left:6px;">Primary</span>' : ''}
-        <div class="position-absolute w-100 d-flex justify-content-center" style="bottom:6px;">
-          <button class="btn btn-sm btn-outline-primary mr-1 setPrimaryBtn">Set</button>
-          <button class="btn btn-sm btn-outline-danger deleteBtn">Del</button>
+
+  /* ✨ 1. rebuild gallery html, including + card if < 6 */
+  let html = '';
+
+  if (imgs.length < 6) {
+    html += `
+      <div class="col-md-4 col-sm-6 mb-4" id="uploadCardContainer">
+        <div class="card shadow-sm upload-card h-100 d-flex justify-content-center align-items-center"
+             id="uploadTrigger" style="cursor:pointer;">
+          <div class="text-center">
+            <div class="upload-icon mb-2" style="font-size:2.5rem;color:#888;">+</div>
+            <div class="text-muted" style="font-size:.9rem;">Add Photo</div>
+          </div>
+          <input type="file" class="d-none" name="image" accept="image/*">
+          <input type="checkbox" class="d-none" name="is_primary" value="1">
         </div>
-      </div>
-    </div>`).join('');
+      </div>`;
+  }
+
+  html += imgs.map(img => `
+      <div class="col-md-4 col-sm-6 mb-4 gallery-item" data-id="${img.image_id}">
+        <div class="card shadow-sm position-relative h-100">
+          <img src="${img.image_url}" class="card-img-top rounded-top"
+               style="height:250px;object-fit:cover;object-position:center;">
+          ${img.is_primary
+              ? '<span class="badge badge-success position-absolute" style="top:10px;left:10px;font-size:.75rem;">PRIMARY</span>'
+              : ''}
+          <div class="card-body py-2 px-3 text-center">
+            <button class="btn btn-sm btn-outline-primary mr-2 setPrimaryBtn">Set</button>
+            <button class="btn btn-sm btn-outline-danger deleteBtn">Del</button>
+          </div>
+        </div>
+      </div>`).join('');
+
+  galleryGrid.innerHTML = html;
+
+  /* ✨ 2. re-attach the “+” card listener each refresh */
+  const plusCard   = document.getElementById('uploadTrigger');
+  const plusInput  = plusCard?.querySelector('input[type="file"]');
+  const plusCheck  = plusCard?.querySelector('input[name="is_primary"]');
+
+  plusCard?.addEventListener('click', () => plusInput?.click());
+  plusInput?.addEventListener('change', async () => {
+      if (!plusInput.files.length) return;
+      const fd = new FormData();
+      fd.append('image', plusInput.files[0]);
+      if (plusCheck?.checked) fd.append('is_primary', '1');
+
+      const up = await fetch('{% url "upload_profile_image" %}', {
+        method:'POST', headers:{'X-CSRFToken':'{{ csrf_token }}'}, body:fd });
+      const res = await up.json();
+      if (res.success) refreshGallery();
+  });
+
+  /* ✨ 3. sync avatar */
+  const avatar  = document.querySelector('.card-profile-image img');
+  const primary = imgs.find(i => i.is_primary === 1);
+  if (primary && avatar) avatar.src = primary.image_url;
 }
+
+// 2-c: Handle upload via "+" card
+const plusCard = document.getElementById('uploadTrigger');
+const plusInput = plusCard?.querySelector('input[type="file"]');
+const plusPrimaryCheckbox = plusCard?.querySelector('input[name="is_primary"]');
+
+plusCard?.addEventListener('click', () => {
+  plusInput?.click();
+});
+
+plusInput?.addEventListener('change', async () => {
+  const file = plusInput.files[0];
+  if (!file) return;
+
+  const form = new FormData();
+  form.append('image', file);
+
+  if (plusPrimaryCheckbox?.checked) {
+    form.append('is_primary', '1');
+  }
+
+  const resp = await fetch("{% url 'upload_profile_image' %}", {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrfToken },
+    body: form,
+  });
+
+  const data = await resp.json();
+  if (data.success) {
+    refreshGallery();
+  } else {
+    alert('❌ Upload failed: ' + (data.error || 'Unknown error'));
+  }
+
+  plusInput.value = ''; // reset file input
+});
 </script>
+
 {% endblock javascripts %}
