@@ -44,9 +44,12 @@
       <!-- Floating Banner -->
       <div class="premium-overlay-message">
         <div class="alert alert-warning text-center">
-          <strong>Upgrade to Premium</strong> to see who liked you.
+          <a href="{% url 'upgrade_premium' %}" class="text-white font-weight-bold" style="text-decoration: underline;">
+            <strong>Upgrade to Premium</strong>
+          </a> to see who liked you.
         </div>
       </div>
+
 
     {% else %}
     <div class="row">
