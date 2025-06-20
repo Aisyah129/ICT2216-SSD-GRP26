@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import login_view, register_user, user_dashboard, admin_dashboard, likes_page, profile_view, verify_email
+from .views import login_view, register_user, user_dashboard, admin_dashboard, likes_page, profile_view, verify_email, request_password_reset, verify_reset_code, set_new_password
 from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
@@ -7,6 +7,10 @@ urlpatterns = [
     path('login/', login_view, name="login"),
     path('register/', register_user, name="register"),
     path('verify/', verify_email, name='verify_email'),
+
+    path("reset/", request_password_reset, name="password_reset"),
+    path("reset/verify/", verify_reset_code, name="verify_reset_code"),
+    path("reset/confirm/", set_new_password, name="set_new_password"),
 
     
     # ✅ Proper logout route
