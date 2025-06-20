@@ -18,6 +18,7 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Email, Content, Personalization
 import os
 import certifi
+from django.http import HttpResponse
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
 
@@ -402,3 +403,15 @@ def likes_page(request):
             'active_tab': 'outgoing',
             'page_obj': page_obj,
         })
+
+
+def upgrade_premium(request):
+    plans = [
+        {'id': 'week', 'name': '1 Week', 'price': 4.99, 'description': 'Short-term access to premium features'},
+        {'id': 'month', 'name': '1 Month', 'price': 9.99, 'description': 'Unlock premium features for a month'},
+        {'id': 'quarter', 'name': '3 Months', 'price': 24.99, 'description': 'Save more with a 3-month plan'},
+    ]
+    return render(request, 'accounts/upgrade_premium.html', {'plans': plans})
+
+def checkout_premium(request, plan_id):
+    return HttpResponse(f"Stripe checkout for plan: {plan_id}")
