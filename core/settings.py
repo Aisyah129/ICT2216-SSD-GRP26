@@ -136,3 +136,4 @@ LOGOUT_REDIRECT_URL = 'login'
 
 # ImageKit Settings
 IMAGEKIT_URL_ENDPOINT = config('IMAGEKIT_URL_ENDPOINT')
+
