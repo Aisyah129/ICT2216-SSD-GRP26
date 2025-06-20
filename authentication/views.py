@@ -12,7 +12,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from urllib.parse import quote
 from django.contrib import messages
-
+from django.core.mail import send_mail
+import random
 
 # LOGIN view using Django auth
 def login_view(request):
@@ -46,16 +47,40 @@ def register_user(request):
 
     if request.method == "POST":
         if form.is_valid():
+            # Get form fields
             email = form.cleaned_data['email']
             raw_password = form.cleaned_data['password']
+            name = form.cleaned_data['name']
+            age = form.cleaned_data['age']
+            gender = form.cleaned_data['gender']
+            location = form.cleaned_data['location']
 
             user = User.objects.create_user(
-                user_id=str(uuid.uuid4()),  # manually assign UUID
                 email=email,
                 password=raw_password,
                 role='user',
                 is_premium=False,
                 created_at=timezone.now()
+            )
+
+            Profile.objects.create(
+                profile_id=str(uuid.uuid4()),
+                user_id_fk=user,
+                name=name,
+                age=age,
+                gender=gender,
+                location=location,
+                created_at=timezone.now(),
+                last_updated=timezone.now()
+            )
+
+            # ✅ Send welcome email
+            send_mail(
+                subject='Welcome to the Ai Stead Mai!',
+                message=f'Thanks for registering, {name}! Your account is now active.',
+                from_email=None,  # uses DEFAULT_FROM_EMAIL from settings.py
+                recipient_list=[email],
+                fail_silently=False,
             )
 
             auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
@@ -64,6 +89,7 @@ def register_user(request):
             msg = "Form not valid"
 
     return render(request, "accounts/register.html", {"form": form, "msg": msg})
+
 
 
 # USER DASHBOARD — use @login_required
@@ -206,4 +232,3 @@ def likes_page(request):
             'active_tab': 'outgoing',
             'page_obj': page_obj,
         })
-
