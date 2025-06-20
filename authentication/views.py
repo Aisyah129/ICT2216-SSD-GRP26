@@ -40,7 +40,7 @@ def login_view(request):
                 else:
                     msg = "Please try again."
             except User.DoesNotExist:
-                msg = "Plesae try again."
+                msg = "Please try again."
         else:
             msg = "Form not valid"
 
@@ -334,7 +334,6 @@ def get_blurred_image_url(original_url):
 
 @login_required
 def likes_page(request):
-    
     user = request.user
     current_user_id = user.user_id
     tab = request.GET.get('tab', 'incoming')  # Default to Likes You tab
@@ -346,7 +345,12 @@ def likes_page(request):
 
     if tab == 'incoming':
         incoming_likes_raw = Like.objects.filter(liked_user_id=current_user_id).order_by('-liked_at')
+
         for like in incoming_likes_raw:
+            # Check if mutual like exists (i.e., the current user also liked this liker)
+            if Like.objects.filter(liker_user_id=current_user_id, liked_user_id=like.liker_user.user_id).exists():
+                continue  # skip mutual match
+
             try:
                 profile = Profile.objects.get(user_id_fk=like.liker_user)
                 image = get_primary_image(profile.profile_id)
@@ -372,7 +376,12 @@ def likes_page(request):
 
     elif tab == 'outgoing':
         outgoing_likes_raw = Like.objects.filter(liker_user_id=current_user_id).order_by('-liked_at')
+
         for like in outgoing_likes_raw:
+            # Check if mutual like exists (i.e., the liked user also liked this user)
+            if Like.objects.filter(liker_user_id=like.liked_user.user_id, liked_user_id=current_user_id).exists():
+                continue  # skip mutual match
+
             try:
                 profile = Profile.objects.get(user_id_fk=like.liked_user)
                 image = get_primary_image(profile.profile_id)
