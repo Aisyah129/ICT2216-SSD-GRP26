@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import login_view, register_user, user_dashboard, admin_dashboard, likes_page, profile_view, verify_email, request_password_reset, verify_reset_code, set_new_password
+from .views import login_view, register_user, user_dashboard, admin_dashboard, likes_page, profile_view, verify_email, request_password_reset, verify_reset_code, set_new_password, upgrade_premium, checkout_premium
 from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
@@ -22,5 +22,9 @@ urlpatterns = [
     path('admin/', admin_dashboard, name="admin_dashboard"),
 
     path('likes/', likes_page, name="likes"),
+
+    path('upgrade/', upgrade_premium, name='upgrade_premium'),
+    path('checkout/<str:plan_id>/', checkout_premium, name='checkout_premium'),
+
 
 ]
