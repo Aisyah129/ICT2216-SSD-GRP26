@@ -69,6 +69,38 @@ def send_verification_email(to_email, code):
     except Exception as e:
         print("❌ SendGrid error:", str(e))
 
+
+def send_welcome_email(to_email, user_name):
+    sg = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
+
+    from_email = Email(settings.DEFAULT_FROM_EMAIL)
+    subject = "🎉 Welcome to Ai Stead Mai!"
+    content = Content("text/html", f"""
+        <p>Hi {user_name},</p>
+        <p>Welcome to <strong>Ai Stead Mai</strong>! Your account has been successfully created.</p>
+        <p>You can now start exploring matches and connect with others!</p>
+        <br>
+        <p>Cheers,<br>The Ai Stead Mai Team</p>
+    """)
+
+    message = Mail()
+    message.from_email = from_email
+    message.subject = subject
+    message.add_content(content)
+
+    personalization = Personalization()
+    personalization.add_to(Email(to_email))
+    message.add_personalization(personalization)
+
+    try:
+        response = sg.send(message)
+        print("✅ Welcome email sent:", response.status_code)
+    except Exception as e:
+        print("❌ SendGrid welcome email error:", str(e))
+
+
+
+
 # REGISTER: store data temporarily and send code
 def register_user(request):
     form = SignUpForm(request.POST or None)
@@ -125,6 +157,8 @@ def verify_email(request):
                 created_at=timezone.now(),
                 last_updated=timezone.now()
             )
+
+            send_welcome_email(user.email, data['name'])
 
             # Clear verification session
             del request.session['registration_data']
