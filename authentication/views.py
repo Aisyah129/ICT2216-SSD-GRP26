@@ -145,12 +145,11 @@ def get_blurred_image_url(original_url):
     return f"{settings.IMAGEKIT_URL_ENDPOINT}tr:bl-20/{quote(filename)}"
 
 
+@login_required
 def likes_page(request):
-    if 'user_id' not in request.session:
-        return redirect('login')
-
-    current_user_id = request.session['user_id']
-    user = User.objects.get(user_id=current_user_id)
+    
+    user = request.user
+    current_user_id = user.user_id
     tab = request.GET.get('tab', 'incoming')  # Default to Likes You tab
     page_number = request.GET.get('page', 1)
 
