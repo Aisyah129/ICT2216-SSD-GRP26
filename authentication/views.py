@@ -14,6 +14,13 @@ from urllib.parse import quote
 from django.contrib import messages
 from django.core.mail import send_mail
 import random
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Email, Content, Personalization
+import os
+import certifi
+os.environ['SSL_CERT_FILE'] = certifi.where()
+
+
 
 # LOGIN view using Django auth
 def login_view(request):
@@ -40,24 +47,69 @@ def login_view(request):
     return render(request, "accounts/login.html", {"form": form, "msg": msg})
 
 
-# REGISTER view with UUID user_id
+def send_verification_email(to_email, code):
+    sg = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
+
+    from_email = Email(settings.DEFAULT_FROM_EMAIL)
+    subject = "Ai Stead Mai Email Verification"
+    content = Content("text/html", f"<p>Hello! Your verification code is: <strong>{code}</strong></p>")
+
+    message = Mail()
+    message.from_email = from_email
+    message.subject = subject
+    message.add_content(content)
+
+    personalization = Personalization()
+    personalization.add_to(Email(to_email))
+    message.add_personalization(personalization)
+
+    try:
+        response = sg.send(message)
+        print("✅ Email sent with status code:", response.status_code)
+    except Exception as e:
+        print("❌ SendGrid error:", str(e))
+
+# REGISTER: store data temporarily and send code
 def register_user(request):
     form = SignUpForm(request.POST or None)
     msg = None
 
-    if request.method == "POST":
-        if form.is_valid():
-            # Get form fields
-            email = form.cleaned_data['email']
-            raw_password = form.cleaned_data['password']
-            name = form.cleaned_data['name']
-            age = form.cleaned_data['age']
-            gender = form.cleaned_data['gender']
-            location = form.cleaned_data['location']
+    if request.method == "POST" and form.is_valid():
+        # Temporarily store registration data in session
+        request.session['registration_data'] = {
+            'email': form.cleaned_data['email'],
+            'password': form.cleaned_data['password'],
+            'name': form.cleaned_data['name'],
+            'age': form.cleaned_data['age'],
+            'gender': form.cleaned_data['gender'],
+            'location': form.cleaned_data['location'],
+        }
 
+        # Generate and store verification code
+        verification_code = str(random.randint(100000, 999999))
+        request.session['verification_code'] = verification_code
+
+        send_verification_email(form.cleaned_data['email'], verification_code)
+
+        return redirect('verify_email')
+
+    return render(request, "accounts/register.html", {"form": form, "msg": msg})
+
+
+# VERIFY: confirm code, then store to DB
+def verify_email(request):
+    msg = None
+
+    if request.method == "POST":
+        entered_code = request.POST.get("code")
+        session_code = request.session.get("verification_code")
+        data = request.session.get("registration_data")
+
+        if entered_code == session_code and data:
+            # Create user and profile
             user = User.objects.create_user(
-                email=email,
-                password=raw_password,
+                email=data['email'],
+                password=data['password'],
                 role='user',
                 is_premium=False,
                 created_at=timezone.now()
@@ -66,29 +118,24 @@ def register_user(request):
             Profile.objects.create(
                 profile_id=str(uuid.uuid4()),
                 user_id_fk=user,
-                name=name,
-                age=age,
-                gender=gender,
-                location=location,
+                name=data['name'],
+                age=data['age'],
+                gender=data['gender'],
+                location=data['location'],
                 created_at=timezone.now(),
                 last_updated=timezone.now()
             )
 
-            # ✅ Send welcome email
-            send_mail(
-                subject='Welcome to the Ai Stead Mai!',
-                message=f'Thanks for registering, {name}! Your account is now active.',
-                from_email=None,  # uses DEFAULT_FROM_EMAIL from settings.py
-                recipient_list=[email],
-                fail_silently=False,
-            )
+            # Clear verification session
+            del request.session['registration_data']
+            del request.session['verification_code']
 
             auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('user_dashboard')
         else:
-            msg = "Form not valid"
+            msg = "Invalid verification code."
 
-    return render(request, "accounts/register.html", {"form": form, "msg": msg})
+    return render(request, "accounts/verify.html", {"msg": msg})
 
 
 
