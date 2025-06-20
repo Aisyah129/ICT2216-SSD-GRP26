@@ -5,20 +5,80 @@ from authentication.models import Profile
 import re
 
 class LoginForm(forms.Form):
-    email = forms.EmailField()
-    password = forms.CharField(widget=forms.PasswordInput)
+    email = forms.EmailField(widget=forms.EmailInput(attrs={
+        'class': 'form-control form-control-alternative',
+        'placeholder': 'Email'
+    }))
+    password = forms.CharField(widget=forms.PasswordInput(attrs={
+        'class': 'form-control form-control-alternative',
+        'placeholder': 'Password'
+    }))
 
-#class SignUpForm(forms.Form):
-    #email = forms.EmailField()
-    #password = forms.CharField(widget=forms.PasswordInput)
+
+class PasswordResetEmailForm(forms.Form):
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control form-control-alternative',
+            'placeholder': 'Enter your email'
+        })
+    )
+
+class VerificationCodeForm(forms.Form):
+    code = forms.CharField(
+        label="Enter the 6-digit verification code",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control form-control-alternative',
+            'placeholder': '123456'
+        })
+    )
+
+
+class SetNewPasswordForm(forms.Form):
+    new_password = forms.CharField(widget=forms.PasswordInput(attrs={
+        'class': 'form-control form-control-alternative',
+        'placeholder': 'New Password'
+    }))
+    confirm_password = forms.CharField(widget=forms.PasswordInput(attrs={
+        'class': 'form-control form-control-alternative',
+        'placeholder': 'Confirm Password'
+    }))
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data['new_password'] != cleaned_data['confirm_password']:
+            raise forms.ValidationError("Passwords do not match.")
+
 
 
 class SignUpForm(forms.Form):
-    email = forms.EmailField(widget=forms.EmailInput(attrs={'class': 'form-control'}))
-    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
-    confirm_password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Email'
+        })
+    )
 
-    name = forms.CharField(max_length=255, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Password'
+        })
+    )
+
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Confirm Password'
+        })
+    )
+
+    name = forms.CharField(
+        max_length=255,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Name'
+        })
+    )
     age = forms.IntegerField(
         min_value=18,
         max_value=90,
@@ -37,7 +97,13 @@ class SignUpForm(forms.Form):
         choices=[('male', 'Male'), ('female', 'Female')],
         widget=forms.Select(attrs={'class': 'form-control'})
     )
-    location = forms.CharField(max_length=255, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    location = forms.CharField(
+        max_length=255,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Location'
+        })
+    )
 
     def clean_name(self):
         name = self.cleaned_data.get('name')
