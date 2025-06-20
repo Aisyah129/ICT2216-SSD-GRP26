@@ -12,10 +12,13 @@ class CustomUserManager(BaseUserManager):
             raise ValueError('Email must be set')
         email = self.normalize_email(email)
 
+        role = extra_fields.pop('role', 'user')
+        extra_fields.pop('created_at', None)
+
         user = self.model(
             user_id=str(uuid.uuid4()),
             email=email,
-            role=extra_fields.get('role', 'user'),
+            role=role,
             is_active=True,
             is_staff=(extra_fields.get('role') == 'admin'),
             is_superuser=(extra_fields.get('role') == 'admin'),
