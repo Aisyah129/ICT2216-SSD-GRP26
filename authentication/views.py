@@ -38,9 +38,9 @@ def login_view(request):
                     auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     return redirect('browse' if user.role == 'user' else 'admin_dashboard')
                 else:
-                    msg = "Invalid password"
+                    msg = "Please try again."
             except User.DoesNotExist:
-                msg = "User not found"
+                msg = "Plesae try again."
         else:
             msg = "Form not valid"
 
@@ -61,7 +61,7 @@ def request_password_reset(request):
             send_reset_code_email(email, code)
             return redirect('verify_reset_code')
         except User.DoesNotExist:
-            msg = "No user found with that email."
+            msg = "Invalid email address."
 
     return render(request, "accounts/password_reset_request.html", {"form": form, "msg": msg})
 
