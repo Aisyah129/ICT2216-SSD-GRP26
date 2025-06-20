@@ -148,3 +148,7 @@ LOGOUT_REDIRECT_URL = 'login'
 # ImageKit Settings
 IMAGEKIT_URL_ENDPOINT = config('IMAGEKIT_URL_ENDPOINT')
 
+EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+SENDGRID_SANDBOX_MODE_IN_DEBUG = False  # set True to avoid actually sending during testing
+DEFAULT_FROM_EMAIL = os.getenv("FROM_EMAIL")  # the verified sender identity
