@@ -1,11 +1,15 @@
 {% extends 'layouts/base.html' %}
+{% load static %}  {# ← Load static files tag here #}
+
 {% block title %} Upgrade to Premium {% endblock %}
 
 {% block content %}
 <div class="container mt-5">
   <h2 class="text-center mb-4">❤️ Go Premium</h2>
   <p class="text-center mb-5 text-muted">
-    Unlock the magic of mutual connection. With <strong>Premium</strong>, the veil is lifted — <strong>see who’s secretly admired you</strong> and take the first step toward something unforgettable. Love might just be a click away.
+    Unlock the magic of mutual connection. With <strong>Premium</strong>, the veil is lifted —
+    <strong>see who’s secretly admired you</strong> and take the first step toward something unforgettable.
+    Love might just be a click away.
   </p>
 
   <div class="row justify-content-center">
@@ -16,6 +20,14 @@
           <h5 class="my-0">{{ plan.name }}</h5>
         </div>
         <div class="card-body">
+          {% if plan.name == '1 Week' %}
+            <img src="{% static 'img/premium-week.png' %}" class="mb-3" style="max-height: 80px;" alt="1 Week Plan">
+          {% elif plan.name == '1 Month' %}
+            <img src="{% static 'img/premium-month.png' %}" class="mb-3" style="max-height: 80px;" alt="1 Month Plan">
+          {% elif plan.name == '3 Months' %}
+            <img src="{% static 'img/premium-3months.png' %}" class="mb-3" style="max-height: 80px;" alt="3 Months Plan">
+          {% endif %}
+
           <h2 class="card-title pricing-card-title">${{ plan.price }}</h2>
           <ul class="list-unstyled mt-3 mb-4">
             <li>{{ plan.description }}</li>
