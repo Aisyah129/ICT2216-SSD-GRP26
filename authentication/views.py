@@ -4,7 +4,7 @@ from django.contrib.auth import login as auth_login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password
 from authentication.models import User, Like, Profile, ProfileImage
-from .forms import LoginForm, SignUpForm, ProfileForm
+from .forms import LoginForm, SignUpForm, ProfileForm, PasswordResetEmailForm, VerificationCodeForm, SetNewPasswordForm
 import uuid
 from django.utils import timezone
 from django.core.paginator import Paginator
@@ -45,6 +45,86 @@ def login_view(request):
             msg = "Form not valid"
 
     return render(request, "accounts/login.html", {"form": form, "msg": msg})
+
+
+def request_password_reset(request):
+    form = PasswordResetEmailForm(request.POST or None)
+    msg = None
+
+    if request.method == "POST" and form.is_valid():
+        email = form.cleaned_data['email']
+        try:
+            user = User.objects.get(email=email)
+            code = str(random.randint(100000, 999999))
+            request.session['reset_email'] = email
+            request.session['reset_code'] = code
+            send_reset_code_email(email, code)
+            return redirect('verify_reset_code')
+        except User.DoesNotExist:
+            msg = "No user found with that email."
+
+    return render(request, "accounts/password_reset_request.html", {"form": form, "msg": msg})
+
+
+def send_reset_code_email(to_email, code):
+    sg = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
+
+    from_email = Email(settings.DEFAULT_FROM_EMAIL)
+    subject = "🔐 Password Reset Code for Ai Stead Mai"
+    content = Content("text/html", f"<p>Your password reset code is: <strong>{code}</strong></p>")
+
+    message = Mail()
+    message.from_email = from_email
+    message.subject = subject
+    message.add_content(content)
+
+    personalization = Personalization()
+    personalization.add_to(Email(to_email))
+    message.add_personalization(personalization)
+
+    try:
+        response = sg.send(message)
+        print("✅ Password reset code sent:", response.status_code)
+    except Exception as e:
+        print("❌ SendGrid error:", str(e))
+
+
+
+def verify_reset_code(request):
+    form = VerificationCodeForm(request.POST or None)
+    msg = None
+
+    if request.method == "POST" and form.is_valid():
+        entered_code = form.cleaned_data['code']
+        if entered_code == request.session.get('reset_code'):
+            return redirect('set_new_password')
+        else:
+            msg = "Invalid verification code."
+
+    return render(request, "accounts/password_reset_verify.html", {"form": form, "msg": msg})
+
+
+def set_new_password(request):
+    form = SetNewPasswordForm(request.POST or None)
+    msg = None
+
+    if request.method == "POST" and form.is_valid():
+        email = request.session.get('reset_email')
+        try:
+            user = User.objects.get(email=email)
+            user.set_password(form.cleaned_data['new_password'])
+            user.save()
+            # Clear session
+            del request.session['reset_email']
+            del request.session['reset_code']
+            messages.success(request, "Password reset successful. You can now log in.")
+            return redirect('login')
+        except User.DoesNotExist:
+            msg = "User not found."
+
+    return render(request, "accounts/set_new_password.html", {"form": form, "msg": msg})
+
+
 
 
 def send_verification_email(to_email, code):
