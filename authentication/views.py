@@ -6,12 +6,16 @@ from django.contrib.auth.hashers import make_password
 from authentication.models import User, Like, Profile, ProfileImage
 from .forms import LoginForm, SignUpForm, ProfileForm
 import uuid
+import boto3
+from django.views.decorators.http import require_POST, require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from urllib.parse import quote
 from django.contrib import messages
+
 
 
 # LOGIN view using Django auth
@@ -123,6 +127,95 @@ def profile_view(request):
         "languages":     languages,
         "pets":          pets,
     })
+
+@login_required
+@require_POST
+def upload_profile_image(request):
+    file = request.FILES.get("image")
+    if not file:
+        return JsonResponse({"success": False, "error": "No image uploaded"}, status=400)
+
+    profile = request.user.profile
+    filename = f"profile_{profile.profile_id}_{uuid.uuid4()}.{file.name.split('.')[-1]}"
+    print("Bucket name:", settings.AWS_STORAGE_BUCKET_NAME)
+
+    s3 = boto3.client(
+        "s3",
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_S3_REGION_NAME
+    )
+    
+    s3.upload_fileobj(
+        file,
+        settings.AWS_STORAGE_BUCKET_NAME,
+        filename,
+        ExtraArgs={"ContentType": file.content_type},
+    )
+
+    image_url = f"{settings.AWS_S3_ENDPOINT}/{filename}"
+    is_primary = request.POST.get("is_primary") in ["on", "true", "1"]
+
+    if is_primary:
+        ProfileImage.objects.filter(profile=profile).update(is_primary=False)
+
+    ProfileImage.objects.create(
+    image_id=str(uuid.uuid4()),
+    profile_id_fk=profile,
+    image_url=image_url,
+    is_primary=1 if is_primary else 0,
+    uploaded_at=timezone.now()
+    )   
+
+    return JsonResponse({"success": True, "image_url": image_url})
+
+# 🟩 Get all profile images for this user (JSON)
+@login_required
+def profile_images_json(request):
+    images = ProfileImage.objects.filter(profile=request.user.profile)\
+                                 .values('image_id', 'image_url', 'is_primary')
+    return JsonResponse(list(images), safe=False)
+
+
+# 🟩 Set selected image as primary
+@login_required
+@require_POST
+def set_primary_image(request, pk):
+    profile = request.user.profile
+    ProfileImage.objects.filter(profile=profile).update(is_primary=False)
+    updated = ProfileImage.objects.filter(profile=profile, pk=pk).update(is_primary=True)
+
+    return JsonResponse({"success": bool(updated)})
+
+
+# 🟥 Delete selected image from DB and S3
+@login_required
+@require_http_methods(["DELETE"])
+def delete_profile_image(request, pk):
+    try:
+        profile = request.user.profile
+        image = ProfileImage.objects.get(profile=profile, pk=pk)
+
+        # Extract S3 key from image URL
+        bucket_prefix = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/"
+        if image.image_url.startswith(bucket_prefix):
+            s3_key = image.image_url.replace(bucket_prefix, "")
+
+            # Delete from S3
+            s3 = boto3.client(
+                "s3",
+                aws_access_key_id     = settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key = settings.AWS_SECRET_ACCESS_KEY,
+                region_name           = settings.AWS_S3_REGION_NAME,
+            )
+            s3.delete_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=s3_key)
+
+        # Delete from DB
+        image.delete()
+        return JsonResponse({"success": True})
+
+    except ProfileImage.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Image not found"}, status=404)
 
 # ADMIN DASHBOARD
 @login_required
