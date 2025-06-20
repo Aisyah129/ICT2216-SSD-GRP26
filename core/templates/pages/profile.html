@@ -13,9 +13,8 @@
       <div class="container-fluid d-flex align-items-center">
         <div class="row">
           <div class="col-lg-7 col-md-10">
-            <h1 class="display-2 text-white">Hello {{ request.user.username }}</h1>
+            <h1 class="display-2 text-white">Hello {{ profile.name }}</h1>
             <p class="text-white mt-0 mb-5">This is your profile page. You can see the progress you've made with your work and manage your projects or assigned tasks</p>
-            <a href="#!" class="btn btn-info">Edit profile</a>
           </div>
         </div>
       </div>
@@ -30,7 +29,11 @@
               <div class="col-lg-3 order-lg-2">
                 <div class="card-profile-image">
                   <a href="#">
-                    <img src="/static/assets/img/theme/team-4-800x800.jpg" class="rounded-circle">
+                                    {% if primary_image %}
+                    <img src="{{ primary_image.image_url }}" class="rounded-circle" alt="{{ profile.name }}">
+                  {% else %}
+                    <img src="/static/assets/img/theme/default-avatar.png" class="rounded-circle" alt="avatar">
+                  {% endif %}
                   </a>
                 </div>
               </div>
@@ -45,19 +48,16 @@
               <div class="row">
                 <div class="col">
                   <div class="card-profile-stats d-flex justify-content-center mt-md-5">
-                    <div>
-                      <span class="heading">22</span>
-                      <span class="description">Friends</span>
-                    </div>
-                    <div>
-                      <span class="heading">10</span>
-                      <span class="description">Photos</span>
-                    </div>
-                    <div>
-                      <span class="heading">89</span>
-                      <span class="description">Comments</span>
-                    </div>
-                  </div>
+                  {% if profile.height_cm %}
+                    <div><span class="heading">{{ profile.height_cm }} cm</span><span class="description">Height</span></div>
+                  {% endif %}
+                  {% if profile.body_type %}
+                    <div><span class="heading">{{ profile.body_type }}</span><span class="description">Body Type</span></div>
+                  {% endif %}
+                  {% if languages %}
+                    <div><span class="heading">{{ languages|length }}</span><span class="description">Languages</span></div>
+                  {% endif %}
+                </div>
                 </div>
               </div>
               <div class="text-center">
@@ -74,7 +74,7 @@
                   <i class="ni education_hat mr-2"></i>University of Computer Science
                 </div>
                 <hr class="my-4" />
-                <p>Ryan — the name taken by Melbourne-raised, Brooklyn-based Nick Murphy — writes, performs and records all of his own music.</p>
+                <p>{{ profile.bio|default:"No bio yet." }}</p>
                 <a href="#">Show more</a>
               </div>
             </div>
@@ -93,82 +93,164 @@
               </div>
             </div>
             <div class="card-body">
-              <form>
-                <h6 class="heading-small text-muted mb-4">User information</h6>
-                <div class="pl-lg-4">
-                  <div class="row">
-                    <div class="col-lg-6">
-                      <div class="form-group">
-                        <label class="form-control-label" for="input-username">Username</label>
-                        <input type="text" id="input-username" class="form-control form-control-alternative" placeholder="Username" 
-                               value="{{ request.user.username }}">
-                      </div>
-                    </div>
-                    <div class="col-lg-6">
-                      <div class="form-group">
-                        <label class="form-control-label" for="input-email">Email address</label>
-                        <input type="email" id="input-email" class="form-control form-control-alternative" 
-                               placeholder="{{ request.user.email }}">
-                      </div>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-lg-6">
-                      <div class="form-group">
-                        <label class="form-control-label" for="input-first-name">First name</label>
-                        <input type="text" id="input-first-name" class="form-control form-control-alternative" >
-                      </div>
-                    </div>
-                    <div class="col-lg-6">
-                      <div class="form-group">
-                        <label class="form-control-label" for="input-last-name">Last name</label>
-                        <input type="text" id="input-last-name" class="form-control form-control-alternative" >
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <hr class="my-4" />
-                <!-- Address -->
-                <h6 class="heading-small text-muted mb-4">Contact information</h6>
-                <div class="pl-lg-4">
-                  <div class="row">
-                    <div class="col-md-12">
-                      <div class="form-group">
-                        <label class="form-control-label" for="input-address">Address</label>
-                        <input id="input-address" class="form-control form-control-alternative" placeholder="Home Address" value="Bld Mihail Kogalniceanu, nr. 8 Bl 1, Sc 1, Ap 09" type="text">
-                      </div>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-lg-4">
-                      <div class="form-group">
-                        <label class="form-control-label" for="input-city">City</label>
-                        <input type="text" id="input-city" class="form-control form-control-alternative" placeholder="City" value="New York">
-                      </div>
-                    </div>
-                    <div class="col-lg-4">
-                      <div class="form-group">
-                        <label class="form-control-label" for="input-country">Country</label>
-                        <input type="text" id="input-country" class="form-control form-control-alternative" placeholder="Country" value="United States">
-                      </div>
-                    </div>
-                    <div class="col-lg-4">
-                      <div class="form-group">
-                        <label class="form-control-label" for="input-country">Postal code</label>
-                        <input type="number" id="input-postal-code" class="form-control form-control-alternative" placeholder="Postal code">
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <hr class="my-4" />
-                <!-- Description -->
-                <h6 class="heading-small text-muted mb-4">About me</h6>
-                <div class="pl-lg-4">
-                  <div class="form-group">
-                    <label>About Me</label>
-                    <textarea rows="4" class="form-control form-control-alternative" placeholder="A few words about you ...">A beautiful Dashboard for Bootstrap 4. It is Free and Open Source.</textarea>
-                  </div>
-                </div>
+<form id="profile-form" method="POST" action="{% url 'profile' %}">
+    {% csrf_token %}
+<h6 class="heading-small text-muted mb-4">Profile Details</h6>
+<div class="pl-lg-4">
+<div class="row">
+  <div class="col-lg-4">
+    <div class="form-group">
+      <label>Age</label>
+      <input name="age" type="number" class="form-control form-control-alternative" value="{{ profile.age|default:'' }}" placeholder="Your age">
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="form-group">
+      <label>Gender</label>
+      <input name="gender" type="text" class="form-control form-control-alternative" value="{{ profile.gender|default:'' }}" placeholder="e.g. Male, Female">
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="form-group">
+      <label>Height (cm)</label>
+      <input name="height_cm" type="number" class="form-control form-control-alternative" value="{{ profile.height_cm|default:'' }}" placeholder="e.g. 170">
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-6">
+    <div class="form-group">
+      <label>Sexual Orientation</label>
+      <input name="sexual_orientation" type="text" class="form-control form-control-alternative" value="{{ profile.sexual_orientation|default:'' }}" placeholder="e.g. Straight, Gay">
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="form-group">
+      <label>Pronouns</label>
+      <input name="pronouns" type="text" class="form-control form-control-alternative" value="{{ profile.pronouns|default:'' }}" placeholder="e.g. He/Him">
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-6">
+    <div class="form-group">
+      <label>Body Type</label>
+      <input name="body_type" type="text" class="form-control form-control-alternative" value="{{ profile.body_type|default:'' }}" placeholder="e.g. Athletic">
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="form-group">
+      <label>Location</label>
+      <input name="location" type="text" class="form-control form-control-alternative" value="{{ profile.location|default:'' }}" placeholder="e.g. Singapore">
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-6">
+    <div class="form-group">
+      <label>Education Level</label>
+      <input name="education_level" type="text" class="form-control form-control-alternative" value="{{ profile.education_level|default:'' }}" placeholder="e.g. University">
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="form-group">
+      <label>Occupation</label>
+      <input name="occupation" type="text" class="form-control form-control-alternative" value="{{ profile.occupation|default:'' }}" placeholder="e.g. Software Engineer">
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-4">
+    <div class="form-group">
+      <label>Religion</label>
+      <input name="religion" type="text" class="form-control form-control-alternative" value="{{ profile.religion|default:'' }}" placeholder="e.g. Christian">
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="form-group">
+      <label>Ethnicity</label>
+      <input name="ethnicity" type="text" class="form-control form-control-alternative" value="{{ profile.ethnicity|default:'' }}" placeholder="e.g. Chinese">
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="form-group">
+      <label>Politics</label>
+      <input name="politics" type="text" class="form-control form-control-alternative" value="{{ profile.politics|default:'' }}" placeholder="e.g. Moderate">
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-4">
+    <div class="form-group">
+      <label>Smoking</label>
+      <input name="smoking" type="text" class="form-control form-control-alternative" value="{{ profile.smoking|default:'' }}" placeholder="e.g. Never">
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="form-group">
+      <label>Drinking</label>
+      <input name="drinking" type="text" class="form-control form-control-alternative" value="{{ profile.drinking|default:'' }}" placeholder="e.g. Socially">
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="form-group">
+      <label>Drug Use</label>
+      <input name="drug_use" type="text" class="form-control form-control-alternative" value="{{ profile.drug_use|default:'' }}" placeholder="e.g. Never">
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-6">
+    <div class="form-group">
+      <label>Has Kids</label>
+<input name="has_kids" type="number" class="form-control form-control-alternative" value="{{ profile.has_kids|default:'' }}" placeholder="e.g. 0 or 1">
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="form-group">
+      <label>Wants Kids</label>
+      <input name="wants_kids" type="text" class="form-control form-control-alternative" value="{{ profile.wants_kids|default:'' }}" placeholder="e.g. Someday">
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-6">
+    <div class="form-group">
+      <label>Zodiac Sign</label>
+      <input name="zodiac_sign" type="text" class="form-control form-control-alternative" value="{{ profile.zodiac_sign|default:'' }}" placeholder="e.g. Aries">
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="form-group">
+      <label>Relationship Goals</label>
+      <input name="relationship_goals" type="text" class="form-control form-control-alternative" value="{{ profile.relationship_goals|default:'' }}" placeholder="e.g. Long-term">
+    </div>
+  </div>
+</div>
+
+<div class="form-group">
+  <label>Hobbies</label>
+  <textarea name="hobbies" rows="3" class="form-control form-control-alternative" placeholder="e.g. Photography, Reading">{{ profile.hobbies|default:'' }}</textarea>
+</div>
+
+<div class="form-group">
+  <label>About Me</label>
+  <textarea name="bio" rows="4" class="form-control form-control-alternative" placeholder="Tell us more about yourself...">{{ profile.bio|default:'' }}</textarea>
+</div>
+
+</div>
+<div class="text-right">
+  <button type="button" class="btn btn-info" id="editProfileBtn">Edit profile</button>
+  <button type="submit" class="btn btn-success d-none" id="saveProfileBtn">Save changes</button>
+</div>
+
               </form>
             </div>
           </div>
@@ -182,4 +264,36 @@
 {% endblock content %}
 
 <!-- Specific JS goes HERE --> 
-{% block javascripts %}{% endblock javascripts %}
+{% block javascripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const form       = document.getElementById("profile-form");
+  const editBtn    = document.getElementById("editProfileBtn");
+  const saveBtn    = document.getElementById("saveProfileBtn");
+  const cancelBtn  = document.getElementById("cancelProfileBtn");
+  const inputs     = form.querySelectorAll("input, textarea");
+
+  function setDisabled(state) {
+    inputs.forEach(el => state ? el.setAttribute("disabled","") : el.removeAttribute("disabled"));
+  }
+
+  // initial: read-only
+  setDisabled(true);
+
+  editBtn.addEventListener("click", () => {
+    setDisabled(false);
+    editBtn.classList.add("d-none");
+    saveBtn.classList.remove("d-none");
+    cancelBtn.classList.remove("d-none");
+  });
+
+  cancelBtn.addEventListener("click", () => {
+    form.reset();               // discard changes
+    setDisabled(true);
+    saveBtn.classList.add("d-none");
+    cancelBtn.classList.add("d-none");
+    editBtn.classList.remove("d-none");
+  });
+});
+</script>
+{% endblock javascripts %}

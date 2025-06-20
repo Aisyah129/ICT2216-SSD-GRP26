@@ -130,7 +130,7 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "core/static"),
 )
 
-# AUTH_USER_MODEL = 'authentication.User'
+AUTH_USER_MODEL = 'authentication.User'
 
 LOGOUT_REDIRECT_URL = 'login'
 
