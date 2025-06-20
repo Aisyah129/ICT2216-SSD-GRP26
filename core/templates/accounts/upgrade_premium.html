@@ -1,0 +1,30 @@
+{% extends 'layouts/base.html' %}
+{% block title %} Upgrade to Premium {% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2 class="text-center mb-4">❤️ Go Premium</h2>
+  <p class="text-center mb-5 text-muted">
+    Unlock the magic of mutual connection. With <strong>Premium</strong>, the veil is lifted — <strong>see who’s secretly admired you</strong> and take the first step toward something unforgettable. Love might just be a click away.
+  </p>
+
+  <div class="row justify-content-center">
+    {% for plan in plans %}
+    <div class="col-md-4 mb-4">
+      <div class="card h-100 text-center shadow-sm border-primary">
+        <div class="card-header bg-primary text-white">
+          <h5 class="my-0">{{ plan.name }}</h5>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title pricing-card-title">${{ plan.price }}</h2>
+          <ul class="list-unstyled mt-3 mb-4">
+            <li>{{ plan.description }}</li>
+          </ul>
+          <a href="{% url 'checkout_premium' plan.id %}" class="btn btn-outline-primary btn-block">Select</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
