@@ -1,36 +1,60 @@
 # authentication/views.py
 
-from django.contrib.auth import login as auth_login, authenticate
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.hashers import make_password
-from authentication.models import User, Like, Profile, ProfileImage, Match
-from .forms import LoginForm, SignUpForm, ProfileForm, PasswordResetEmailForm, VerificationCodeForm, SetNewPasswordForm
-import uuid
-import boto3
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST, require_http_methods
-from django.views.decorators.csrf import csrf_exempt, csrf_protect
-from django.utils import timezone
-from django.core.paginator import Paginator
-from django.shortcuts import render, redirect, get_object_or_404
-from django.conf import settings
-from urllib.parse import quote
-from django.contrib import messages
-from django.core.mail import send_mail
-import random
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Email, Content, Personalization
+# ✦ Standard library
+import json
 import os
+import random
+import uuid
+from datetime import datetime
+from typing import Optional  # ← used in a few type-hints
+
+# ✦ Third-party libraries
+import boto3
 import certifi
-from django.http import HttpResponse
-from pymongo import MongoClient         
-from django.db.models import Q
 import iso8601
-from functools import lru_cache          
-from datetime import datetime            
+import stripe
+from pymongo import MongoClient
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Content, Email, Mail, Personalization
+from functools import lru_cache
+
+# ✦ Django core
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import login as auth_login
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.hashers import make_password  
+from django.core.paginator import Paginator
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST, require_http_methods
+
+# ✦ Django ORM
+from django.db.models import Q
+
+# ✦ Project-local
+from authentication.models import (
+    Like,
+    Match,
+    Profile,
+    ProfileImage,
+    Subscription,
+    User,
+)
+from .forms import (
+    LoginForm,
+    PasswordResetEmailForm,
+    ProfileForm,
+    SetNewPasswordForm,
+    SignUpForm,
+    VerificationCodeForm,
+)
+
 
 os.environ['SSL_CERT_FILE'] = certifi.where()
-
 
 # LOGIN view using Django auth
 def login_view(request):
@@ -115,7 +139,8 @@ def verify_reset_code(request):
 
 
 def set_new_password(request):
-    form = SetNewPasswordForm(request.POST or None)
+    form = SetNewPasswordForm(request.POST or 
+    None)
     msg = None
 
     if request.method == "POST" and form.is_valid():
@@ -764,4 +789,214 @@ def messages_json(request, user_id):
     } for m in msgs]
 
     return JsonResponse({"messages": lite})
+
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+# ONE place that maps the slug used in URLs → the real Stripe Price IDs
+PRICE_MAP = {
+    "week":    settings.STRIPE_PRICE_ID_WEEK,
+    "month":   settings.STRIPE_PRICE_ID_MONTH,
+    "quarter": settings.STRIPE_PRICE_ID_QUARTER,
+}
+
+def _price_to_cycle(price_id: str) -> str:
+    """Convert price-ID → ‘1week’ | ‘1month’ | ‘3month’ for DB column."""
+    if price_id == settings.STRIPE_PRICE_ID_WEEK:
+        return "1week"
+    if price_id == settings.STRIPE_PRICE_ID_MONTH:
+        return "1month"
+    return "3month"          # quarter
+
+# ─────────────  1)  Launch checkout  ─────────────
+@login_required
+def create_checkout_session(request, plan: str):
+    """
+    Called by the “Select” button.
+    `plan` is the slug in the <a href="{% url 'stripe_checkout' plan.slug %}">.
+    """
+    price_id = PRICE_MAP.get(plan.lower())
+    if not price_id:
+        return HttpResponse("Unknown plan", status=400)
+
+    # ➊ create a Checkout session on Stripe
+    session = stripe.checkout.Session.create(
+        mode="subscription",
+        customer_email=request.user.email,
+        payment_method_types=["card"],
+        line_items=[{"price": price_id, "quantity": 1}],
+        success_url=request.build_absolute_uri(
+            reverse("stripe_success")) + "?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url=request.build_absolute_uri(reverse("stripe_cancel")),
+        metadata={
+            "user_id": str(request.user.user_id),
+            "plan":    plan,
+        },
+    )
+
+    # ➋ store a *pending* subscription row – useful even before the webhook
+    _create_sub_record(
+        user_uuid          = request.user.user_id,
+        stripe_sub_id      = None,                 # will be filled later
+        price_id           = price_id,
+        stripe_session_id  = session.id,
+    )
+
+    return redirect(session.url)
+
+
+# ─────────────  2)  Success / cancel splash pages  ─────────────
+@login_required
+def checkout_success(request):
+    messages.success(request, "🎉 Thanks! Your Premium is now active.")
+    return render(request, "billing/success.html")
+
+
+@login_required
+def checkout_cancel(request):
+    messages.warning(request, "Payment cancelled.")
+    return render(request, "billing/cancel.html")
+
+
+# ─────────────  3)  Stripe web-hook  ─────────────
+@csrf_exempt
+def stripe_webhook(request):
+    payload = request.body
+    sig     = request.headers.get("stripe-signature", "")
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig, settings.STRIPE_WEBHOOK_SECRET
+        )
+    except (ValueError, stripe.error.SignatureVerificationError):
+        return HttpResponse(status=400)
+
+    typ = event["type"]
+
+    # 1️⃣ Checkout finished
+    if typ == "checkout.session.completed":
+        session   = event["data"]["object"]
+        sub_id    = session["subscription"]           # the real sub ID
+        user_id   = session["metadata"]["user_id"]
+        price_id  = session["display_items"][0]["price"]["id"] \
+                    if session.get("display_items") else None
+        _create_sub_record(
+            user_uuid         = user_id,
+            stripe_sub_id     = sub_id,
+            price_id          = price_id,
+            stripe_session_id = session["id"],
+        )
+
+    # 2️⃣ Recurring invoice paid (renewal)
+    if typ == "invoice.paid":
+        _update_next_renewal(event["data"]["object"]["subscription"])
+
+    # 3️⃣ Payment failed / subscription cancelled / downgraded
+    if typ in ("invoice.payment_failed", "customer.subscription.updated"):
+        _check_status(event["data"]["object"]["id"])
+
+    return HttpResponse(status=200)
+
+
+# ─────────────  4)  Helpers  ─────────────
+def _create_sub_record(
+    user_uuid: str,
+    stripe_sub_id: Optional[str],
+    price_id: Optional[str],
+    *,
+    stripe_session_id: Optional[str] = None,
+):
+    """
+    Insert-or-update the Subscription table.
+
+    • If `stripe_sub_id` is None we mark the row as 'pending'.
+    • If the row exists already (because we created it at checkout),
+      we patch it with the missing Stripe IDs once the webhook arrives.
+    """
+    user = User.objects.get(user_id=user_uuid)
+
+    # fetch the live Stripe sub only if we already know its ID
+    sub_json = stripe.Subscription.retrieve(stripe_sub_id) if stripe_sub_id else None
+
+    Subscription.objects.update_or_create(
+        user_id_fk=user,
+        defaults={
+            "stripe_subscription_id": stripe_sub_id,
+            "stripe_customer_id":     sub_json["customer"] if sub_json else None,
+            "stripe_price_id":        price_id,
+            "stripe_session_id":      stripe_session_id,
+            "price": (
+                sub_json["plan"]["amount"] / 100 if sub_json else None
+            ),
+            "billing_cycle": (
+                _price_to_cycle(price_id) if price_id else None
+            ),
+            "features": json.dumps({"premium": True}),
+            "started_at": timezone.now(),
+            "expires_at": (
+                timezone.make_aware(
+                    datetime.fromtimestamp(sub_json["current_period_end"])
+                ) if sub_json else timezone.now()
+            ),
+            "auto_renew": 1,
+            "status": sub_json["status"] if sub_json else "pending",
+        },
+    )
+
+    # immediately flag the user as premium
+    user.is_premium = True
+    user.save(update_fields=["is_premium"])
+
+
+def _update_next_renewal(stripe_sub_id: str):
+    sub_json = stripe.Subscription.retrieve(stripe_sub_id)
+    try:
+        db_sub = Subscription.objects.get(
+            stripe_subscription_id=stripe_sub_id,
+            status__in=["active", "trialing"],
+        )
+        db_sub.expires_at = timezone.make_aware(
+            datetime.fromtimestamp(sub_json["current_period_end"])
+        )
+        db_sub.status = sub_json["status"]
+        db_sub.save(update_fields=["expires_at", "status"])
+    except Subscription.DoesNotExist:
+        pass
+
+
+def _check_status(stripe_sub_id: str):
+    sub_json = stripe.Subscription.retrieve(stripe_sub_id)
+    if sub_json["status"] in ("canceled", "unpaid"):
+        try:
+            db_sub = Subscription.objects.get(
+                stripe_subscription_id=stripe_sub_id
+            )
+            db_sub.status = sub_json["status"]
+            db_sub.save(update_fields=["status"])
+            db_sub.user_id_fk.is_premium = False
+            db_sub.user_id_fk.save(update_fields=["is_premium"])
+        except Subscription.DoesNotExist:
+            pass
+
+def upgrade_premium(request):
+    plans = [
+        {
+            "slug": "week",   # make sure this is here
+            "name": "1 Week",
+            "price": "4.99",
+            "description": "Short-term access to premium features",
+        },
+        {
+            "slug": "month",
+            "name": "1 Month",
+            "price": "9.99",
+            "description": "Unlock premium features for a month",
+        },
+        {
+            "slug": "quarter",
+            "name": "3 Months",
+            "price": "24.99",
+            "description": "Save more with a 3-month plan",
+        },
+    ]
+    return render(request, "accounts/upgrade_premium.html", {"plans": plans})
 
