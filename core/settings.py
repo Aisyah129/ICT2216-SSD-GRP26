@@ -87,15 +87,15 @@ DATABASES = {
 }
 
 #NOSQL DB
-#MONGO_URI = config("MONGO_URI")
-#MONGO_DB_NAME = config("MONGO_DB_NAME")
+MONGO_URI = config("MONGO_URI")
+MONGO_DB = config("MONGO_DB_NAME")
 
 #S3 Bucket Amazon
-#AWS_ACCESS_KEY_ID        = config("AWS_ACCESS_KEY_ID")
-#AWS_SECRET_ACCESS_KEY    = config("AWS_SECRET_ACCESS_KEY")
-#AWS_STORAGE_BUCKET_NAME  = config("AWS_STORAGE_BUCKET_NAME")
-#AWS_S3_REGION_NAME       = config("AWS_S3_REGION_NAME", default="ap-southeast-1")
-#AWS_S3_ENDPOINT          = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
+AWS_ACCESS_KEY_ID        = config("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY    = config("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME  = config("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME       = config("AWS_S3_REGION_NAME", default="ap-southeast-1")
+AWS_S3_ENDPOINT          = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
 
 
 # Password validation

@@ -172,4 +172,13 @@ class Profilepet(models.Model):
         db_table = 'ProfilePet'
         unique_together = (('profile_id_fk', 'pet_id_fk'),)
 
+class Match(models.Model):
+    match_id = models.CharField(primary_key=True, max_length=36)
+    user1 = models.ForeignKey('User', models.DO_NOTHING)
+    user2 = models.ForeignKey('User', models.DO_NOTHING, related_name='match_user2_set')
+    matched_at = models.DateTimeField()
+    is_active = models.IntegerField(blank=True, null=True)
 
+    class Meta:
+        managed = False
+        db_table = 'Match'

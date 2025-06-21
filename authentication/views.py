@@ -3,13 +3,13 @@
 from django.contrib.auth import login as auth_login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password
-from authentication.models import User, Like, Profile, ProfileImage
+from authentication.models import User, Like, Profile, ProfileImage, Match
 from .forms import LoginForm, SignUpForm, ProfileForm, PasswordResetEmailForm, VerificationCodeForm, SetNewPasswordForm
 import uuid
 import boto3
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
@@ -23,9 +23,13 @@ from sendgrid.helpers.mail import Mail, Email, Content, Personalization
 import os
 import certifi
 from django.http import HttpResponse
+from pymongo import MongoClient         
+from django.db.models import Q
+import iso8601
+from functools import lru_cache          
+from datetime import datetime            
+
 os.environ['SSL_CERT_FILE'] = certifi.where()
-
-
 
 
 # LOGIN view using Django auth
@@ -540,3 +544,224 @@ def upgrade_premium(request):
 
 def checkout_premium(request, plan_id):
     return HttpResponse(f"Stripe checkout for plan: {plan_id}")
+
+
+# --- MongoDB Connection ---
+@lru_cache
+def mongo():
+    client = MongoClient(settings.MONGO_URI)
+    return client[settings.MONGO_DB]
+
+COL = mongo().messages   # <-- Each message is its own document
+
+def fetch_messages(match, limit=None):
+    q = {"match_id": str(match.match_id)}
+    cursor = COL.find(q).sort("sent_at", 1)
+    if limit:
+        cursor = cursor.limit(limit)
+    return list(cursor)
+
+def append_message(match, sender_id, text):
+    msg = {
+        "match_id": str(match.match_id),
+        "message_id": str(uuid.uuid4()),
+        "sender_user_id": sender_id,
+        "ciphertext": text,
+        "sent_at": datetime.utcnow().isoformat(timespec="seconds"),
+        "is_read": False,
+        "encryption_meta": {
+            "key_id": "default", "version": 1
+        },
+    }
+    COL.insert_one(msg)
+    return msg
+
+def mark_read(match, reader_id):
+    COL.update_many(
+        {
+            "match_id": str(match.match_id),
+            "sender_user_id": {"$ne": reader_id},
+            "is_read": False
+        },
+        {"$set": {"is_read": True}}
+    )
+
+def get_conversations_for(user):
+    # 1️⃣ SQL matches that involve me
+    sql_matches = (
+        Match.objects
+        .filter(is_active=1)
+        .filter(Q(user1_id=user.user_id) | Q(user2_id=user.user_id))
+        .values("match_id", "user1_id", "user2_id")
+    )
+    match_ids = [str(m["match_id"]) for m in sql_matches]
+
+    # 2️⃣ unread counts in Mongo
+    pipeline = [
+        {"$match": {
+            "match_id": {"$in": match_ids},
+            "sender_user_id": {"$ne": str(user.user_id)},
+            "is_read": False
+        }},
+        {"$group": {"_id": "$match_id", "unread": {"$sum": 1}}},
+    ]
+    unread_map = {d["_id"]: d["unread"] for d in COL.aggregate(pipeline)}
+
+    # 3️⃣ build sidebar data
+    conversations = []
+    for m in sql_matches:
+        other_uuid = m["user2_id"] if m["user1_id"] == user.user_id else m["user1_id"]
+        # ▸ grab display name & primary image
+        try:
+            profile  = Profile.objects.only("name").get(user_id_fk__user_id=other_uuid)
+            display  = profile.name or "Unknown"
+        except Profile.DoesNotExist:
+            display  = "Unknown"
+
+        # primary image (may be None)
+        img = (ProfileImage.objects
+                          .only("image_url")
+                          .filter(profile_id_fk=profile, is_primary=1)
+                          .first())
+        img_url = img.image_url if img else settings.STATIC_URL + "img/avatar-placeholder.png"
+
+        conversations.append({
+            "user_id":   other_uuid,
+            "name":      display,
+            "avatar":    img_url,
+            "unread":    unread_map.get(str(m["match_id"]), 0),
+        })
+
+    # sort: unread first, then alpha
+    conversations.sort(key=lambda c: (-c["unread"], c["name"].lower()))
+    return conversations
+
+# add near messages_with
+@login_required
+def messages_home(request):
+    convos = get_conversations_for(request.user)
+    if convos:
+        # jump straight into the 1st conversation
+        return redirect("messages_with", user_id=convos[0]["user_id"])
+    # no matches yet – render same template with placeholders
+    return render(request, "pages/messages.html", {
+    "conversations": [],
+    "selected_user": None,
+    "selected_name": None,
+    "selected_avatar": None,
+    "messages": [],
+})
+
+# --- Main View ---
+@login_required
+def messages_with(request, user_id):
+    """Chat view between the logged-in user and `other_user`."""
+    # ------------------------------------------------------------------
+    # 0️⃣  Get the other user, profile, display-name, avatar
+    # ------------------------------------------------------------------
+    other_user = get_object_or_404(User, pk=user_id)
+
+    try:
+        other_profile = Profile.objects.only("name").get(user_id_fk=other_user)
+        display_name  = other_profile.name or other_user.email
+    except Profile.DoesNotExist:
+        display_name  = other_user.email
+
+    img = (
+        ProfileImage.objects
+        .only("image_url")
+        .filter(profile_id_fk=other_profile, is_primary=1)
+        .first()
+    )
+    avatar_url = img.image_url if img else settings.STATIC_URL + "img/avatar-placeholder.png"
+
+    # ------------------------------------------------------------------
+    # 1️⃣  Find the *active* Match row involving these two users
+    #      (order-agnostic, UUID fields)
+    # ------------------------------------------------------------------
+    match = (
+        Match.objects
+        .filter(is_active=1)
+        .filter(
+            (Q(user1_id=request.user.user_id) & Q(user2_id=other_user.user_id)) |
+            (Q(user1_id=other_user.user_id) & Q(user2_id=request.user.user_id))
+        )
+        .first()
+    )
+    if not match:
+        raise Http404("No active match between these users.")
+
+    # ------------------------------------------------------------------
+    # 2️⃣  POST ⇒ send a new message to Mongo
+    # ------------------------------------------------------------------
+    if request.method == "POST":
+        body = request.POST.get("message", "").strip()
+        if body:
+            append_message(match, str(request.user.user_id), body)
+        # after sending, redirect to GET avoids resubmission on refresh
+        return redirect("messages_with", user_id=other_user.user_id)
+
+    # ------------------------------------------------------------------
+    # 3️⃣  GET ⇒ fetch message list and mark partner’s messages as read
+    # ------------------------------------------------------------------
+    messages = fetch_messages(match)              # list[dict] from Mongo
+    mark_read(match, str(request.user.user_id))   # mark incoming as read
+
+    # ------------------------------------------------------------------
+    # 4️⃣  Render page
+    # ------------------------------------------------------------------
+    context = {
+        "conversations":   get_conversations_for(request.user),
+        "selected_user":   other_user,
+        "selected_name":   display_name,
+        "selected_avatar": avatar_url,
+        "messages":        messages,
+        "user":            request.user,
+    }
+    return render(request, "pages/messages.html", context)
+
+
+@login_required
+def messages_json(request, user_id):
+    """
+    Return all messages, or only messages sent **after** ?after=<iso8601-stamp>.
+    Used by polling JS.
+    """
+    other_user = get_object_or_404(User, pk=user_id)
+
+    match = (
+        Match.objects
+        .filter(is_active=True)
+        .filter(
+            (Q(user1_id=request.user.user_id) & Q(user2_id=other_user.user_id)) |
+            (Q(user1_id=other_user.user_id) & Q(user2_id=request.user.user_id))
+        )
+        .first()
+    )
+    if not match:
+        return JsonResponse({"messages": []})
+
+    since = request.GET.get("after")
+    msgs  = fetch_messages(match)
+
+    if since:
+        try:
+            after_dt = iso8601.parse_date(since)
+            msgs = [m for m in msgs
+                    if iso8601.parse_date(m["sent_at"]) > after_dt]
+        except iso8601.ParseError:
+            pass  # ignore bad param – return full list
+
+    # mark everything from partner as read
+    mark_read(match, str(request.user.user_id))
+
+    # send back **only** the fields the browser needs
+    lite = [{
+        "id":    m["message_id"],
+        "text":  m["ciphertext"],
+        "ts":    m["sent_at"],
+        "from":  m["sender_user_id"],
+    } for m in msgs]
+
+    return JsonResponse({"messages": lite})
+
