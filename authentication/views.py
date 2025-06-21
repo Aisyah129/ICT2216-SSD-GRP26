@@ -43,7 +43,7 @@ def login_view(request):
             except User.DoesNotExist:
                 msg = "Please try again."
         else:
-            msg = "Form not valid"
+            msg = "Please try again."
 
     return render(request, "accounts/login.html", {"form": form, "msg": msg})
 
