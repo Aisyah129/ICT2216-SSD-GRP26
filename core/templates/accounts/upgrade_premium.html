@@ -1,42 +1,100 @@
-{% extends 'layouts/base.html' %}
-{% load static %}  {# ← Load static files tag here #}
+{# templates/accounts/upgrade_premium.html #}
+{% extends "layouts/base.html" %}
+{% load static %}
 
-{% block title %} Upgrade to Premium {% endblock %}
+{% block title %}Upgrade – Premium{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-  <h2 class="text-center mb-4">❤️ Go Premium</h2>
-  <p class="text-center mb-5 text-muted">
-    Unlock the magic of mutual connection. With <strong>Premium</strong>, the veil is lifted —
-    <strong>see who’s secretly admired you</strong> and take the first step toward something unforgettable.
-    Love might just be a click away.
-  </p>
+<div class="container py-5">
 
+  {# ░░ Hero ░░ #}
+  <div class="text-center mb-5">
+    <h2 class="display-5 font-weight-bold">❤️ Go&nbsp;Premium</h2>
+    <p class="lead text-muted mx-auto" style="max-width:36rem;">
+      Unlock the magic of mutual connection. With <strong>Premium</strong> the veil is lifted&nbsp;—&nbsp;
+      <em>see who’s secretly admired you</em> and take the first step toward something unforgettable.
+    </p>
+  </div>
+
+  {# ░░ Plans ░░ #}
   <div class="row justify-content-center">
+
     {% for plan in plans %}
-    <div class="col-md-4 mb-4">
-      <div class="card h-100 text-center shadow-sm border-primary">
-        <div class="card-header bg-primary text-white">
+    <div class="col-12 col-sm-10 col-md-6 col-lg-4 mb-4 d-flex">
+
+      <div class="card w-100 shadow-sm border-primary border-2 plan-card position-relative
+                  {% if plan.slug == 'quarter' %}best-value{% endif %}">
+
+        {# Ribbon for “best value” #}
+        {% if plan.slug == 'quarter' %}
+          <span class="badge badge-danger ribbon">Best&nbsp;value</span>
+        {% endif %}
+
+        <div class="card-header text-white"
+             style="background:linear-gradient(90deg,#4e73df,#6c63ff);">
           <h5 class="my-0">{{ plan.name }}</h5>
         </div>
-        <div class="card-body">
-          {% if plan.name == '1 Week' %}
-            <img src="{% static 'img/premium-week.png' %}" class="mb-3" style="max-height: 80px;" alt="1 Week Plan">
-          {% elif plan.name == '1 Month' %}
-            <img src="{% static 'img/premium-month.png' %}" class="mb-3" style="max-height: 80px;" alt="1 Month Plan">
-          {% elif plan.name == '3 Months' %}
-            <img src="{% static 'img/premium-3months.png' %}" class="mb-3" style="max-height: 80px;" alt="3 Months Plan">
+
+        <div class="card-body d-flex flex-column">
+
+          {# Illustration #}
+          {% if plan.slug == 'week' %}
+            <img src="{% static 'img/premium-week.png' %}" class="mb-3 mx-auto"
+                 style="max-height:72px;" alt="Week plan">
+          {% elif plan.slug == 'month' %}
+            <img src="{% static 'img/premium-month.png' %}" class="mb-3 mx-auto"
+                 style="max-height:72px;" alt="Month plan">
+          {% elif plan.slug == 'quarter' %}
+            <img src="{% static 'img/premium-3months.png' %}" class="mb-3 mx-auto"
+                 style="max-height:72px;" alt="3-months plan">
           {% endif %}
 
-          <h2 class="card-title pricing-card-title">${{ plan.price }}</h2>
-          <ul class="list-unstyled mt-3 mb-4">
-            <li>{{ plan.description }}</li>
+          <h2 class="card-title pricing-card-title">
+            ${{ plan.price }}
+            <small class="text-muted font-weight-normal"
+                   style="font-size:.8rem;">
+              /{% if plan.slug == 'week' %}wk{% elif plan.slug == 'month' %}mo{% else %}3&nbsp;mo{% endif %}
+            </small>
+          </h2>
+
+          <ul class="list-unstyled text-left small mt-3 mb-4">
+            <li><i class="fas fa-check text-success mr-1"></i>{{ plan.description }}</li>
+            <li><i class="fas fa-check text-success mr-1"></i>See who likes you</li>
+            <li><i class="fas fa-check text-success mr-1"></i>Unlimited swipes</li>
           </ul>
-          <a href="{% url 'checkout_premium' plan.id %}" class="btn btn-outline-primary btn-block">Select</a>
+
+          <a href="{% url 'stripe_checkout' plan.slug %}"
+             class="btn btn-primary mt-auto font-weight-semibold">
+            Select
+          </a>
         </div>
       </div>
     </div>
     {% endfor %}
+
   </div>
+
+  <p class="text-center mt-4 small text-muted">
+    Payments are processed securely by Stripe. Cancel anytime from your settings.
+  </p>
 </div>
+
+{# Tiny CSS tweaks #}
+<style>
+  .plan-card:hover{
+      transform:translateY(-4px);
+      box-shadow:0 0.5rem 1rem rgba(0,0,0,.15);
+      transition:transform .2s ease,box-shadow .2s ease;
+  }
+  .plan-card .btn:hover{filter:brightness(1.05);}
+
+  /* ribbon */
+  .plan-card.best-value .ribbon{
+      position:absolute;
+      top:-10px;right:-10px;
+      transform:rotate(10deg);
+      padding:.35rem .7rem;
+      font-size:.65rem;
+  }
+</style>
 {% endblock %}

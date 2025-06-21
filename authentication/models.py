@@ -182,3 +182,36 @@ class Match(models.Model):
     class Meta:
         managed = False
         db_table = 'Match'
+
+class Subscription(models.Model):
+    subscription_id = models.CharField(
+        max_length=36, primary_key=True, db_column="subscription_id"
+    )
+    user_id_fk = models.OneToOneField(
+        "User", models.DO_NOTHING, db_column="user_id_fk"
+    )
+
+    stripe_subscription_id = models.CharField(
+        max_length=255, null=True, blank=True, db_column="stripe_subscription_id"
+    )
+    stripe_customer_id = models.CharField(
+        max_length=255, null=True, blank=True, db_column="stripe_customer_id"
+    )
+    stripe_price_id = models.CharField(
+        max_length=100, null=True, blank=True, db_column="stripe_price_id"
+    )
+    stripe_session_id = models.CharField(
+        max_length=255, null=True, blank=True, db_column="stripe_session_id"
+    )
+    
+    price          = models.FloatField(null=True, blank=True)
+    features       = models.JSONField(null=True, blank=True)
+    billing_cycle  = models.CharField(max_length=6)          # 1week/1month/3month
+    started_at     = models.DateTimeField()
+    expires_at     = models.DateTimeField()
+    auto_renew     = models.IntegerField(null=True, blank=True)
+    status         = models.CharField(max_length=20, null=True, blank=True)
+
+    class Meta:
+        managed  = False           # keep using the pre-built table
+        db_table = "Subscription"
