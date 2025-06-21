@@ -8,6 +8,7 @@ import os
 from decouple import config
 from unipath import Path
 import pymysql
+
 pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -84,6 +85,25 @@ DATABASES = {
     }
 }
 
+#Stripe
+STRIPE_PUBLISHABLE_KEY = config("STRIPE_PUBLISHABLE_KEY")
+STRIPE_SECRET_KEY      = config("STRIPE_SECRET_KEY")
+STRIPE_WEBHOOK_SECRET  = config("STRIPE_WEBHOOK_SECRET")
+STRIPE_PRICE_ID_WEEK  = config("STRIPE_PRICE_ID_WEEK")
+STRIPE_PRICE_ID_MONTH  = config("STRIPE_PRICE_ID_MONTH")
+STRIPE_PRICE_ID_QUARTER  = config("STRIPE_PRICE_ID_QUARTER")
+
+#NOSQL DB
+MONGO_URI = config("MONGO_URI")
+MONGO_DB = config("MONGO_DB_NAME")
+
+#S3 Bucket Amazon
+AWS_ACCESS_KEY_ID        = config("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY    = config("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME  = config("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME       = config("AWS_S3_REGION_NAME", default="ap-southeast-1")
+AWS_S3_ENDPOINT          = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
+
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -130,6 +150,13 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "core/static"),
 )
 
-# AUTH_USER_MODEL = 'authentication.User'
+AUTH_USER_MODEL = 'authentication.User'
 
 LOGOUT_REDIRECT_URL = 'login'
+
+# ImageKit Settings
+IMAGEKIT_URL_ENDPOINT = config('IMAGEKIT_URL_ENDPOINT')
+
+
+SENDGRID_API_KEY = config("SENDGRID_API_KEY")
+DEFAULT_FROM_EMAIL = config("FROM_EMAIL")

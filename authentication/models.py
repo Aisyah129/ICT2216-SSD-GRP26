@@ -1,24 +1,91 @@
 # authentication/models.py
 
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.db import models
 from django.utils import timezone
 import uuid
 
-class User(models.Model):
+
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('Email must be set')
+        email = self.normalize_email(email)
+
+        role = extra_fields.pop('role', 'user')
+        extra_fields.pop('created_at', None)
+
+        user = self.model(
+            user_id=str(uuid.uuid4()),
+            email=email,
+            role=role,
+            is_active=True,
+            is_staff=(extra_fields.get('role') == 'admin'),
+            is_superuser=(extra_fields.get('role') == 'admin'),
+            created_at=timezone.now(),
+            **extra_fields
+        )
+        user.set_password(password)           # hashes and stores into password field
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('role', 'admin')
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(email, password, **extra_fields)
+
+
+class User(AbstractBaseUser, PermissionsMixin):
+    # --- Core IDs ----------------------------------------------------
     user_id = models.CharField(max_length=36, primary_key=True)
-    email = models.EmailField(unique=True)
-    password_hash = models.CharField(max_length=128)
-    is_premium = models.BooleanField(default=False)
-    role = models.CharField(max_length=10, default='user')
-    created_at = models.DateTimeField(default=timezone.now)
+
+    # --- Credentials -------------------------------------------------
+    email    = models.EmailField(unique=True)
+
+    # Map Django's `password` field to the *existing* password_hash column
+    password = models.CharField(max_length=128, db_column='password_hash')
+
+    # --- Extra business fields --------------------------------------
+    role        = models.CharField(max_length=10, default='user')
+    is_premium  = models.BooleanField(default=False)
+    created_at  = models.DateTimeField(default=timezone.now)
+
+    # --- Django-required flags --------------------------------------
+    is_active   = models.BooleanField(default=True)
+    is_staff    = models.BooleanField(default=False)   # can access admin
+    # `is_superuser` comes from PermissionsMixin
+
+    # --- Config ------------------------------------------------------
+    USERNAME_FIELD  = 'email'
+    REQUIRED_FIELDS = []             # e.g. add 'role' if you want
+
+    objects = CustomUserManager()
 
     class Meta:
         db_table = 'User'
-        managed = False  # Because you're using an existing table
+        managed  = False              # keep using existing table
 
     def __str__(self):
         return self.email
-    
+
+
+class Language(models.Model):
+    language_id = models.AutoField(primary_key=True)
+    language_name = models.CharField(unique=True, max_length=10)
+
+    class Meta:
+        managed = False
+        db_table = 'Language'
+
+class Pet(models.Model):
+    pet_id = models.AutoField(primary_key=True)
+    pet_type = models.CharField(unique=True, max_length=7)
+
+    class Meta:
+        managed = False
+        db_table = 'Pet'
+
 class Profile(models.Model):
     profile_id = models.CharField(primary_key=True, max_length=36)
     user_id_fk = models.OneToOneField('User', models.DO_NOTHING, db_column='user_id_fk')
@@ -50,6 +117,104 @@ class Profile(models.Model):
     class Meta:
         managed = False
         db_table = 'Profile'
+
+    def __str__(self):
+        return self.name
+
+
+class Like(models.Model):
+    like_id = models.CharField(max_length=36, primary_key=True)
+    like_status = models.CharField(max_length=20)
+    liker_user = models.ForeignKey(User, db_column='liker_user_id', on_delete=models.DO_NOTHING, related_name='likes_sent')
+    liked_user = models.ForeignKey(User, db_column='liked_user_id', on_delete=models.DO_NOTHING, related_name='likes_received')
+    liked_at = models.DateTimeField()
+
+    class Meta:
+        db_table = 'Like'
+        managed = False
+
+    def __str__(self):
+        return f"{self.liker_user} → {self.liked_user} ({self.like_status})"
+
+
+class ProfileImage(models.Model):
+    image_id = models.CharField(primary_key=True, max_length=36)
+    profile_id_fk = models.ForeignKey(Profile, models.DO_NOTHING, db_column='profile_id_fk')
+    image_url = models.TextField()
+    is_primary = models.IntegerField(blank=True, null=True)  # 1 for True, 0 for False
+    uploaded_at = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'ProfileImage'
+
+    def __str__(self):
+        return f"{self.profile_id_fk_id} - {self.image_url}"
+
+class Profilelanguage(models.Model):
+    profile_language_id = models.AutoField(primary_key=True)
+    language_id_fk = models.ForeignKey(Language, models.DO_NOTHING, db_column='language_id_fk')
+    profile_id_fk = models.ForeignKey(Profile, models.DO_NOTHING, db_column='profile_id_fk')
+
+    class Meta:
+        managed = False
+        db_table = 'ProfileLanguage'
+        unique_together = (('profile_id_fk', 'language_id_fk'),)
+
+
+class Profilepet(models.Model):
+    profile_pet_id = models.AutoField(primary_key=True)
+    profile_id_fk = models.ForeignKey(Profile, models.DO_NOTHING, db_column='profile_id_fk')
+    pet_id_fk = models.ForeignKey(Pet, models.DO_NOTHING, db_column='pet_id_fk')
+
+    class Meta:
+        managed = False
+        db_table = 'ProfilePet'
+        unique_together = (('profile_id_fk', 'pet_id_fk'),)
+
+class Match(models.Model):
+    match_id = models.CharField(primary_key=True, max_length=36)
+    user1 = models.ForeignKey('User', models.DO_NOTHING)
+    user2 = models.ForeignKey('User', models.DO_NOTHING, related_name='match_user2_set')
+    matched_at = models.DateTimeField()
+    is_active = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'Match'
+
+class Subscription(models.Model):
+    subscription_id = models.CharField(
+        max_length=36, primary_key=True, db_column="subscription_id"
+    )
+    user_id_fk = models.OneToOneField(
+        "User", models.DO_NOTHING, db_column="user_id_fk"
+    )
+
+    stripe_subscription_id = models.CharField(
+        max_length=255, null=True, blank=True, db_column="stripe_subscription_id"
+    )
+    stripe_customer_id = models.CharField(
+        max_length=255, null=True, blank=True, db_column="stripe_customer_id"
+    )
+    stripe_price_id = models.CharField(
+        max_length=100, null=True, blank=True, db_column="stripe_price_id"
+    )
+    stripe_session_id = models.CharField(
+        max_length=255, null=True, blank=True, db_column="stripe_session_id"
+    )
+    
+    price          = models.FloatField(null=True, blank=True)
+    features       = models.JSONField(null=True, blank=True)
+    billing_cycle  = models.CharField(max_length=6)          # 1week/1month/3month
+    started_at     = models.DateTimeField()
+    expires_at     = models.DateTimeField()
+    auto_renew     = models.IntegerField(null=True, blank=True)
+    status         = models.CharField(max_length=20, null=True, blank=True)
+
+    class Meta:
+        managed  = False           # keep using the pre-built table
+        db_table = "Subscription"
 
 class ProfileImage(models.Model):
     image_id = models.CharField(primary_key=True, max_length=36)
