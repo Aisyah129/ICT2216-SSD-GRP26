@@ -41,7 +41,6 @@
       <p class="text-muted ml-3">No one has liked you yet.</p>
       {% endif %}
 
-      <!-- Floating Banner -->
       <div class="premium-overlay-message">
         <div class="alert alert-warning text-center">
           <a href="{% url 'upgrade_premium' %}" class="text-white font-weight-bold" style="text-decoration: underline;">
@@ -50,12 +49,17 @@
         </div>
       </div>
 
-
     {% else %}
     <div class="row">
       {% for user in page_obj %}
       <div class="col-md-4 mb-3">
-        <div class="card shadow-sm text-center">
+        <div class="card shadow-sm text-center clickable-card"
+             data-user-id="{{ user.id }}"
+             data-user-name="{{ user.name }}"
+             data-user-age="{{ user.age }}"
+             data-user-date="{{ user.liked_date|date:'d M Y' }}"
+             data-user-image="{{ user.image_url }}"
+             onclick="handleCardClick(this)">
           <div class="card-body">
             {% if user.image_url %}
             <img src="{{ user.image_url }}" class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: cover;" alt="Profile Picture">
@@ -65,8 +69,6 @@
           </div>
         </div>
       </div>
-      {% empty %}
-      <p class="text-muted ml-3">No one has liked you yet.</p>
       {% endfor %}
     </div>
     {% endif %}
@@ -80,7 +82,7 @@
       <div class="card shadow-sm text-center">
         <div class="card-body">
           {% if user.image_url %}
-          <img src="{{ user.image_url }}" class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: cover;" alt="ProfilePicture">
+          <img src="{{ user.image_url }}" class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: cover;" alt="Profile Picture">
           {% endif %}
           <h5 class="card-title">{{ user.name }}</h5>
           <p class="card-text text-muted">You liked them on {{ user.liked_date|date:"d M Y" }}</p>
@@ -94,7 +96,23 @@
   {% endif %}
 </div>
 
-<!-- Shared Fixed Pagination -->
+<!-- Shared Modal -->
+<div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl custom-wide-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitle">Profile</h5>
+        <button type="button" class="custom-close-button" data-bs-dismiss="modal" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body text-center">
+        <img id="modalImage" class="img-fluid rounded mb-3" style="max-height: 300px; object-fit: cover;" alt="Profile">
+        <p id="modalBody"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Pagination -->
 <div class="fixed-pagination">
   <ul class="pagination justify-content-center m-0">
     {% if page_obj.has_previous %}
@@ -185,6 +203,15 @@
     pointer-events: none;
   }
 
+  .clickable-card {
+    cursor: pointer;
+    transition: transform 0.1s ease-in-out;
+  }
+
+  .clickable-card:hover {
+    transform: scale(1.02);
+  }
+
   .fixed-pagination {
     position: fixed;
     bottom: 0;
@@ -196,7 +223,65 @@
   }
 
   .container {
-    padding-bottom: 90px; /* ensures content isn't hidden behind pagination */
+    padding-bottom: 90px;
+  }
+
+  .custom-wide-modal {
+    max-width: 95vw;
+    max-height: 95vh;
+    margin: 0 auto;
+  }
+
+  .custom-wide-modal .modal-content {
+    height: 90vh;
+    overflow-y: auto;
+    border-radius: 0.75rem;
+  }
+
+  .custom-close-button {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background-color: #f8f9fa;
+    color: #212529;
+    border: 1.5px solid #ced4da;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .custom-close-button:hover {
+    background-color: #dc3545;
+    color: #fff;
+    border-color: #dc3545;
   }
 </style>
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  function handleCardClick(card) {
+    const name = card.dataset.userName;
+    const age = card.dataset.userAge;
+    const date = card.dataset.userDate;
+    const image = card.dataset.userImage;
+
+    document.getElementById("modalTitle").innerText = `Profile of ${name}`;
+    document.getElementById("modalImage").src = image;
+    document.getElementById("modalBody").innerText =
+      `This is a placeholder profile popup for ${name}, aged ${age}. They liked you on ${date}.`;
+
+    const modal = new bootstrap.Modal(document.getElementById("profileModal"));
+    modal.show();
+  }
+</script>
 {% endblock %}
