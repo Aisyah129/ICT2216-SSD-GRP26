@@ -86,8 +86,8 @@ DATABASES = {
 }
 
 #NOSQL DB
-#MONGO_URI = config("MONGO_URI")
-#MONGO_DB_NAME = config("MONGO_DB_NAME")
+MONGO_URI = config("MONGO_URI")
+MONGO_DB = config("MONGO_DB_NAME")
 
 #S3 Bucket Amazon
 AWS_ACCESS_KEY_ID        = config("AWS_ACCESS_KEY_ID")
