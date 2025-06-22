@@ -278,7 +278,9 @@ def verify_email(request):
             del request.session['verification_code']
 
             auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-            return redirect('user_dashboard')
+            request.session['user_id'] = user.user_id  # ensure session is set
+            return redirect('browse_one')  # this triggers browse_one_profile()
+
         else:
             msg = "Invalid verification code."
 
@@ -1004,25 +1006,22 @@ def browse_one_profile(request):
     except Profile.DoesNotExist:
         return redirect('login')
 
-    # ✨ Orientation-based gender filtering
+    # ✨ Orientation-based gender filtering (with fallback)
     user_gender = current_profile.gender
     user_orientation = current_profile.sexual_orientation
 
-    # Apply gender filter based on sexual orientation
-    if user_orientation == "straight":
-        if user_gender == "male":
-            profiles = profiles.filter(gender="female")
-        elif user_gender == "female":
-            profiles = profiles.filter(gender="male")
-    elif user_orientation == "gay":
-        if user_gender == "male":
-            profiles = profiles.filter(gender="male")
-        elif user_gender == "female":
-            profiles = profiles.filter(gender="female")
-    elif user_orientation == "bisexual":
-        pass  # bisexual users can see all genders, so no filter needed
+    if user_gender and user_orientation:
+        if user_orientation == "straight":
+            profiles = profiles.filter(gender="female" if user_gender == "male" else "male")
+        elif user_orientation == "gay":
+            profiles = profiles.filter(gender=user_gender)
+        elif user_orientation == "bisexual":
+            pass  # no gender filter
+        else:
+            print("⚠️ Unknown orientation, skipping filtering.")
     else:
-        profiles = profiles.none()  # fallback for undefined orientations
+        print("🟡 New user or incomplete profile — skipping gender/orientation filter.")
+
 
     # 🧠 STEP: Filter profiles based on like/dislike history
     rated_likes = Like.objects.filter(liker_user_id=user_id)
@@ -1044,6 +1043,7 @@ def browse_one_profile(request):
     def fetch_pref(model, field):
         obj = model.objects.filter(preference_id_fk=preferences).first()
         return getattr(obj, field, None) if obj else None
+        
 
     # 👀 If all profiles have been rated and fewer than 5 disliked remain, show browse_done
     if len(unseen_ids) == 0:
