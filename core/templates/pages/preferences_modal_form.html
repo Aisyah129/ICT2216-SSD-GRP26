@@ -1,0 +1,195 @@
+<!-- preferences_modal_form.html -->
+<div class="modal fade" id="preferencesModal" tabindex="-1" aria-labelledby="preferencesModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <form method="post" action="{% url 'save_preferences' %}">
+      {% csrf_token %}
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="preferencesModalLabel">Set Preferences</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+
+            <!-- Age -->
+            <div class="col-md-6">
+              <label>Preferred Age Min</label>
+              <input type="number" class="form-control" name="preferred_age_min" value="{{ preferences.preferred_age_min|default:'' }}">
+            </div>
+            <div class="col-md-6">
+              <label>Preferred Age Max</label>
+              <input type="number" class="form-control" name="preferred_age_max" value="{{ preferences.preferred_age_max|default:'' }}">
+            </div>
+
+            <!-- Distance -->
+            <div class="col-md-6">
+              <label>Preferred Distance (km)</label>
+              <input type="number" class="form-control" name="preferred_distance_km" value="{{ preferences.preferred_distance_km|default:'' }}">
+            </div>
+
+            <!-- Height -->
+            <div class="col-md-6">
+              <label>Preferred Height Min (cm)</label>
+              <input type="number" class="form-control" name="preferred_height_min" value="{{ preferences.preferred_height_min|default:'' }}">
+            </div>
+            <div class="col-md-6">
+              <label>Preferred Height Max (cm)</label>
+              <input type="number" class="form-control" name="preferred_height_max" value="{{ preferences.preferred_height_max|default:'' }}">
+            </div>
+
+            <!-- Gender -->
+            <div class="col-md-6">
+              <label>Gender</label>
+              <select class="form-select" name="gender_type">
+                <option value="">--</option>
+                <option value="male" {% if gender == "male" %}selected{% endif %}>Male</option>
+                <option value="female" {% if gender == "female" %}selected{% endif %}>Female</option>
+              </select>
+            </div>
+
+            <!-- Body Type -->
+            <div class="col-md-6">
+              <label>Body Type</label>
+              <select class="form-select" name="body_type_value">
+                <option value="">--</option>
+                {% for val, label in body_choices %}
+                  <option value="{{ val }}" {% if body_type == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Education -->
+            <div class="col-md-6">
+              <label>Education</label>
+              <select class="form-select" name="education_level">
+                <option value="">--</option>
+                {% for val, label in education_choices %}
+                  <option value="{{ val }}" {% if education == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Religion -->
+            <div class="col-md-6">
+              <label>Religion</label>
+              <select class="form-select" name="religion_type">
+                <option value="">--</option>
+                {% for val, label in religion_choices %}
+                  <option value="{{ val }}" {% if religion == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Ethnicity -->
+            <div class="col-md-6">
+              <label>Ethnicity</label>
+              <select class="form-select" name="ethnicity_type">
+                <option value="">--</option>
+                {% for val, label in ethnicity_choices %}
+                  <option value="{{ val }}" {% if ethnicity == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Politics -->
+            <div class="col-md-6">
+              <label>Politics</label>
+              <select class="form-select" name="politics_type">
+                <option value="">--</option>
+                {% for val, label in politics_choices %}
+                  <option value="{{ val }}" {% if politics == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Lifestyle -->
+            <div class="col-md-4">
+              <label>Smoking</label>
+              <select class="form-select" name="smoking_type">
+                <option value="">--</option>
+                {% for val, label in smoking_choices %}
+                  <option value="{{ val }}" {% if smoking == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label>Drinking</label>
+              <select class="form-select" name="drinking_type">
+                <option value="">--</option>
+                {% for val, label in drinking_choices %}
+                  <option value="{{ val }}" {% if drinking == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label>Drug Use</label>
+              <select class="form-select" name="drug_type">
+                <option value="">--</option>
+                {% for val, label in drug_choices %}
+                  <option value="{{ val }}" {% if drug == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Kids -->
+            <div class="col-md-6">
+              <label>Has Kids</label>
+              <select class="form-select" name="has_kids_type">
+                <option value="">--</option>
+                <option value="yes" {% if has_kids == "yes" %}selected{% endif %}>Yes</option>
+                <option value="no" {% if has_kids == "no" %}selected{% endif %}>No</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label>Wants Kids</label>
+              <select class="form-select" name="wants_kids_type">
+                <option value="">--</option>
+                {% for val, label in wants_kids_choices %}
+                  <option value="{{ val }}" {% if wants_kids == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Zodiac -->
+            <div class="col-md-6">
+              <label>Zodiac Sign</label>
+              <select class="form-select" name="zodiac_type">
+                <option value="">--</option>
+                {% for val, label in zodiac_choices %}
+                  <option value="{{ val }}" {% if zodiac == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Relationship Goals -->
+            <div class="col-md-6">
+              <label>Relationship Type</label>
+              <select class="form-select" name="relationship_type">
+                <option value="">--</option>
+                {% for val, label in relationship_choices %}
+                  <option value="{{ val }}" {% if relationship == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Language -->
+            <div class="col-md-6">
+              <label>Language</label>
+              <select class="form-select" name="language_id_fk">
+                <option value="">--</option>
+                {% for lang in languages %}
+                  <option value="{{ lang.language_id }}" {% if language_id == lang.language_id %}selected{% endif %}>{{ lang.language_name|capfirst }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save Preferences</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
