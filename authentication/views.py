@@ -497,6 +497,9 @@ def likes_page(request):
     incoming_likes = []
     outgoing_likes = []
 
+    match_popup = request.session.pop('match_popup_likes', None)
+
+
     if tab == 'incoming':
         incoming_likes_raw = Like.objects.filter(liked_user_id=user).order_by('-liked_at')
 
@@ -510,31 +513,32 @@ def likes_page(request):
                 image = get_primary_image(profile.profile_id)
                 incoming_likes.append({
                     'id': like.liker_user_id.user_id,
-    'name': profile.name if user.is_premium else None,
-    'age': profile.age if user.is_premium else None,
-    'liked_date': like.liked_at if user.is_premium else None,
-    'image_url': image.image_url if user.is_premium else get_blurred_image_url(image.image_url),
-    'gender': profile.gender,
-    'location': profile.location,
-    'pronouns': profile.pronouns,
-    'sexual_orientation': profile.sexual_orientation,
-    'zodiac_sign': profile.zodiac_sign,
-    'smoking': profile.smoking,
-    'drinking': profile.drinking,
-    'drug_use': profile.drug_use,
-    'has_kids': profile.has_kids,
-    'wants_kids': profile.wants_kids,
-    'education_level': profile.education_level,
-    'occupation': profile.occupation,
-    'religion': profile.religion,
-    'politics': profile.politics,
-    'ethnicity': profile.ethnicity,
-    'height_cm': profile.height_cm,
-    'body_type': profile.body_type,
-    'hobbies': profile.hobbies,
-    'relationship_goals': profile.relationship_goals,
-    'bio': profile.bio,
-                })
+                    'name': profile.name if user.is_premium else None,
+                    'age': profile.age if user.is_premium else None,
+                    'liked_date': like.liked_at if user.is_premium else None,
+                    'image_url': image.image_url if user.is_premium else get_blurred_image_url(image.image_url),
+                    'gender': profile.gender if user.is_premium else None,
+                    'location': profile.location if user.is_premium else None,
+                    'pronouns': profile.pronouns if user.is_premium else None,
+                    'sexual_orientation': profile.sexual_orientation if user.is_premium else None,
+                    'zodiac_sign': profile.zodiac_sign if user.is_premium else None,
+                    'smoking': profile.smoking if user.is_premium else None,
+                    'drinking': profile.drinking if user.is_premium else None,
+                    'drug_use': profile.drug_use if user.is_premium else None,
+                    'has_kids': profile.has_kids if user.is_premium else None,
+                    'wants_kids': profile.wants_kids if user.is_premium else None,
+                    'education_level': profile.education_level if user.is_premium else None,
+                    'occupation': profile.occupation if user.is_premium else None,
+                    'religion': profile.religion if user.is_premium else None,
+                    'politics': profile.politics if user.is_premium else None,
+                    'ethnicity': profile.ethnicity if user.is_premium else None,
+                    'height_cm': profile.height_cm if user.is_premium else None,
+                    'body_type': profile.body_type if user.is_premium else None,
+                    'hobbies': profile.hobbies if user.is_premium else None,
+                    'relationship_goals': profile.relationship_goals if user.is_premium else None,
+                    'bio': profile.bio if user.is_premium else None,
+                }
+                )
             except Profile.DoesNotExist:
                 continue
 
@@ -546,7 +550,9 @@ def likes_page(request):
             'incoming_likes': page_obj,
             'outgoing_likes': [],
             'active_tab': 'incoming',
-            'page_obj': page_obj
+            'page_obj': page_obj,
+            'match_popup': match_popup
+
         })
 
     elif tab == 'outgoing':
@@ -561,32 +567,33 @@ def likes_page(request):
                 profile = Profile.objects.get(user_id_fk=like.liked_user_id)
                 image = get_primary_image(profile.profile_id)
                 outgoing_likes.append({
-                    'id': like.liker_user_id.user_id,
-    'name': profile.name if user.is_premium else None,
-    'age': profile.age if user.is_premium else None,
-    'liked_date': like.liked_at if user.is_premium else None,
-    'image_url': image.image_url if user.is_premium else get_blurred_image_url(image.image_url),
-    'gender': profile.gender,
-    'location': profile.location,
-    'pronouns': profile.pronouns,
-    'sexual_orientation': profile.sexual_orientation,
-    'zodiac_sign': profile.zodiac_sign,
-    'smoking': profile.smoking,
-    'drinking': profile.drinking,
-    'drug_use': profile.drug_use,
-    'has_kids': profile.has_kids,
-    'wants_kids': profile.wants_kids,
-    'education_level': profile.education_level,
-    'occupation': profile.occupation,
-    'religion': profile.religion,
-    'politics': profile.politics,
-    'ethnicity': profile.ethnicity,
-    'height_cm': profile.height_cm,
-    'body_type': profile.body_type,
-    'hobbies': profile.hobbies,
-    'relationship_goals': profile.relationship_goals,
-    'bio': profile.bio,
-                })
+                    'id': like.liked_user_id.user_id,
+                    'name': profile.name,
+                    'age': profile.age,
+                    'liked_date': like.liked_at,
+                    'image_url': image.image_url if image else None,
+                    'gender': profile.gender,
+                    'location': profile.location,
+                    'pronouns': profile.pronouns ,
+                    'sexual_orientation': profile.sexual_orientation ,
+                    'zodiac_sign': profile.zodiac_sign,
+                    'smoking': profile.smoking ,
+                    'drinking': profile.drinking,
+                    'drug_use': profile.drug_use ,
+                    'has_kids': profile.has_kids ,
+                    'wants_kids': profile.wants_kids ,
+                    'education_level': profile.education_level,
+                    'occupation': profile.occupation,
+                    'religion': profile.religion ,
+                    'politics': profile.politics,
+                    'ethnicity': profile.ethnicity ,
+                    'height_cm': profile.height_cm ,
+                    'body_type': profile.body_type ,
+                    'hobbies': profile.hobbies ,
+                    'relationship_goals': profile.relationship_goals ,
+                    'bio': profile.bio
+                }
+                )
             except Profile.DoesNotExist:
                 continue
 
@@ -598,7 +605,8 @@ def likes_page(request):
             'incoming_likes': [],
             'outgoing_likes': page_obj,
             'active_tab': 'outgoing',
-            'page_obj': page_obj
+            'page_obj': page_obj,
+            'match_popup': match_popup
         })
 
 
@@ -1089,7 +1097,7 @@ def browse_one_profile(request):
 
     # 👀 If all profiles have been rated and fewer than 5 disliked remain, show browse_done
     if len(unseen_ids) == 0:
-        if len(remaining_disliked_ids) < 5:
+        if len(remaining_disliked_ids) < 3:
             print("🔚 No profiles left and fewer than 5 disliked to reuse.")
             return render(request, 'pages/browse_done.html', {
                 'preferences': preferences,
@@ -1360,12 +1368,17 @@ def like_profile(request):
         except User.DoesNotExist:
             return redirect('/browse/')
 
+        # Update if exists, else create
         existing_like = Like.objects.filter(
             liker_user_id=liker_user,
             liked_user_id=liked_user
-        ).exists()
+        ).first()
 
-        if not existing_like:
+        if existing_like:
+            existing_like.like_status = 'liked'
+            existing_like.liked_at = timezone.now()
+            existing_like.save()
+        else:
             Like.objects.create(
                 like_id=str(uuid.uuid4()),
                 like_status='liked',
@@ -1374,6 +1387,7 @@ def like_profile(request):
                 liked_at=timezone.now()
             )
 
+        # Check for mutual like
         mutual_like = Like.objects.filter(
             liker_user_id=liked_user,
             liked_user_id=liker_user,
@@ -1397,13 +1411,25 @@ def like_profile(request):
 
                 profile = liked_user.profile
                 image = profile.profileimage_set.filter(is_primary=True).first()
-                request.session['match_popup'] = {
+                popup_data = {
                     'name': profile.name,
                     'image': image.image_url if image else ""
                 }
 
-        index = int(request.GET.get("index", 0)) + 1
-        return redirect(f"/browse/?index={index}")
+                # 💡 Store modal popup in correct session key
+                if request.POST.get("from_likes") == "1":
+                    request.session['match_popup_likes'] = popup_data
+                else:
+                    request.session['match_popup'] = popup_data
+
+        # ✅ Redirect to the correct page
+        if request.POST.get("from_likes") == "1":
+            return redirect('/likes/?tab=incoming')
+
+        next_index = int(request.GET.get("index", 0)) + 1
+        return redirect(f"/browse/?index={next_index}")
+
+
 
 def save_preferences(request):
     if request.method == 'POST':
@@ -1466,12 +1492,17 @@ def dislike_profile(request):
         except User.DoesNotExist:
             return redirect('/browse/')
 
+        # Update if exists, else create
         existing_dislike = Like.objects.filter(
             liker_user_id=liker_user,
             liked_user_id=disliked_user
-        ).exists()
+        ).first()
 
-        if not existing_dislike:
+        if existing_dislike:
+            existing_dislike.like_status = 'passed'
+            existing_dislike.liked_at = timezone.now()
+            existing_dislike.save()
+        else:
             Like.objects.create(
                 like_id=str(uuid.uuid4()),
                 like_status='passed',
@@ -1480,6 +1511,10 @@ def dislike_profile(request):
                 liked_at=timezone.now()
             )
 
+        # Optional: maintain index if using browsing
         index = int(request.POST.get("index") or request.GET.get("index", 0))
+
+        if 'from_likes' in request.POST:
+            return redirect('/likes/?tab=outgoing')
+
         return redirect(f"/browse/?index={index}")
-    
