@@ -83,12 +83,18 @@
   <div class="row mt-3">
     {% for user in page_obj %}
     <div class="col-md-4 mb-3">
-      <div class="card shadow-sm text-center">
+      <div class="card shadow-sm text-center clickable-card"
+          data-user-id="{{ user.id }}"
+          data-user-name="{{ user.name }}"
+          data-user-age="{{ user.age }}"
+          data-user-date="{{ user.liked_date|date:'d M Y' }}"
+          data-user-image="{{ user.image_url }}"
+          onclick="handleCardClick(this)">
         <div class="card-body">
           {% if user.image_url %}
           <img src="{{ user.image_url }}" class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: cover;" alt="Profile Picture">
           {% endif %}
-          <h5 class="card-title">{{ user.name }}</h5>
+          <h5 class="card-title">{{ user.name }}, {{ user.age }}</h5>
           <p class="card-text text-muted">You liked them on {{ user.liked_date|date:"d M Y" }}</p>
         </div>
       </div>
@@ -98,6 +104,7 @@
     {% endfor %}
   </div>
   {% endif %}
+
 </div>
 
 <!-- Shared Modal -->
@@ -246,21 +253,23 @@
     position: absolute;
     top: 15px;
     right: 20px;
+    width: 32px;
+    height: 32px;
     background-color: #f8f9fa;
     color: #212529;
     border: 1.5px solid #ced4da;
     border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: bold;
-    line-height: 1;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     transition: all 0.2s ease-in-out;
+
+    display: flex;
+    align-items: center;   /* vertical centering */
+    justify-content: center; /* horizontal centering */
+    padding: 0;
   }
+
 
   .custom-close-button:hover {
     background-color: #dc3545;
