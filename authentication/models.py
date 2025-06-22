@@ -280,37 +280,6 @@ class Match(models.Model):
         return f"Match: {self.user1_id} ❤ {self.user2_id}"
 
 
-class Language(models.Model):
-    language_id = models.AutoField(primary_key=True)
-    language_name = models.CharField(
-        max_length=20,
-        choices=[
-            ('english', 'English'), ('chinese', 'Chinese'), ('malay', 'Malay'), ('tamil', 'Tamil'),
-            ('hindi', 'Hindi'), ('japanese', 'Japanese'), ('korean', 'Korean'), ('thai', 'Thai'),
-            ('vietnamese', 'Vietnamese'), ('spanish', 'Spanish'), ('french', 'French'), ('german', 'German'),
-            ('russian', 'Russian'), ('arabic', 'Arabic'), ('portuguese', 'Portuguese'), ('bengali', 'Bengali'),
-            ('urdu', 'Urdu'), ('others', 'Others')
-        ]
-    )
-
-    class Meta:
-        db_table = 'Language'
-
-class ProfileLanguage(models.Model):
-    profile_id_fk = models.ForeignKey(
-        Profile,
-        on_delete=models.CASCADE,
-        db_column='profile_id_fk',
-        related_name='languages'
-    )
-    language_id_fk = models.ForeignKey(
-        Language,
-        on_delete=models.CASCADE,
-        db_column='language_id_fk'
-    )
-
-    class Meta:
-        db_table = 'ProfileLanguage'
 
 class Preferences(models.Model):
     preference_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
