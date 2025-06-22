@@ -27,7 +27,7 @@ from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password  
 from django.core.paginator import Paginator
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -529,7 +529,7 @@ def likes_page(request):
         })
 
     elif tab == 'outgoing':
-        outgoing_likes_raw = Like.objects.filter(liker_user_id=user).order_by('-liked_at')
+        outgoing_likes_raw = Like.objects.filter(liker_user_id=user, like_status='liked').order_by('-liked_at')
 
         for like in outgoing_likes_raw:
             # Skip if mutual match already exists
@@ -1440,3 +1440,4 @@ def dislike_profile(request):
 
         index = int(request.POST.get("index") or request.GET.get("index", 0))
         return redirect(f"/browse/?index={index}")
+    
