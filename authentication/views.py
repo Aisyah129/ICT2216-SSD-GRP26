@@ -910,18 +910,14 @@ def _create_sub_record(
     *,
     stripe_session_id: Optional[str] = None,
 ):
-    """
-    Insert-or-update the Subscription table.
-
-    • If `stripe_sub_id` is None we mark the row as 'pending'.
-    • If the row exists already (because we created it at checkout),
-      we patch it with the missing Stripe IDs once the webhook arrives.
-    """
     user = User.objects.get(user_id=user_uuid)
 
-    # fetch the live Stripe sub only if we already know its ID
-    sub_json = stripe.Subscription.retrieve(stripe_sub_id) if stripe_sub_id else None
+    sub_json = (
+        stripe.Subscription.retrieve(stripe_sub_id)
+        if stripe_sub_id else None
+    )
 
+    #  ⬇️  DO NOT set "subscription_id" here — the model default will do it
     Subscription.objects.update_or_create(
         user_id_fk=user,
         defaults={
@@ -929,25 +925,20 @@ def _create_sub_record(
             "stripe_customer_id":     sub_json["customer"] if sub_json else None,
             "stripe_price_id":        price_id,
             "stripe_session_id":      stripe_session_id,
-            "price": (
-                sub_json["plan"]["amount"] / 100 if sub_json else None
-            ),
-            "billing_cycle": (
-                _price_to_cycle(price_id) if price_id else None
-            ),
-            "features": json.dumps({"premium": True}),
-            "started_at": timezone.now(),
+            "price":       sub_json["plan"]["amount"] / 100 if sub_json else None,
+            "billing_cycle": _price_to_cycle(price_id) if price_id else None,
+            "features":    json.dumps({"premium": True}),
+            "started_at":  timezone.now(),
             "expires_at": (
                 timezone.make_aware(
                     datetime.fromtimestamp(sub_json["current_period_end"])
                 ) if sub_json else timezone.now()
             ),
             "auto_renew": 1,
-            "status": sub_json["status"] if sub_json else "pending",
+            "status":     sub_json["status"] if sub_json else "pending",
         },
     )
 
-    # immediately flag the user as premium
     user.is_premium = True
     user.save(update_fields=["is_premium"])
 

@@ -185,11 +185,41 @@ class Match(models.Model):
 
 class Subscription(models.Model):
     subscription_id = models.CharField(
-        max_length=36, primary_key=True, db_column="subscription_id"
+        primary_key=True,
+        max_length=36,
+        default=uuid.uuid4,     # ✅ generates a real UUID
+        editable=False,
+        db_column="subscription_id",
     )
+
     user_id_fk = models.OneToOneField(
-        "User", models.DO_NOTHING, db_column="user_id_fk"
+        "User",
+        on_delete=models.DO_NOTHING,
+        db_column="user_id_fk",
     )
+
+    price = models.FloatField(null=True, blank=True)
+    
+    features = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="JSON field storing enabled features",
+    )
+
+    billing_cycle = models.CharField(
+        max_length=6,
+        choices=[
+            ('1week', '1 Week'),
+            ('1month', '1 Month'),
+            ('3month', '3 Months'),
+        ],
+        db_column="billing_cycle",
+    )
+
+    started_at = models.DateTimeField(db_column="started_at")
+    expires_at = models.DateTimeField(db_column="expires_at")
+    auto_renew = models.IntegerField(null=True, blank=True, db_column="auto_renew")
+    status = models.CharField(max_length=20, null=True, blank=True, db_column="status")
 
     stripe_subscription_id = models.CharField(
         max_length=255, null=True, blank=True, db_column="stripe_subscription_id"
@@ -203,17 +233,9 @@ class Subscription(models.Model):
     stripe_session_id = models.CharField(
         max_length=255, null=True, blank=True, db_column="stripe_session_id"
     )
-    
-    price          = models.FloatField(null=True, blank=True)
-    features       = models.JSONField(null=True, blank=True)
-    billing_cycle  = models.CharField(max_length=6)          # 1week/1month/3month
-    started_at     = models.DateTimeField()
-    expires_at     = models.DateTimeField()
-    auto_renew     = models.IntegerField(null=True, blank=True)
-    status         = models.CharField(max_length=20, null=True, blank=True)
 
     class Meta:
-        managed  = False           # keep using the pre-built table
+        managed = False
         db_table = "Subscription"
 
 class ProfileImage(models.Model):
