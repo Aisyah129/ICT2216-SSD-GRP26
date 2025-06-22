@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import login_view, register_user, user_dashboard, admin_dashboard, likes_page, profile_view, verify_email, request_password_reset, verify_reset_code, set_new_password, upgrade_premium, checkout_premium, upload_profile_image, profile_images_json, delete_profile_image, set_primary_image, messages_with, messages_home, messages_json, create_checkout_session, checkout_success, checkout_cancel, stripe_webhook
+from .views import *
 from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
@@ -36,4 +36,8 @@ urlpatterns = [
     path('admin/', admin_dashboard, name="admin_dashboard"),
     path('likes/', likes_page, name="likes"),
 
+    path('browse/', browse_one_profile, name='browse_one'),
+    path('like/', like_profile, name='like_profile'),
+    path('preferences/save/', save_preferences, name='save_preferences'),
+    path("dislike/", dislike_profile, name="dislike_profile"),
 ]
