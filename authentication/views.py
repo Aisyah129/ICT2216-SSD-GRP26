@@ -1019,6 +1019,7 @@ def _check_status(stripe_sub_id: str):
         except Subscription.DoesNotExist:
             pass
 
+@login_required
 def upgrade_premium(request):
     plans = [
         {
@@ -1043,7 +1044,7 @@ def upgrade_premium(request):
     return render(request, "accounts/upgrade_premium.html", {"plans": plans})
 
 
-
+@login_required
 def browse_one_profile(request):
     user_id = request.session.get('user_id')
     if not user_id:
@@ -1354,6 +1355,7 @@ def browse_one_profile(request):
 
     return render(request, 'pages/browse.html', context)
 
+@login_required
 def like_profile(request):
     liker_user_uuid = request.session.get("user_id")
     if not liker_user_uuid:
@@ -1431,6 +1433,7 @@ def like_profile(request):
 
 
 
+@login_required
 def save_preferences(request):
     if request.method == 'POST':
         if 'user_id' not in request.session:
@@ -1478,6 +1481,7 @@ def save_preferences(request):
 
         return redirect('browse_one')
 
+@login_required
 def dislike_profile(request):
     liker_user_uuid = request.session.get("user_id")
     if not liker_user_uuid:
