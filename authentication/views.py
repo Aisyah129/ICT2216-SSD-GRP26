@@ -996,7 +996,7 @@ def upgrade_premium(request):
     ]
     return render(request, "accounts/upgrade_premium.html", {"plans": plans})
 
-=======
+
 def browse_one_profile(request):
     user_id = request.session.get('user_id')
     if not user_id:
