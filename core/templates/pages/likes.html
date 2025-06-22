@@ -50,27 +50,31 @@
       </div>
 
     {% else %}
-    <div class="row">
-      {% for user in page_obj %}
-      <div class="col-md-4 mb-3">
-        <div class="card shadow-sm text-center clickable-card"
-             data-user-id="{{ user.id }}"
-             data-user-name="{{ user.name }}"
-             data-user-age="{{ user.age }}"
-             data-user-date="{{ user.liked_date|date:'d M Y' }}"
-             data-user-image="{{ user.image_url }}"
-             onclick="handleCardClick(this)">
-          <div class="card-body">
-            {% if user.image_url %}
-            <img src="{{ user.image_url }}" class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: cover;" alt="Profile Picture">
-            {% endif %}
-            <h5 class="card-title">{{ user.name }}, {{ user.age }}</h5>
-            <p class="card-text text-muted">Liked you on {{ user.liked_date|date:"d M Y" }}</p>
+      {% if page_obj|length > 0 %}
+      <div class="row">
+        {% for user in page_obj %}
+        <div class="col-md-4 mb-3">
+          <div class="card shadow-sm text-center clickable-card"
+               data-user-id="{{ user.id }}"
+               data-user-name="{{ user.name }}"
+               data-user-age="{{ user.age }}"
+               data-user-date="{{ user.liked_date|date:'d M Y' }}"
+               data-user-image="{{ user.image_url }}"
+               onclick="handleCardClick(this)">
+            <div class="card-body">
+              {% if user.image_url %}
+              <img src="{{ user.image_url }}" class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: cover;" alt="Profile Picture">
+              {% endif %}
+              <h5 class="card-title">{{ user.name }}, {{ user.age }}</h5>
+              <p class="card-text text-muted">Liked you on {{ user.liked_date|date:"d M Y" }}</p>
+            </div>
           </div>
         </div>
+        {% endfor %}
       </div>
-      {% endfor %}
-    </div>
+      {% else %}
+      <p class="text-muted ml-3">No one has liked you yet.</p>
+      {% endif %}
     {% endif %}
   {% endif %}
 
