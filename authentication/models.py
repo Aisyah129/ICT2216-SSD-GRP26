@@ -35,7 +35,6 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault('is_superuser', True)
         return self.create_user(email, password, **extra_fields)
 
-
 class User(AbstractBaseUser, PermissionsMixin):
     # --- Core IDs ----------------------------------------------------
     user_id = models.CharField(max_length=36, primary_key=True)
@@ -68,13 +67,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
-
-
-
-
-
-
-
 
 class Profile(models.Model):
     profile_id = models.CharField(primary_key=True, max_length=36)
@@ -148,7 +140,6 @@ class Match(models.Model):
 
     def __str__(self):
         return f"Match: {self.user1_id} ❤ {self.user2_id}"
-
 
 class Language(models.Model):
     language_id = models.AutoField(primary_key=True)
