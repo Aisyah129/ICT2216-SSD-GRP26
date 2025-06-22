@@ -509,10 +509,31 @@ def likes_page(request):
                 profile = Profile.objects.get(user_id_fk=like.liker_user_id)
                 image = get_primary_image(profile.profile_id)
                 incoming_likes.append({
-                    'name': profile.name if user.is_premium else None,
-                    'age': profile.age if user.is_premium else None,
-                    'liked_date': like.liked_at if user.is_premium else None,
-                    'image_url': image.image_url if user.is_premium else get_blurred_image_url(image.image_url)
+                    'id': like.liker_user_id.user_id,
+    'name': profile.name if user.is_premium else None,
+    'age': profile.age if user.is_premium else None,
+    'liked_date': like.liked_at if user.is_premium else None,
+    'image_url': image.image_url if user.is_premium else get_blurred_image_url(image.image_url),
+    'gender': profile.gender,
+    'location': profile.location,
+    'pronouns': profile.pronouns,
+    'sexual_orientation': profile.sexual_orientation,
+    'zodiac_sign': profile.zodiac_sign,
+    'smoking': profile.smoking,
+    'drinking': profile.drinking,
+    'drug_use': profile.drug_use,
+    'has_kids': profile.has_kids,
+    'wants_kids': profile.wants_kids,
+    'education_level': profile.education_level,
+    'occupation': profile.occupation,
+    'religion': profile.religion,
+    'politics': profile.politics,
+    'ethnicity': profile.ethnicity,
+    'height_cm': profile.height_cm,
+    'body_type': profile.body_type,
+    'hobbies': profile.hobbies,
+    'relationship_goals': profile.relationship_goals,
+    'bio': profile.bio,
                 })
             except Profile.DoesNotExist:
                 continue
@@ -540,10 +561,31 @@ def likes_page(request):
                 profile = Profile.objects.get(user_id_fk=like.liked_user_id)
                 image = get_primary_image(profile.profile_id)
                 outgoing_likes.append({
-                    'name': profile.name,
-                    'age': profile.age,
-                    'liked_date': like.liked_at,
-                    'image_url': image.image_url if image else None
+                    'id': like.liker_user_id.user_id,
+    'name': profile.name if user.is_premium else None,
+    'age': profile.age if user.is_premium else None,
+    'liked_date': like.liked_at if user.is_premium else None,
+    'image_url': image.image_url if user.is_premium else get_blurred_image_url(image.image_url),
+    'gender': profile.gender,
+    'location': profile.location,
+    'pronouns': profile.pronouns,
+    'sexual_orientation': profile.sexual_orientation,
+    'zodiac_sign': profile.zodiac_sign,
+    'smoking': profile.smoking,
+    'drinking': profile.drinking,
+    'drug_use': profile.drug_use,
+    'has_kids': profile.has_kids,
+    'wants_kids': profile.wants_kids,
+    'education_level': profile.education_level,
+    'occupation': profile.occupation,
+    'religion': profile.religion,
+    'politics': profile.politics,
+    'ethnicity': profile.ethnicity,
+    'height_cm': profile.height_cm,
+    'body_type': profile.body_type,
+    'hobbies': profile.hobbies,
+    'relationship_goals': profile.relationship_goals,
+    'bio': profile.bio,
                 })
             except Profile.DoesNotExist:
                 continue

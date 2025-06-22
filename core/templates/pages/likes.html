@@ -18,64 +18,72 @@
 
   <!-- Likes You Tab -->
   {% if active_tab == 'incoming' %}
-    {% if not viewer.is_premium %}
-      {% if page_obj|length > 0 %}
-      <div class="cards-blurred-behind">
-        <div class="row">
-          {% for user in page_obj %}
-          <div class="col-md-4 mb-3">
-            <div class="card shadow-sm text-center">
-              <div class="card-body">
-                {% if user.image_url %}
-                <img src="{{ user.image_url }}" class="img-fluid rounded mb-2 blurred-image" style="max-height: 200px; object-fit: cover;" alt="Blurred Profile Picture">
-                {% endif %}
-                <div class="placeholder-bar name-bar mb-2"></div>
-                <div class="placeholder-bar date-bar"></div>
-              </div>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      {% else %}
-      <p class="text-muted ml-3">No one has liked you yet.</p>
-      {% endif %}
-
-      <div class="premium-overlay-message">
-        <div class="alert alert-warning text-center">
-          <a href="{% url 'upgrade_premium' %}" class="text-white font-weight-bold" style="text-decoration: underline;">
-            <strong>Upgrade to Premium</strong>
-          </a> to see who liked you.
-        </div>
-      </div>
-
-    {% else %}
-      {% if page_obj|length > 0 %}
-      <div class="row">
-        {% for user in page_obj %}
-        <div class="col-md-4 mb-3">
-          <div class="card shadow-sm text-center clickable-card"
-               data-user-id="{{ user.id }}"
-               data-user-name="{{ user.name }}"
-               data-user-age="{{ user.age }}"
-               data-user-date="{{ user.liked_date|date:'d M Y' }}"
-               data-user-image="{{ user.image_url }}"
-               onclick="handleCardClick(this)">
-            <div class="card-body">
-              {% if user.image_url %}
-              <img src="{{ user.image_url }}" class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: cover;" alt="Profile Picture">
-              {% endif %}
-              <h5 class="card-title">{{ user.name }}, {{ user.age }}</h5>
-              <p class="card-text text-muted">Liked you on {{ user.liked_date|date:"d M Y" }}</p>
-            </div>
+  {% if not viewer.is_premium %}
+  {% if page_obj|length > 0 %}
+  <div class="cards-blurred-behind">
+    <div class="row">
+      {% for user in page_obj %}
+      <div class="col-md-4 mb-3">
+        <div class="card shadow-sm text-center">
+          <div class="card-body">
+            {% if user.image_url %}
+            <img src="{{ user.image_url }}" class="img-fluid rounded mb-2 blurred-image"
+              style="max-height: 200px; object-fit: cover;" alt="Blurred Profile Picture">
+            {% endif %}
+            <div class="placeholder-bar name-bar mb-2"></div>
+            <div class="placeholder-bar date-bar"></div>
           </div>
         </div>
-        {% endfor %}
       </div>
-      {% else %}
-      <p class="text-muted ml-3">No one has liked you yet.</p>
-      {% endif %}
-    {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <p class="text-muted ml-3">No one has liked you yet.</p>
+  {% endif %}
+
+  <div class="premium-overlay-message">
+    <div class="alert alert-warning text-center">
+      <a href="{% url 'upgrade_premium' %}" class="text-white font-weight-bold" style="text-decoration: underline;">
+        <strong>Upgrade to Premium</strong>
+      </a> to see who liked you.
+    </div>
+  </div>
+
+  {% else %}
+  {% if page_obj|length > 0 %}
+  <div class="row">
+    {% for user in page_obj %}
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm text-center clickable-card" data-user-id="{{ user.id }}"
+        data-user-name="{{ user.name }}" data-user-age="{{ user.age }}"
+        data-user-date="{{ user.liked_date|date:'d M Y' }}" data-user-image="{{ user.image_url }}">
+        <div id="user-{{ user.id }}" class="d-none" data-location="{{ user.location }}"
+          data-pronouns="{{ user.pronouns }}" data-sexual="{{ user.sexual_orientation }}"
+          data-zodiac="{{ user.zodiac_sign }}" data-smoking="{{ user.smoking }}" data-drinking="{{ user.drinking }}"
+          data-drugs="{{ user.drug_use }}" data-has-kids="{{ user.has_kids }}" data-wants-kids="{{ user.wants_kids }}"
+          data-education="{{ user.education_level }}" data-occupation="{{ user.occupation }}"
+          data-religion="{{ user.religion }}" data-politics="{{ user.politics }}" data-ethnicity="{{ user.ethnicity }}"
+          data-height="{{ user.height_cm }}" data-body="{{ user.body_type }}" data-hobbies="{{ user.hobbies }}"
+          data-relationship="{{ user.relationship_goals }}" data-bio="{{ user.bio }}">
+        </div>
+
+        <div class="card-body">
+          {% if user.image_url %}
+          <img src="{{ user.image_url }}" class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: cover;"
+            alt="Profile Picture">
+          {% endif %}
+          <h5 class="card-title">{{ user.name }}, {{ user.age }}</h5>
+          <p class="card-text text-muted">Liked you on {{ user.liked_date|date:"d M Y" }}</p>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-muted ml-3">No one has liked you yet.</p>
+  {% endif %}
+  {% endif %}
   {% endif %}
 
   <!-- You Liked Tab -->
@@ -83,16 +91,23 @@
   <div class="row mt-3">
     {% for user in page_obj %}
     <div class="col-md-4 mb-3">
-      <div class="card shadow-sm text-center clickable-card"
-          data-user-id="{{ user.id }}"
-          data-user-name="{{ user.name }}"
-          data-user-age="{{ user.age }}"
-          data-user-date="{{ user.liked_date|date:'d M Y' }}"
-          data-user-image="{{ user.image_url }}"
-          onclick="handleCardClick(this)">
+      <div class="card shadow-sm text-center clickable-card" data-user-id="{{ user.id }}"
+        data-user-name="{{ user.name }}" data-user-age="{{ user.age }}"
+        data-user-date="{{ user.liked_date|date:'d M Y' }}" data-user-image="{{ user.image_url }}">
+        <div id="user-{{ user.id }}" class="d-none" data-location="{{ user.location }}"
+          data-pronouns="{{ user.pronouns }}" data-sexual="{{ user.sexual_orientation }}"
+          data-zodiac="{{ user.zodiac_sign }}" data-smoking="{{ user.smoking }}" data-drinking="{{ user.drinking }}"
+          data-drugs="{{ user.drug_use }}" data-has-kids="{{ user.has_kids }}" data-wants-kids="{{ user.wants_kids }}"
+          data-education="{{ user.education_level }}" data-occupation="{{ user.occupation }}"
+          data-religion="{{ user.religion }}" data-politics="{{ user.politics }}" data-ethnicity="{{ user.ethnicity }}"
+          data-height="{{ user.height_cm }}" data-body="{{ user.body_type }}" data-hobbies="{{ user.hobbies }}"
+          data-relationship="{{ user.relationship_goals }}" data-bio="{{ user.bio }}">
+        </div>
+
         <div class="card-body">
           {% if user.image_url %}
-          <img src="{{ user.image_url }}" class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: cover;" alt="Profile Picture">
+          <img src="{{ user.image_url }}" class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: cover;"
+            alt="Profile Picture">
           {% endif %}
           <h5 class="card-title">{{ user.name }}, {{ user.age }}</h5>
           <p class="card-text text-muted">You liked them on {{ user.liked_date|date:"d M Y" }}</p>
@@ -185,9 +200,17 @@
   }
 
   @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.4; }
-    100% { opacity: 1; }
+    0% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.4;
+    }
+
+    100% {
+      opacity: 1;
+    }
   }
 
   .premium-overlay-message {
@@ -206,7 +229,7 @@
     background-color: #ff7f50;
     color: white;
     border: none;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
   }
 
   .cards-blurred-behind {
@@ -265,8 +288,10 @@
     transition: all 0.2s ease-in-out;
 
     display: flex;
-    align-items: center;   /* vertical centering */
-    justify-content: center; /* horizontal centering */
+    align-items: center;
+    /* vertical centering */
+    justify-content: center;
+    /* horizontal centering */
     padding: 0;
   }
 
@@ -282,6 +307,14 @@
 {% block javascripts %}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".clickable-card").forEach(card => {
+      card.addEventListener("click", () => handleCardClick(card));
+    });
+  });
+
+
   function handleCardClick(card) {
     const name = card.dataset.userName;
     const age = card.dataset.userAge;
@@ -290,8 +323,36 @@
 
     document.getElementById("modalTitle").innerText = `Profile of ${name}`;
     document.getElementById("modalImage").src = image;
-    document.getElementById("modalBody").innerText =
-      `This is a placeholder profile popup for ${name}, aged ${age}. They liked you on ${date}.`;
+    const profileDiv = document.getElementById(`user-${card.dataset.userId}`);
+    if (!profileDiv) return;
+
+    const get = attr => profileDiv.dataset[attr] || 'N/A';
+
+    const profileDetails = `
+  <strong>Location:</strong> ${get('location')}<br>
+  <strong>Pronouns:</strong> ${get('pronouns')}<br>
+  <strong>Sexual Orientation:</strong> ${get('sexual')}<br>
+  <strong>Zodiac Sign:</strong> ${get('zodiac')}<br>
+  <strong>Smoking:</strong> ${get('smoking')}<br>
+  <strong>Drinking:</strong> ${get('drinking')}<br>
+  <strong>Drug Use:</strong> ${get('drugs')}<br>
+  <strong>Has Kids:</strong> ${get('hasKids')}<br>
+  <strong>Wants Kids:</strong> ${get('wantsKids')}<br>
+  <strong>Education:</strong> ${get('education')}<br>
+  <strong>Occupation:</strong> ${get('occupation')}<br>
+  <strong>Religion:</strong> ${get('religion')}<br>
+  <strong>Politics:</strong> ${get('politics')}<br>
+  <strong>Ethnicity:</strong> ${get('ethnicity')}<br>
+  <strong>Height:</strong> ${get('height')} cm<br>
+  <strong>Body Type:</strong> ${get('body')}<br>
+  <strong>Hobbies:</strong> ${get('hobbies')}<br>
+  <strong>Relationship Goals:</strong> ${get('relationship')}<br>
+  <strong>Bio:</strong> ${get('bio')}<br><br>
+  <em>Liked you on ${date}</em>
+`;
+
+    document.getElementById("modalBody").innerHTML = profileDetails;
+
 
     const modal = new bootstrap.Modal(document.getElementById("profileModal"));
     modal.show();
