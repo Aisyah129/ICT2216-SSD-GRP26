@@ -17,6 +17,8 @@ from pymongo import MongoClient
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Content, Email, Mail, Personalization
 from functools import lru_cache
+from urllib.parse import quote
+
 
 # ✦ Django core
 from django.conf import settings
