@@ -23,6 +23,7 @@ class CustomUserManager(BaseUserManager):
             is_staff=(extra_fields.get('role') == 'admin'),
             is_superuser=(extra_fields.get('role') == 'admin'),
             created_at=timezone.now(),
+            last_login=timezone.now(),
             **extra_fields
         )
         user.set_password(password)           # hashes and stores into password field
@@ -49,6 +50,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     role        = models.CharField(max_length=10, default='user')
     is_premium  = models.BooleanField(default=False)
     created_at  = models.DateTimeField(default=timezone.now)
+    last_login = models.DateTimeField(null=True, blank=True)
 
     # --- Django-required flags --------------------------------------
     is_active   = models.BooleanField(default=True)
