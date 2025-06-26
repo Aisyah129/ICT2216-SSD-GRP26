@@ -406,3 +406,19 @@ class Subscription(models.Model):
     class Meta:
         managed = False
         db_table = "Subscription"
+
+# Model map to our db
+class ActionLog(models.Model):
+    log_id = models.CharField(primary_key=True, max_length=36)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, db_column='user_id_fk', to_field='user_id')
+    action_type = models.CharField(max_length=50)
+    target_id = models.CharField(max_length=36, null=True, blank=True)
+    target_type = models.CharField(max_length=50, null=True, blank=True)
+    severity = models.CharField(max_length=10)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    metadata = models.TextField(null=True, blank=True)
+    log_hash = models.TextField()
+
+    class Meta:
+        db_table = 'ActionLog' 

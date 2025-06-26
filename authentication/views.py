@@ -41,6 +41,7 @@ from django.db.models import Q
 
 # ✦ Project-local
 from authentication.models import *
+from .utils import log_action
 from .forms import (
     LoginForm,
     PasswordResetEmailForm,
@@ -68,6 +69,7 @@ def login_view(request):
                 if user.check_password(password):  # using AbstractBaseUser
                     auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     request.session['user_id'] = user.user_id  # ✅ this makes your existing views work
+                    log_action(user, "User logged in", "INFO", request) # ✅ Log successful login
                     return redirect('browse' if user.role == 'user' else 'admin_dashboard')
                 else:
                     msg = "Please try again."
@@ -91,6 +93,7 @@ def request_password_reset(request):
             request.session['reset_email'] = email
             request.session['reset_code'] = code
             send_reset_code_email(email, code)
+            log_action(user, "Requested password reset", "INFO", request) # ✅ Log password reset requested
             return redirect('verify_reset_code')
         except User.DoesNotExist:
             msg = "Invalid email address."
@@ -128,9 +131,18 @@ def verify_reset_code(request):
 
     if request.method == "POST" and form.is_valid():
         entered_code = form.cleaned_data['code']
-        if entered_code == request.session.get('reset_code'):
+        stored_code = request.session.get('reset_code')
+        email = request.session.get('reset_email')
+
+        if entered_code == stored_code:
+            try:
+                user = User.objects.get(email=email)
+                log_action(user, "Verified reset code", "INFO", request)
+            except User.DoesNotExist:
+                log_action(None, f"Reset code verified but user {email} not found", "WARNING", request)
             return redirect('set_new_password')
         else:
+            log_action(None, f"Failed reset code attempt for {email}", "WARNING", request)
             msg = "Invalid verification code."
 
     return render(request, "accounts/password_reset_verify.html", {"form": form, "msg": msg})
@@ -147,6 +159,7 @@ def set_new_password(request):
             user = User.objects.get(email=email)
             user.set_password(form.cleaned_data['new_password'])
             user.save()
+            log_action(user, "Password reset successful", "CRITICAL", request)
             # Clear session
             del request.session['reset_email']
             del request.session['reset_code']
@@ -154,6 +167,7 @@ def set_new_password(request):
             return redirect('login')
         except User.DoesNotExist:
             msg = "User not found."
+            log_action(None, f"Password reset failed - user not found: {email}", "CRITICAL", request)
 
     return render(request, "accounts/set_new_password.html", {"form": form, "msg": msg})
 
@@ -470,7 +484,8 @@ def delete_profile_image(request, pk):
 @login_required
 def admin_dashboard(request):
     users = User.objects.filter(role='user')
-    return render(request, 'accounts/admin_dashboard.html', {'users': users})
+    logs = ActionLog.objects.order_by('-timestamp')[:50]  # Show last 50 logs
+    return render(request, 'accounts/admin_dashboard.html', {'users': users, 'logs': logs})
 
 
 def get_primary_image(profile_id):
