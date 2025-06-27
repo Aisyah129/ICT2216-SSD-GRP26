@@ -1,147 +1,155 @@
 {% extends 'layouts/base.html' %}
+{% load static %}
+
 
 {% block title %} Profile {% endblock title %}
 
 {% block content %}
 
-    <!-- Header -->
-    <div class="header pb-8 pt-5 pt-lg-8 d-flex align-items-center justify-content-center text-center"
-     style="min-height: 400px; background: linear-gradient(to right, #1e3c72, #2a5298);">
+<!-- Header -->
+<div class="header pb-8 pt-5 pt-lg-8 d-flex align-items-center justify-content-center text-center"
+  style="min-height: 400px; background: linear-gradient(to right, #1e3c72, #2a5298);">
 
-      <!-- Mask -->
-      <span class="mask bg-gradient-default opacity-8"></span>
-      <!-- Header container -->
-      <div class="container-fluid d-flex align-items-center justify-content-center">
-  <div class="row text-center">
-    <div class="col-lg-12">
+  <!-- Mask -->
+  <span class="mask bg-gradient-default opacity-8"></span>
+  <!-- Header container -->
+  <div class="container-fluid d-flex align-items-center justify-content-center">
+    <div class="row text-center">
+      <div class="col-lg-12">
 
-            <h1 class="display-2 text-white">Welcome {{ profile.name }}</h1>
-            <p class="text-white mt-0 mb-5">Download love, one profile at a time—because love shouldn’t be left on read.</p>
+        <h1 class="display-2 text-white">Welcome {{ profile.name }}</h1>
+        <p class="text-white mt-0 mb-5">Download love, one profile at a time—because love shouldn’t be left on read.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container-fluid mt--7">
+  <div class="row">
+    <div class="col-xl-4 order-xl-2 mb-5 mb-xl-0">
+      <div class="card card-profile shadow">
+        <div class="row justify-content-center">
+          <div class="col-lg-3 order-lg-2">
+            <div class="card-profile-image">
+              <a href="#">
+                {% if primary_image %}
+                <img src="{{ primary_image.image_url }}" class="rounded-circle shadow-lg"
+                  style="object-fit: cover; width: 140px; height: 140px; margin-top: -30px; margin-bottom: 20px; border: 3px solid white;"
+                  alt="{{ profile.name }}">
+                {% else %}
+                <img src="{% static 'images/default-avatar.jpg' %}" class="rounded-circle shadow-lg"
+                  style="object-fit: cover; width: 140px; height: 140px; margin-top: -30px; margin-bottom: 20px; border: 3px solid white;"
+                  alt="{{ profile.name }}">
+
+                {% endif %}
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-header text-center border-0 pt-8 pt-md-4 pb-0 pb-md-4">
+          <div class="d-flex justify-content-between">
+
+          </div>
+        </div>
+
+        <div class="card-body pt-0 pt-md-4">
+          <div class="text-center">
+            <h3>{{ request.user.username }}</h3>
+            <div class="h1 mt-4">
+              <i class="ni business_briefcase-24 mr-2"></i>{{ profile.name }}
+            </div>
+            <div class="h3 font-weight-300">{{ request.user.email }}</div>
+            <div><i class="ni education_hat mr-2"></i>Education Level: {{profile.education_level}}</div>
+            <hr />
+            <div class="text-left px-3 pb-3">
+              <div class="row" id="galleryGrid">
+
+                {% if images|length < 6 %} <div class="col-md-4 col-sm-6 mb-4" id="uploadCardContainer">
+                  <div class="card shadow-sm upload-card h-100 d-flex justify-content-center align-items-center"
+                    id="uploadTrigger" style="cursor: pointer;">
+                    <div class="text-center">
+                      <div class="upload-icon mb-2" style="font-size: 2.5rem; color: #888;">+</div>
+                      <div class="text-muted" style="font-size: 0.9rem;">Add Photo</div>
+                    </div>
+                    <!-- 🔁 Moved inside -->
+                    <input type="file" class="d-none" name="image" accept="image/*" required>
+                    <input type="checkbox" class="d-none" name="is_primary" value="1">
+                  </div>
+              </div>
+
+              <!-- Hidden actual file input + form -->
+              <form id="uploadForm" enctype="multipart/form-data" class="d-none">
+                <input type="file" id="fileInput" name="image" accept="image/*" required>
+                <input type="checkbox" id="primaryCheck" name="is_primary" value="1">
+              </form>
+
+              {% endif %}
+
+              {% for img in images %}
+              <div class="col-md-4 col-sm-6 mb-4 gallery-item" data-id="{{ img.image_id }}">
+                <div class="card shadow-sm position-relative h-100">
+                  <img src="{{ img.image_url }}" class="card-img-top rounded-top"
+                    style="object-fit: cover; height: 250px;" alt="Profile image">
+                  {% if img.is_primary %}
+                  <span class="badge badge-success position-absolute"
+                    style="top: 10px; left: 10px; font-size: 0.75rem;">PRIMARY</span>
+                  {% endif %}
+                  <div class="card-body py-2 px-3 text-center">
+                    <button class="btn btn-sm btn-outline-primary setPrimaryBtn mr-2">Set</button>
+                    <button class="btn btn-sm btn-outline-danger deleteBtn">Del</button>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+
+            </div>
+          </div>
+
+          <hr class="my-4" />
+          <p>{{ profile.bio|default:"No bio yet." }}</p>
+          <a href="#">Show more</a>
+        </div>
+
+        <!-- ⬇️ Upload Form + Gallery -->
+
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-8 order-xl-1">
+    <div class="card bg-secondary shadow">
+      <div class="card-header bg-white border-0">
+        <div class="row align-items-center">
+          <div class="col-8">
+            <h3 class="mb-0">My account</h3>
           </div>
         </div>
       </div>
-    </div>
-    <div class="container-fluid mt--7">
-      <div class="row">
-        <div class="col-xl-4 order-xl-2 mb-5 mb-xl-0">
-  <div class="card card-profile shadow">
-    <div class="row justify-content-center">
-      <div class="col-lg-3 order-lg-2">
-        <div class="card-profile-image">
-          <a href="#">
-            {% if primary_image %}
-              <img src="{{ primary_image.image_url }}" 
-     class="rounded-circle shadow-lg"
-     style="object-fit: cover; width: 140px; height: 140px; margin-top: -30px; margin-bottom: 20px; border: 3px solid white;"
-     alt="{{ profile.name }}">
-            {% else %}
-              <img src="/static/assets/img/theme/default-avatar.png" class="rounded-circle" alt="avatar">
-            {% endif %}
-          </a>
-        </div>
-      </div>
-    </div>
+      <div class="card-body">
 
-    <div class="card-header text-center border-0 pt-8 pt-md-4 pb-0 pb-md-4">
-      <div class="d-flex justify-content-between">
-       
-      </div>
-    </div>
-
-    <div class="card-body pt-0 pt-md-4">
-      <div class="text-center">
-        <h3>{{ request.user.username }}</h3>
-        <div class="h1 mt-4">
-          <i class="ni business_briefcase-24 mr-2"></i>{{ profile.name }}
-        </div>
-        <div class="h3 font-weight-300">{{ request.user.email }}</div>
-        <div><i class="ni education_hat mr-2"></i>Education Level: {{profile.education_level}}</div>
-         <hr />
-      <div class="text-left px-3 pb-3">
-        <div class="row" id="galleryGrid">
-
-  {% if images|length < 6 %}
- <div class="col-md-4 col-sm-6 mb-4" id="uploadCardContainer">
-  <div class="card shadow-sm upload-card h-100 d-flex justify-content-center align-items-center"
-       id="uploadTrigger" style="cursor: pointer;">
-    <div class="text-center">
-      <div class="upload-icon mb-2" style="font-size: 2.5rem; color: #888;">+</div>
-      <div class="text-muted" style="font-size: 0.9rem;">Add Photo</div>
-    </div>
-    <!-- 🔁 Moved inside -->
-    <input type="file" class="d-none" name="image" accept="image/*" required>
-    <input type="checkbox" class="d-none" name="is_primary" value="1">
-  </div>
-</div>
-
-<!-- Hidden actual file input + form -->
-<form id="uploadForm" enctype="multipart/form-data" class="d-none">
-  <input type="file" id="fileInput" name="image" accept="image/*" required>
-  <input type="checkbox" id="primaryCheck" name="is_primary" value="1">
-</form>
-
-  {% endif %}
-
-  {% for img in images %}
-  <div class="col-md-4 col-sm-6 mb-4 gallery-item" data-id="{{ img.image_id }}">
-    <div class="card shadow-sm position-relative h-100">
-      <img src="{{ img.image_url }}" class="card-img-top rounded-top" style="object-fit: cover; height: 250px;" alt="Profile image">
-      {% if img.is_primary %}
-        <span class="badge badge-success position-absolute" style="top: 10px; left: 10px; font-size: 0.75rem;">PRIMARY</span>
-      {% endif %}
-      <div class="card-body py-2 px-3 text-center">
-        <button class="btn btn-sm btn-outline-primary setPrimaryBtn mr-2">Set</button>
-        <button class="btn btn-sm btn-outline-danger deleteBtn">Del</button>
-      </div>
-    </div>
-  </div>
-  {% endfor %}
-
-</div>
-      </div> 
-
-        <hr class="my-4" />
-        <p>{{ profile.bio|default:"No bio yet." }}</p>
-        <a href="#">Show more</a>
-      </div>
-
-      <!-- ⬇️ Upload Form + Gallery -->
-      
-    </div>
-  </div>
-</div>
-        <div class="col-xl-8 order-xl-1">
-          <div class="card bg-secondary shadow">
-            <div class="card-header bg-white border-0">
-              <div class="row align-items-center">
-                <div class="col-8">
-                  <h3 class="mb-0">My account</h3>
-                </div>
-              </div>
-            </div>
-            <div class="card-body">
-
-            <form id="profile-form" method="POST" action="{% url 'profile' %}">
-                {% csrf_token %}
-            <h6 class="heading-small text-muted mb-4">Profile Details</h6>
-            <div class="pl-lg-4">
+        <form id="profile-form" method="POST" action="{% url 'profile' %}">
+          {% csrf_token %}
+          <h6 class="heading-small text-muted mb-4">Profile Details</h6>
+          <div class="pl-lg-4">
             <div class="row">
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Age</label>
-                  <input name="age" type="number" class="form-control form-control-alternative" value="{{ profile.age|default:'' }}" placeholder="Your age">
+                  <input name="age" type="number" class="form-control form-control-alternative"
+                    value="{{ profile.age|default:'' }}" placeholder="Your age">
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Gender</label>
-                  <input name="gender" type="text" class="form-control form-control-alternative" value="{{ profile.gender|default:'' }}" placeholder="e.g. Male, Female">
+                  <input name="gender" type="text" class="form-control form-control-alternative"
+                    value="{{ profile.gender|default:'' }}" placeholder="e.g. Male, Female">
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Height (cm)</label>
-                  <input name="height_cm" type="number" class="form-control form-control-alternative" value="{{ profile.height_cm|default:'' }}" placeholder="e.g. 170">
+                  <input name="height_cm" type="number" class="form-control form-control-alternative"
+                    value="{{ profile.height_cm|default:'' }}" placeholder="e.g. 170">
                 </div>
               </div>
             </div>
@@ -150,13 +158,15 @@
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Sexual Orientation</label>
-                  <input name="sexual_orientation" type="text" class="form-control form-control-alternative" value="{{ profile.sexual_orientation|default:'' }}" placeholder="e.g. Straight, Gay">
+                  <input name="sexual_orientation" type="text" class="form-control form-control-alternative"
+                    value="{{ profile.sexual_orientation|default:'' }}" placeholder="e.g. Straight, Gay">
                 </div>
               </div>
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Pronouns</label>
-                  <input name="pronouns" type="text" class="form-control form-control-alternative" value="{{ profile.pronouns|default:'' }}" placeholder="e.g. He/Him">
+                  <input name="pronouns" type="text" class="form-control form-control-alternative"
+                    value="{{ profile.pronouns|default:'' }}" placeholder="e.g. He/Him">
                 </div>
               </div>
             </div>
@@ -165,13 +175,15 @@
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Body Type</label>
-                  <input name="body_type" type="text" class="form-control form-control-alternative" value="{{ profile.body_type|default:'' }}" placeholder="e.g. Athletic">
+                  <input name="body_type" type="text" class="form-control form-control-alternative"
+                    value="{{ profile.body_type|default:'' }}" placeholder="e.g. Athletic">
                 </div>
               </div>
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Location</label>
-                  <input name="location" type="text" class="form-control form-control-alternative" value="{{ profile.location|default:'' }}" placeholder="e.g. Singapore">
+                  <input name="location" type="text" class="form-control form-control-alternative"
+                    value="{{ profile.location|default:'' }}" placeholder="e.g. Singapore">
                 </div>
               </div>
             </div>
@@ -180,13 +192,15 @@
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Education Level</label>
-                  <input name="education_level" type="text" class="form-control form-control-alternative" value="{{ profile.education_level|default:'' }}" placeholder="e.g. University">
+                  <input name="education_level" type="text" class="form-control form-control-alternative"
+                    value="{{ profile.education_level|default:'' }}" placeholder="e.g. University">
                 </div>
               </div>
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Occupation</label>
-                  <input name="occupation" type="text" class="form-control form-control-alternative" value="{{ profile.occupation|default:'' }}" placeholder="e.g. Software Engineer">
+                  <input name="occupation" type="text" class="form-control form-control-alternative"
+                    value="{{ profile.occupation|default:'' }}" placeholder="e.g. Software Engineer">
                 </div>
               </div>
             </div>
@@ -195,19 +209,22 @@
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Religion</label>
-                  <input name="religion" type="text" class="form-control form-control-alternative" value="{{ profile.religion|default:'' }}" placeholder="e.g. Christian">
+                  <input name="religion" type="text" class="form-control form-control-alternative"
+                    value="{{ profile.religion|default:'' }}" placeholder="e.g. Christian">
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Ethnicity</label>
-                  <input name="ethnicity" type="text" class="form-control form-control-alternative" value="{{ profile.ethnicity|default:'' }}" placeholder="e.g. Chinese">
+                  <input name="ethnicity" type="text" class="form-control form-control-alternative"
+                    value="{{ profile.ethnicity|default:'' }}" placeholder="e.g. Chinese">
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Politics</label>
-                  <input name="politics" type="text" class="form-control form-control-alternative" value="{{ profile.politics|default:'' }}" placeholder="e.g. Moderate">
+                  <input name="politics" type="text" class="form-control form-control-alternative"
+                    value="{{ profile.politics|default:'' }}" placeholder="e.g. Moderate">
                 </div>
               </div>
             </div>
@@ -216,19 +233,22 @@
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Smoking</label>
-                  <input name="smoking" type="text" class="form-control form-control-alternative" value="{{ profile.smoking|default:'' }}" placeholder="e.g. Never">
+                  <input name="smoking" type="text" class="form-control form-control-alternative"
+                    value="{{ profile.smoking|default:'' }}" placeholder="e.g. Never">
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Drinking</label>
-                  <input name="drinking" type="text" class="form-control form-control-alternative" value="{{ profile.drinking|default:'' }}" placeholder="e.g. Socially">
+                  <input name="drinking" type="text" class="form-control form-control-alternative"
+                    value="{{ profile.drinking|default:'' }}" placeholder="e.g. Socially">
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Drug Use</label>
-                  <input name="drug_use" type="text" class="form-control form-control-alternative" value="{{ profile.drug_use|default:'' }}" placeholder="e.g. Never">
+                  <input name="drug_use" type="text" class="form-control form-control-alternative"
+                    value="{{ profile.drug_use|default:'' }}" placeholder="e.g. Never">
                 </div>
               </div>
             </div>
@@ -237,13 +257,15 @@
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Has Kids</label>
-            <input name="has_kids" type="number" class="form-control form-control-alternative" value="{{ profile.has_kids|default:'' }}" placeholder="e.g. 0 or 1">
+                  <input name="has_kids" type="number" class="form-control form-control-alternative"
+                    value="{{ profile.has_kids|default:'' }}" placeholder="e.g. 0 or 1">
                 </div>
               </div>
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Wants Kids</label>
-                  <input name="wants_kids" type="text" class="form-control form-control-alternative" value="{{ profile.wants_kids|default:'' }}" placeholder="e.g. Someday">
+                  <input name="wants_kids" type="text" class="form-control form-control-alternative"
+                    value="{{ profile.wants_kids|default:'' }}" placeholder="e.g. Someday">
                 </div>
               </div>
             </div>
@@ -252,148 +274,152 @@
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Zodiac Sign</label>
-                  <input name="zodiac_sign" type="text" class="form-control form-control-alternative" value="{{ profile.zodiac_sign|default:'' }}" placeholder="e.g. Aries">
+                  <input name="zodiac_sign" type="text" class="form-control form-control-alternative"
+                    value="{{ profile.zodiac_sign|default:'' }}" placeholder="e.g. Aries">
                 </div>
               </div>
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Relationship Goals</label>
-                  <input name="relationship_goals" type="text" class="form-control form-control-alternative" value="{{ profile.relationship_goals|default:'' }}" placeholder="e.g. Long-term">
+                  <input name="relationship_goals" type="text" class="form-control form-control-alternative"
+                    value="{{ profile.relationship_goals|default:'' }}" placeholder="e.g. Long-term">
                 </div>
               </div>
             </div>
 
             <div class="form-group">
               <label>Hobbies</label>
-              <textarea name="hobbies" rows="3" class="form-control form-control-alternative" placeholder="e.g. Photography, Reading">{{ profile.hobbies|default:'' }}</textarea>
+              <textarea name="hobbies" rows="3" class="form-control form-control-alternative"
+                placeholder="e.g. Photography, Reading">{{ profile.hobbies|default:'' }}</textarea>
             </div>
 
             <div class="form-group">
               <label>About Me</label>
-              <textarea name="bio" rows="4" class="form-control form-control-alternative" placeholder="Tell us more about yourself...">{{ profile.bio|default:'' }}</textarea>
+              <textarea name="bio" rows="4" class="form-control form-control-alternative"
+                placeholder="Tell us more about yourself...">{{ profile.bio|default:'' }}</textarea>
             </div>
 
-            </div>
-            <div class="text-right">
-              <button type="button" class="btn btn-info" id="editProfileBtn">Edit profile</button>
-              <button type="submit" class="btn btn-success d-none" id="saveProfileBtn">Save changes</button>
-            </div>
-
-              </form>
-            </div>
           </div>
-        </div>
+          <div class="text-right">
+            <button type="button" class="btn btn-info" id="editProfileBtn">Edit profile</button>
+            <button type="submit" class="btn btn-success d-none" id="saveProfileBtn">Save changes</button>
+          </div>
+
+        </form>
       </div>
     </div>
+  </div>
+</div>
+</div>
 
 {% endblock content %}
 
-<!-- Specific JS goes HERE --> 
+<!-- Specific JS goes HERE -->
 {% block javascripts %}
 <script>
-/* ─────────────────────────────────────────────────────────────
-   1.  PROFILE “EDIT / SAVE / CANCEL” TOGGLE
-   ────────────────────────────────────────────────────────────*/
-document.addEventListener('DOMContentLoaded', () => {
-  const form      = document.getElementById('profile-form');
-  const editBtn   = document.getElementById('editProfileBtn');
-  const saveBtn   = document.getElementById('saveProfileBtn');
-  const cancelBtn = document.getElementById('cancelProfileBtn');
-  const inputs    = form.querySelectorAll('input, textarea');
+  /* ─────────────────────────────────────────────────────────────
+     1.  PROFILE “EDIT / SAVE / CANCEL” TOGGLE
+     ────────────────────────────────────────────────────────────*/
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('profile-form');
+    const editBtn = document.getElementById('editProfileBtn');
+    const saveBtn = document.getElementById('saveProfileBtn');
+    const cancelBtn = document.getElementById('cancelProfileBtn');
+    const inputs = form.querySelectorAll('input, textarea');
 
-  const setDisabled = (state) => {
-    inputs.forEach(el => state
-      ? el.setAttribute('disabled', '')
-      : el.removeAttribute('disabled'));
-  };
+    const setDisabled = (state) => {
+      inputs.forEach(el => state
+        ? el.setAttribute('disabled', '')
+        : el.removeAttribute('disabled'));
+    };
 
-  /* start page in read-only mode */
-  setDisabled(true);
-
-  editBtn.addEventListener('click', () => {
-    setDisabled(false);
-    editBtn.classList.add('d-none');
-    saveBtn.classList.remove('d-none');
-    cancelBtn.classList.remove('d-none');
-  });
-
-  cancelBtn.addEventListener('click', () => {
-    form.reset();                 // discard unsaved edits
+    /* start page in read-only mode */
     setDisabled(true);
-    saveBtn.classList.add('d-none');
-    cancelBtn.classList.add('d-none');
-    editBtn.classList.remove('d-none');
-  });
-});
 
-/* ─────────────────────────────────────────────────────────────
-   2.  IMAGE UPLOAD (+), DELETE, SET-PRIMARY
-   ────────────────────────────────────────────────────────────*/
-const galleryGrid = document.getElementById('galleryGrid');
-const statusDiv   = document.getElementById('uploadStatus');
-const csrfToken   = '{{ csrf_token }}';
-
-/* 2-a  Upload (traditional form submit still present somewhere) */
-const uploadForm = document.getElementById('uploadForm');
-uploadForm?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const form = new FormData(uploadForm);
-
-  const resp  = await fetch('{% url "upload_profile_image" %}', {
-    method : 'POST',
-    headers: { 'X-CSRFToken': csrfToken },
-    body   : form,
-  });
-  const data = await resp.json();
-
-  if (data.success) {
-    statusDiv.textContent = '✅ Uploaded.';
-    uploadForm.reset();
-    refreshGallery();
-  } else {
-    statusDiv.textContent = `❌ ${data.error || 'Upload failed'}`;
-  }
-});
-
-/* 2-b  Delegated click handler for Set / Del buttons */
-galleryGrid?.addEventListener('click', async (e) => {
-  const card = e.target.closest('.gallery-item');
-  if (!card) return;
-
-  const id = card.dataset.id;
-
-  /* delete image */
-  if (e.target.classList.contains('deleteBtn')) {
-    if (!confirm('Delete this image?')) return;
-    await fetch(`/profile/image/${id}/delete/`, {
-      method : 'DELETE',
-      headers: { 'X-CSRFToken': csrfToken },
+    editBtn.addEventListener('click', () => {
+      setDisabled(false);
+      editBtn.classList.add('d-none');
+      saveBtn.classList.remove('d-none');
+      cancelBtn.classList.remove('d-none');
     });
-    refreshGallery();
-  }
 
-  /* set primary */
-  if (e.target.classList.contains('setPrimaryBtn')) {
-    await fetch(`/profile/image/${id}/set-primary/`, {
-      method : 'POST',
-      headers: { 'X-CSRFToken': csrfToken },
+    cancelBtn.addEventListener('click', () => {
+      form.reset();                 // discard unsaved edits
+      setDisabled(true);
+      saveBtn.classList.add('d-none');
+      cancelBtn.classList.add('d-none');
+      editBtn.classList.remove('d-none');
     });
-    refreshGallery();
-  }
-});
+  });
 
-/* ─────────────────────────────────────────────────────────────
-   3.  REFRESH GALLERY & AVATAR
-   ────────────────────────────────────────────────────────────*/
-async function refreshGallery() {
-  const resp = await fetch('{% url "profile_images_json" %}');
-  const imgs = await resp.json();
+  /* ─────────────────────────────────────────────────────────────
+     2.  IMAGE UPLOAD (+), DELETE, SET-PRIMARY
+     ────────────────────────────────────────────────────────────*/
+  const galleryGrid = document.getElementById('galleryGrid');
+  const statusDiv = document.getElementById('uploadStatus');
+  const csrfToken = '{{ csrf_token }}';
 
-  /* ✨ 1. rebuild gallery html, including + card if < 6 */
-  let html = '';
+  /* 2-a  Upload (traditional form submit still present somewhere) */
+  const uploadForm = document.getElementById('uploadForm');
+  uploadForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = new FormData(uploadForm);
 
-  if (imgs.length < 6) {
-    html += `
+    const resp = await fetch('{% url "upload_profile_image" %}', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken },
+      body: form,
+    });
+    const data = await resp.json();
+
+    if (data.success) {
+      statusDiv.textContent = '✅ Uploaded.';
+      uploadForm.reset();
+      refreshGallery();
+    } else {
+      statusDiv.textContent = `❌ ${data.error || 'Upload failed'}`;
+    }
+  });
+
+  /* 2-b  Delegated click handler for Set / Del buttons */
+  galleryGrid?.addEventListener('click', async (e) => {
+    const card = e.target.closest('.gallery-item');
+    if (!card) return;
+
+    const id = card.dataset.id;
+
+    /* delete image */
+    if (e.target.classList.contains('deleteBtn')) {
+      if (!confirm('Delete this image?')) return;
+      await fetch(`/profile/image/${id}/delete/`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': csrfToken },
+      });
+      refreshGallery();
+    }
+
+    /* set primary */
+    if (e.target.classList.contains('setPrimaryBtn')) {
+      await fetch(`/profile/image/${id}/set-primary/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken },
+      });
+      refreshGallery();
+    }
+  });
+
+  /* ─────────────────────────────────────────────────────────────
+     3.  REFRESH GALLERY & AVATAR
+     ────────────────────────────────────────────────────────────*/
+  async function refreshGallery() {
+    const resp = await fetch('{% url "profile_images_json" %}');
+    const imgs = await resp.json();
+
+    /* ✨ 1. rebuild gallery html, including + card if < 6 */
+    let html = '';
+
+    if (imgs.length < 6) {
+      html += `
       <div class="col-md-4 col-sm-6 mb-4" id="uploadCardContainer">
         <div class="card shadow-sm upload-card h-100 d-flex justify-content-center align-items-center"
              id="uploadTrigger" style="cursor:pointer;">
@@ -405,16 +431,16 @@ async function refreshGallery() {
           <input type="checkbox" class="d-none" name="is_primary" value="1">
         </div>
       </div>`;
-  }
+    }
 
-  html += imgs.map(img => `
+    html += imgs.map(img => `
       <div class="col-md-4 col-sm-6 mb-4 gallery-item" data-id="${img.image_id}">
         <div class="card shadow-sm position-relative h-100">
           <img src="${img.image_url}" class="card-img-top rounded-top"
                style="height:250px;object-fit:cover;object-position:center;">
           ${img.is_primary
-              ? '<span class="badge badge-success position-absolute" style="top:10px;left:10px;font-size:.75rem;">PRIMARY</span>'
-              : ''}
+        ? '<span class="badge badge-success position-absolute" style="top:10px;left:10px;font-size:.75rem;">PRIMARY</span>'
+        : ''}
           <div class="card-body py-2 px-3 text-center">
             <button class="btn btn-sm btn-outline-primary mr-2 setPrimaryBtn">Set</button>
             <button class="btn btn-sm btn-outline-danger deleteBtn">Del</button>
@@ -422,67 +448,68 @@ async function refreshGallery() {
         </div>
       </div>`).join('');
 
-  galleryGrid.innerHTML = html;
+    galleryGrid.innerHTML = html;
 
-  /* ✨ 2. re-attach the “+” card listener each refresh */
-  const plusCard   = document.getElementById('uploadTrigger');
-  const plusInput  = plusCard?.querySelector('input[type="file"]');
-  const plusCheck  = plusCard?.querySelector('input[name="is_primary"]');
+    /* ✨ 2. re-attach the “+” card listener each refresh */
+    const plusCard = document.getElementById('uploadTrigger');
+    const plusInput = plusCard?.querySelector('input[type="file"]');
+    const plusCheck = plusCard?.querySelector('input[name="is_primary"]');
 
-  plusCard?.addEventListener('click', () => plusInput?.click());
-  plusInput?.addEventListener('change', async () => {
+    plusCard?.addEventListener('click', () => plusInput?.click());
+    plusInput?.addEventListener('change', async () => {
       if (!plusInput.files.length) return;
       const fd = new FormData();
       fd.append('image', plusInput.files[0]);
       if (plusCheck?.checked) fd.append('is_primary', '1');
 
       const up = await fetch('{% url "upload_profile_image" %}', {
-        method:'POST', headers:{'X-CSRFToken':'{{ csrf_token }}'}, body:fd });
+        method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token }}' }, body: fd
+      });
       const res = await up.json();
       if (res.success) refreshGallery();
-  });
+    });
 
-  /* ✨ 3. sync avatar */
-  const avatar  = document.querySelector('.card-profile-image img');
-  const primary = imgs.find(i => i.is_primary === 1);
-  if (primary && avatar) avatar.src = primary.image_url;
-}
-
-// 2-c: Handle upload via "+" card
-const plusCard = document.getElementById('uploadTrigger');
-const plusInput = plusCard?.querySelector('input[type="file"]');
-const plusPrimaryCheckbox = plusCard?.querySelector('input[name="is_primary"]');
-
-plusCard?.addEventListener('click', () => {
-  plusInput?.click();
-});
-
-plusInput?.addEventListener('change', async () => {
-  const file = plusInput.files[0];
-  if (!file) return;
-
-  const form = new FormData();
-  form.append('image', file);
-
-  if (plusPrimaryCheckbox?.checked) {
-    form.append('is_primary', '1');
+    /* ✨ 3. sync avatar */
+    const avatar = document.querySelector('.card-profile-image img');
+    const primary = imgs.find(i => i.is_primary === 1);
+    if (primary && avatar) avatar.src = primary.image_url;
   }
 
-  const resp = await fetch("{% url 'upload_profile_image' %}", {
-    method: 'POST',
-    headers: { 'X-CSRFToken': csrfToken },
-    body: form,
+  // 2-c: Handle upload via "+" card
+  const plusCard = document.getElementById('uploadTrigger');
+  const plusInput = plusCard?.querySelector('input[type="file"]');
+  const plusPrimaryCheckbox = plusCard?.querySelector('input[name="is_primary"]');
+
+  plusCard?.addEventListener('click', () => {
+    plusInput?.click();
   });
 
-  const data = await resp.json();
-  if (data.success) {
-    refreshGallery();
-  } else {
-    alert('❌ Upload failed: ' + (data.error || 'Unknown error'));
-  }
+  plusInput?.addEventListener('change', async () => {
+    const file = plusInput.files[0];
+    if (!file) return;
 
-  plusInput.value = ''; // reset file input
-});
+    const form = new FormData();
+    form.append('image', file);
+
+    if (plusPrimaryCheckbox?.checked) {
+      form.append('is_primary', '1');
+    }
+
+    const resp = await fetch("{% url 'upload_profile_image' %}", {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken },
+      body: form,
+    });
+
+    const data = await resp.json();
+    if (data.success) {
+      refreshGallery();
+    } else {
+      alert('❌ Upload failed: ' + (data.error || 'Unknown error'));
+    }
+
+    plusInput.value = ''; // reset file input
+  });
 </script>
 
 {% endblock javascripts %}
