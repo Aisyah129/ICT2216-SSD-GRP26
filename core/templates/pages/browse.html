@@ -284,7 +284,7 @@
 <div class="action-buttons">
   {% with profile=entry.profile %}
   <div class="d-flex justify-content-center gap-3 flex-wrap">
-    <form action="{% url 'dislike_profile' %}?index={{ next_index }}" method="post">
+    <form action="{% url 'dislike_profile' %}" method="post">
       {% csrf_token %}
       <input type="hidden" name="disliked_user_id" value="{{ profile.user_id_fk.user_id }}">
       <button type="submit" class="btn pass-button">
@@ -292,7 +292,7 @@
       </button>
     </form>
 
-    <form action="{% url 'like_profile' %}?index={{ next_index }}" method="post">
+    <form action="{% url 'like_profile' %}" method="post">
       {% csrf_token %}
       <input type="hidden" name="liked_user_id" value="{{ profile.user_id_fk.user_id }}">
       <button type="submit" class="btn like-button">
@@ -320,7 +320,7 @@
 
 <script>
   setTimeout(function () {
-    window.location.href = "{% url 'browse_one' %}?index={{ next_index }}";
+    window.location.href = "{% url 'browse_one' %}";
   }, 4000);
 </script>
 {% endif %}
