@@ -1,38 +1,333 @@
 {% extends "layouts/base.html" %}
-{% block title %}Browse Matches{% endblock %}
+{% block title %}Browse Profiles{% endblock %}
+{% load static %}
+
 
 {% block content %}
-<div class="row mb-5 text-center">
-  <div class="col">
-    <h1 class="display-4 fw-bold">💘 Welcome, {{ user.email }}!</h1>
-    <p class="text-muted fs-5">Browse your potential matches below</p>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+  body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+    background-color: #f2f2f2;
+  }
+
+  .profile-container {
+    display: flex;
+    flex-direction: row;
+    height: calc(100vh - 150px);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .profile-left {
+    flex: 1;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    border-right: 1px solid #ddd;
+    position: relative;
+  }
+
+  .carousel-container {
+    width: 100%;
+    max-width: 400px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    object-fit: cover;
+  }
+
+  .profile-left img {
+    width: auto;
+    height: 70vh;
+    max-height: 75vh;
+    max-width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    object-fit: cover;
+  }
+
+  .carousel-inner img {
+    width: auto;
+    height: 70vh;
+    max-height: 75vh;
+    max-width: 100%;
+    border-radius: 12px;
+    object-fit: cover;
+    display: block;
+    margin: 0 auto;
+  }
+
+
+  .match-score {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: #ffefef;
+    color: #b30000;
+    padding: 5px 12px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+
+  .preferences-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+  }
+
+  .profile-right {
+    flex: 1;
+    background: linear-gradient(to bottom, #f9f9f9, #ffffff);
+    overflow-y: auto;
+    padding: 2rem;
+  }
+
+  .profile-content h2 {
+    position: sticky;
+    top: 0;
+    background: #f9f9f9;
+    padding-bottom: 0.5rem;
+    z-index: 10;
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+
+  .section-card {
+    background: #fff;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .section-card h4 {
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+  }
+
+  .section-card p {
+    margin-bottom: 0.5rem;
+  }
+
+  .action-buttons {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 1rem 1.5rem;
+    background-color: #fff;
+    border-top: 1px solid #ddd;
+    width: 100%;
+    text-align: center;
+    z-index: 1000;
+  }
+
+  .action-buttons .btn {
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 10px 24px;
+    border-radius: 999px;
+    transition: all 0.3s ease;
+  }
+
+  .pass-button {
+    border: 2px solid #333;
+    background-color: #fff;
+    color: #333;
+    margin-right: 8px;
+  }
+
+  .pass-button:hover {
+    background-color: #f2f2f2;
+  }
+
+  .like-button {
+    background-color: #ff2d91;
+    color: #fff;
+    border: none;
+  }
+
+  .like-button:hover {
+    background-color: #e0257f;
+  }
+
+  .icon {
+    margin-right: 6px;
+  }
+
+  @media (max-width: 768px) {
+    .profile-container {
+      flex-direction: column;
+    }
+
+    .profile-left,
+    .profile-right {
+      border: none;
+      height: auto;
+    }
+
+    .action-buttons {
+      position: static;
+      transform: none;
+      margin-top: 1rem;
+    }
+
+    .action-buttons .btn {
+      font-size: 0.9rem;
+      padding: 8px 20px;
+    }
+  }
+</style>
+
+
+<div class="profile-container">
+  <!-- LEFT: Profile Image/Carousel -->
+  <div class="profile-left">
+    <span class="match-score">🔥 Match Score: {{ entry.score }}%</span>
+
+    <button class="btn btn-outline-primary preferences-button" data-bs-toggle="modal"
+      data-bs-target="#preferencesModal">
+      ⚙️ Preferences
+    </button>
+
+    {% with images=entry.images %}
+    {% if images|length > 1 %}
+    <div id="profileCarousel" class="carousel slide carousel-container" data-bs-ride="carousel">
+      <div class="carousel-inner">
+        {% for image in images %}
+        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+          <img src="{{ image.image_url }}" class="d-block w-100" alt="Profile image">
+        </div>
+        {% endfor %}
+      </div>
+      <button class="carousel-control-prev" type="button" data-bs-target="#profileCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#profileCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+      </button>
+    </div>
+    {% elif images %}
+    <img src="{{ images.0.image_url }}" alt="Profile image">
+    {% else %}
+    <img src="{% static 'images/default-avatar.jpg' %}" alt="Default avatar">
+    {% endif %}
+    {% endwith %}
+  </div>
+
+  <!-- RIGHT: Profile Info -->
+  <div class="profile-right">
+    <div class="profile-content">
+      {% with profile=entry.profile %}
+      <h2>{{ profile.name }} ({{ profile.age }})</h2>
+
+      <div class="section-card">
+        <h4>🌍 Basic Info</h4>
+        <p><strong>Gender:</strong> {{ profile.gender }}</p>
+        <p><strong>Location:</strong> {{ profile.location }}</p>
+        <p><strong>Pronouns:</strong> {{ profile.pronouns|default:"-" }}</p>
+        <p><strong>Sexual Orientation:</strong> {{ profile.sexual_orientation|default:"-" }}</p>
+        <p><strong>Zodiac Sign:</strong> {{ profile.zodiac_sign|default:"-" }}</p>
+      </div>
+
+      <div class="section-card">
+        <h4>🏖️ Lifestyle</h4>
+        <p><strong>Smoking:</strong> {{ profile.smoking|default:"-" }}</p>
+        <p><strong>Drinking:</strong> {{ profile.drinking|default:"-" }}</p>
+        <p><strong>Drug Use:</strong> {{ profile.drug_use|default:"-" }}</p>
+        <p><strong>Has Kids:</strong> {{ profile.has_kids|default:"-" }}</p>
+        <p><strong>Wants Kids:</strong> {{ profile.wants_kids|default:"-" }}</p>
+      </div>
+
+      <div class="section-card">
+        <h4>🎓 Education & Career</h4>
+        <p><strong>Education:</strong> {{ profile.education_level|default:"-" }}</p>
+        <p><strong>Occupation:</strong> {{ profile.occupation|default:"-" }}</p>
+      </div>
+
+      <div class="section-card">
+        <h4>🧠 Values & Beliefs</h4>
+        <p><strong>Religion:</strong> {{ profile.religion|default:"-" }}</p>
+        <p><strong>Politics:</strong> {{ profile.politics|default:"-" }}</p>
+        <p><strong>Ethnicity:</strong> {{ profile.ethnicity|default:"-" }}</p>
+      </div>
+
+      <div class="section-card">
+        <h4>🏃‍♀️ Physical</h4>
+        <p><strong>Height:</strong> {{ profile.height_cm|default:"-" }} cm</p>
+        <p><strong>Body Type:</strong> {{ profile.body_type|default:"-" }}</p>
+      </div>
+
+      <div class="section-card">
+        <h4>🎯 Interests</h4>
+        <p><strong>Hobbies:</strong> {{ profile.hobbies|default:"-" }}</p>
+        <p><strong>Relationship Goals:</strong> {{ profile.relationship_goals|default:"-" }}</p>
+      </div>
+
+      <div class="section-card">
+        <h4>📝 Bio</h4>
+        <p>{{ profile.bio|default:"No bio available." }}</p>
+      </div>
+      {% endwith %}
+    </div>
   </div>
 </div>
 
-<div class="row">
-  {% for match in matches %}
-  <div class="col-md-6 col-lg-4 mb-5">
-    <div class="card border-0 shadow match-card">
-      <div class="position-relative">
-        <img src="{{ match.profile_pic.url }}" class="card-img-top object-fit-cover" style="height: 250px;" alt="Match photo">
-        <span class="position-absolute top-0 end-0 bg-primary text-white rounded-pill px-3 py-1 m-2 fs-6">{{ match.match_percent }}%</span>
-      </div>
-      <div class="card-body">
-        <h4 class="card-title">{{ match.name }}, {{ match.age }}</h4>
-        <p class="card-text text-muted mb-3"><i class="ni ni-pin-3"></i> {{ match.location }}</p>
-        
-        <div class="d-flex justify-content-between">
-          <button class="btn btn-outline-secondary">❌ Pass</button>
-          <button class="btn btn-outline-danger">💖 Like</button>
-          <button class="btn btn-primary">💬 Intro</button>
-        </div>
-      </div>
+<!-- Like/Dislike Buttons -->
+<div class="action-buttons">
+  {% with profile=entry.profile %}
+  <div class="d-flex justify-content-center gap-3 flex-wrap">
+    <form action="{% url 'dislike_profile' %}?index={{ next_index }}" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="disliked_user_id" value="{{ profile.user_id_fk.user_id }}">
+      <button type="submit" class="btn pass-button">
+        <span class="icon">✖</span> PASS
+      </button>
+    </form>
+
+    <form action="{% url 'like_profile' %}?index={{ next_index }}" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="liked_user_id" value="{{ profile.user_id_fk.user_id }}">
+      <button type="submit" class="btn like-button">
+        <span class="icon">🤍</span> LIKE
+      </button>
+    </form>
+  </div>
+  {% endwith %}
+</div>
+
+
+
+{% if match_popup %}
+<div class="modal fade show" id="matchModal" tabindex="-1" style="display:block;" aria-modal="true" role="dialog">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center p-4 shadow rounded">
+      <h2 class="mb-3">💘 It's a Match!</h2>
+      <img src="{{ match_popup.image }}" alt="{{ match_popup.name }}" class="img-fluid rounded-circle mb-2"
+        style="max-width: 150px;">
+      <h4>{{ match_popup.name }}</h4>
+      <p>You both liked each other!</p>
     </div>
   </div>
-  {% empty %}
-  <div class="col text-center text-muted">
-    <p>No matches available at the moment. Check back later!</p>
-  </div>
-  {% endfor %}
 </div>
+
+<script>
+  setTimeout(function () {
+    window.location.href = "{% url 'browse_one' %}?index={{ next_index }}";
+  }, 4000);
+</script>
+{% endif %}
+
+{% include "pages/preferences_modal_form.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 {% endblock %}

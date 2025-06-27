@@ -1,0 +1,23 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Email Verification{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2>🔒 Email Verification</h2>
+  <p>Please check your email for a 6-digit code and enter it below to complete your registration.</p>
+
+  {% if msg %}
+    <div class="alert alert-danger">{{ msg }}</div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="code">Verification Code</label>
+      <input type="text" class="form-control" name="code" maxlength="6" required pattern="\d{6}">
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Verify</button>
+  </form>
+</div>
+{% endblock %}

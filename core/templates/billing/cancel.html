@@ -1,0 +1,11 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Payment Cancelled{% endblock %}
+
+{% block content %}
+<div class="container text-center py-5">
+  <h2 class="text-danger mb-3">❌ Payment Cancelled</h2>
+  <p class="lead">You cancelled the payment process. No changes were made.</p>
+  <a href="{% url 'upgrade_premium' %}" class="btn btn-outline-secondary mt-4">Back to Plans</a>
+</div>
+{% endblock %}
