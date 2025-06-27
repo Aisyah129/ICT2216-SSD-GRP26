@@ -1305,9 +1305,16 @@ def browse_one_profile(request):
     scored_profiles = priority_profiles + secondary_profiles
 
 
-    index = int(request.GET.get('index', 0))
+    # index = int(request.GET.get('index', 0))
+    # if index >= len(scored_profiles):
+    #     return redirect('/browse/?index=0')     
+    
+
+    index = request.session.get('browse_index', 0)
     if index >= len(scored_profiles):
-        return redirect('/browse/?index=0')     
+        index = 0  # reset if overflow
+    request.session['browse_index'] = index + 1  # update for next round
+
 
 
     match_popup = request.session.pop('match_popup', None)
@@ -1428,8 +1435,11 @@ def like_profile(request):
         if request.POST.get("from_likes") == "1":
             return redirect('/likes/?tab=incoming')
 
-        next_index = int(request.GET.get("index", 0)) + 1
-        return redirect(f"/browse/?index={next_index}")
+        # next_index = int(request.GET.get("index", 0)) + 1
+        # return redirect(f"/browse/?index={next_index}")
+
+        return redirect('browse_one')  # use the name of the URL
+
 
 
 
@@ -1516,9 +1526,12 @@ def dislike_profile(request):
             )
 
         # Optional: maintain index if using browsing
-        index = int(request.POST.get("index") or request.GET.get("index", 0))
+        # index = int(request.POST.get("index") or request.GET.get("index", 0))
 
         if 'from_likes' in request.POST:
             return redirect('/likes/?tab=outgoing')
 
-        return redirect(f"/browse/?index={index}")
+        # return redirect(f"/browse/?index={index}")
+
+        return redirect('browse_one')
+
