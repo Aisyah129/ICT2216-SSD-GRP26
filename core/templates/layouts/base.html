@@ -38,7 +38,13 @@
           <li class="nav-item"><a class="nav-link" href="{% url 'likes' %}">Likes</a></li>
           <li class="nav-item"><a class="nav-link" href="{% url 'messages' %}">Messages</a></li>
           <li class="nav-item"><a class="nav-link" href="{% url 'profile' %}">Profile</a></li>
-          <li class="nav-item"><a class="nav-link text-danger" href="{% url 'logout' %}">Logout</a></li>
+          <li class="nav-item">
+            <form method="POST" action="{% url 'logout' %}" style="display: inline;">
+              {% csrf_token %}
+              <button class="btn btn-link nav-link text-danger" type="submit">Logout</button>
+            </form>
+          </li>
+
         </ul>
       </div>
     </nav>
