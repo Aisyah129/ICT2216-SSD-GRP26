@@ -1,0 +1,255 @@
+<style>
+  input[type=range] {
+  width: 100%;
+  height: 1.5rem;
+  background: transparent;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: black;
+  border-radius: 2px;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #0d6efd;
+  margin-top: -6px;
+  cursor: pointer;
+}
+
+input[type=range]::-moz-range-track {
+  height: 4px;
+  background: #dee2e6;
+  border-radius: 2px;
+}
+
+input[type=range]::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #0d6efd;
+  cursor: pointer;
+}
+
+</style>
+
+<div class="modal fade" id="preferencesModal" tabindex="-1" aria-labelledby="preferencesModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <form method="post" action="{% url 'save_preferences' %}">
+      {% csrf_token %}
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="preferencesModalLabel">Set Preferences</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="container-fluid">
+            <div class="row g-4">
+
+              <!-- 🌍 AGE & DISTANCE -->
+              <div class="col-12 bg-light rounded p-3">
+                <h6 class="fw-bold text-primary">Age & Distance</h6>
+                <div class="row g-3 align-items-center">
+                  <div class="col-md-4">
+                    <label class="form-label">Preferred Age Min: <span id="ageMinDisplay">{{ preferences.preferred_age_min|default:18 }}</span></label>
+                    <input type="range" class="form-range" min="18" max="90" name="preferred_age_min" id="ageMin" value="{{ preferences.preferred_age_min|default:18 }}">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Preferred Age Max: <span id="ageMaxDisplay">{{ preferences.preferred_age_max|default:30 }}</span></label>
+                    <input type="range" class="form-range" min="18" max="90" name="preferred_age_max" id="ageMax" value="{{ preferences.preferred_age_max|default:30 }}">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Preferred Distance (km): <span id="distanceDisplay">{{ preferences.preferred_distance_km|default:10 }}</span></label>
+                    <input type="range" class="form-range" min="1" max="100" step="1" name="preferred_distance_km" id="distance" value="{{ preferences.preferred_distance_km|default:10 }}">
+                  </div>
+                </div>
+              </div>
+
+              <!-- 📏 HEIGHT -->
+              <div class="col-12 bg-secondary-subtle rounded p-3">
+                <h6 class="fw-bold text-secondary">Height Preferences</h6>
+                <div class="row g-3 align-items-center">
+                  <div class="col-md-6">
+                    <label class="form-label">Min Height (cm): <span id="heightMinDisplay">{{ preferences.preferred_height_min|default:150 }}</span></label>
+                    <input type="range" class="form-range" min="100" max="250" name="preferred_height_min" id="heightMin" value="{{ preferences.preferred_height_min|default:150 }}">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Max Height (cm): <span id="heightMaxDisplay">{{ preferences.preferred_height_max|default:200 }}</span></label>
+                    <input type="range" class="form-range" min="100" max="250" name="preferred_height_max" id="heightMax" value="{{ preferences.preferred_height_max|default:200 }}">
+                  </div>
+                </div>
+              </div>
+
+              <!-- 🧍‍♂️ DEMOGRAPHICS -->
+              <div class="col-12 bg-warning-subtle rounded p-3">
+                <h6 class="fw-bold text-warning">Demographics</h6>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Gender</label>
+                    <select class="form-select" name="gender_type">
+                      <option value="">--</option>
+                      <option value="male" {% if gender == "male" %}selected{% endif %}>Male</option>
+                      <option value="female" {% if gender == "female" %}selected{% endif %}>Female</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Body Type</label>
+                    <select class="form-select" name="body_type_value">
+                      <option value="">--</option>
+                      {% for val, label in body_choices %}
+                        <option value="{{ val }}" {% if body_type == val %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Education</label>
+                    <select class="form-select" name="education_level">
+                      <option value="">--</option>
+                      {% for val, label in education_choices %}
+                        <option value="{{ val }}" {% if education == val %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Religion</label>
+                    <select class="form-select" name="religion_type">
+                      <option value="">--</option>
+                      {% for val, label in religion_choices %}
+                        <option value="{{ val }}" {% if religion == val %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Ethnicity</label>
+                    <select class="form-select" name="ethnicity_type">
+                      <option value="">--</option>
+                      {% for val, label in ethnicity_choices %}
+                        <option value="{{ val }}" {% if ethnicity == val %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Politics</label>
+                    <select class="form-select" name="politics_type">
+                      <option value="">--</option>
+                      {% for val, label in politics_choices %}
+                        <option value="{{ val }}" {% if politics == val %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 🧬 LIFESTYLE -->
+              <div class="col-12 bg-info-subtle rounded p-3">
+                <h6 class="fw-bold text-info">Lifestyle</h6>
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Smoking</label>
+                    <select class="form-select" name="smoking_type">
+                      {% for val, label in smoking_choices %}
+                        <option value="{{ val }}" {% if smoking == val %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Drinking</label>
+                    <select class="form-select" name="drinking_type">
+                      {% for val, label in drinking_choices %}
+                        <option value="{{ val }}" {% if drinking == val %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Drug Use</label>
+                    <select class="form-select" name="drug_type">
+                      {% for val, label in drug_choices %}
+                        <option value="{{ val }}" {% if drug == val %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 👪 FAMILY & GOALS -->
+              <div class="col-12 bg-success-subtle rounded p-3">
+                <h6 class="fw-bold text-success">Family & Relationship Goals</h6>
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Has Kids</label>
+                    <select class="form-select" name="has_kids_type">
+                      <option value="yes" {% if has_kids == "yes" %}selected{% endif %}>Yes</option>
+                      <option value="no" {% if has_kids == "no" %}selected{% endif %}>No</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Wants Kids</label>
+                    <select class="form-select" name="wants_kids_type">
+                      {% for val, label in wants_kids_choices %}
+                        <option value="{{ val }}" {% if wants_kids == val %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Relationship Type</label>
+                    <select class="form-select" name="relationship_type">
+                      {% for val, label in relationship_choices %}
+                        <option value="{{ val }}" {% if relationship == val %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Zodiac Sign</label>
+                    <select class="form-select" name="zodiac_type">
+                      {% for val, label in zodiac_choices %}
+                        <option value="{{ val }}" {% if zodiac == val %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Language</label>
+                    <select class="form-select" name="language_id_fk">
+                      {% for lang in languages %}
+                        <option value="{{ lang.language_id }}" {% if language_id == lang.language_id %}selected{% endif %}>{{ lang.language_name|capfirst }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary w-100">Save Preferences</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const sliders = [
+    { id: 'ageMin', display: 'ageMinDisplay' },
+    { id: 'ageMax', display: 'ageMaxDisplay' },
+    { id: 'distance', display: 'distanceDisplay' },
+    { id: 'heightMin', display: 'heightMinDisplay' },
+    { id: 'heightMax', display: 'heightMaxDisplay' }
+  ];
+
+  sliders.forEach(s => {
+    const slider = document.getElementById(s.id);
+    const output = document.getElementById(s.display);
+    if (slider && output) {
+      slider.addEventListener('input', () => {
+        output.textContent = slider.value;
+      });
+    }
+  });
+</script>
