@@ -69,6 +69,15 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+    
+    def save(self, *args, **kwargs):
+        if self.role == 'admin':
+            self.is_staff = True
+            self.is_superuser = True
+        else:
+            self.is_staff = False
+            self.is_superuser = False
+        super().save(*args, **kwargs)
 
 class Profile(models.Model):
     profile_id = models.CharField(primary_key=True, max_length=36)
