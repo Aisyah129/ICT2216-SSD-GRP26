@@ -55,6 +55,9 @@ os.environ['SSL_CERT_FILE'] = certifi.where()
 
 # LOGIN view using Django auth
 def login_view(request):
+    if request.session.get('user_id'):
+        return redirect('browse')
+    
     form = LoginForm(request.POST or None)
     msg = None
 
@@ -123,6 +126,8 @@ def send_reset_code_email(to_email, code):
 
 
 def verify_reset_code(request):
+    if request.session.get('user_id'):
+        return redirect('browse')
     form = VerificationCodeForm(request.POST or None)
     msg = None
 
@@ -216,6 +221,8 @@ def send_welcome_email(to_email, user_name):
 
 # REGISTER: store data temporarily and send code
 def register_user(request):
+    if request.session.get('user_id'):
+        return redirect('browse')
     form = SignUpForm(request.POST or None)
     msg = None
 
@@ -243,6 +250,9 @@ def register_user(request):
 
 # VERIFY: confirm code, then store to DB
 def verify_email(request):
+
+    if request.session.get('user_id'):
+        return redirect('browse')
     msg = None
 
     if request.method == "POST":
