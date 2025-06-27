@@ -1320,10 +1320,16 @@ def browse_one_profile(request):
     #     return redirect('/browse/?index=0')     
     
 
-    index = request.session.get('browse_index', 0)
+    if request.method == "POST":
+        index = request.session.get('browse_index', 0)
+        request.session['browse_index'] = index + 1  # Only update on POST
+    else:
+        index = request.session.get('browse_index', 0)
+
     if index >= len(scored_profiles):
-        index = 0  # reset if overflow
-    request.session['browse_index'] = index + 1  # update for next round
+        index = 0
+        request.session['browse_index'] = 1  # Set to next after resetting
+
 
 
 
