@@ -63,18 +63,17 @@
 
         <!-- ░░ NO-MESSAGE banner (outside scroll area) ░░ -->
         {% if not messages %}
-        <div id="empty-placeholder"
-     class="d-flex flex-column align-items-center justify-content-center text-muted"
-     style="height: 100%; text-align: center;">
-  <h4 class="mb-2 fw-semibold">You and {{ selected_name }} matched!</h4>
-  <p class="mb-0">Say hello to start chatting 💬</p>
-</div>
+        <div id="empty-placeholder" class="d-flex flex-column align-items-center justify-content-center text-muted"
+          style="height: 100%; text-align: center;">
+          <h4 class="mb-2 fw-semibold">You and {{ selected_name }} matched!</h4>
+          <p class="mb-0">Say hello to start chatting 💬</p>
+        </div>
 
         {% endif %}
 
         <!-- ░░ Scrollable message list ░░ -->
         <div id="chat-window" class="card-body flex-grow-1 overflow-auto px-4"
-     style="scroll-behavior: smooth; min-height: 0;">
+          style="scroll-behavior: smooth; min-height: 0;">
 
 
           <div id="message-list">
@@ -116,6 +115,38 @@
               </div>
             </div>
           </form>
+
+          <script>
+            async function encryptMessage(message) {
+              const keyB64 = "{{ AES_JS_KEY|default:'' }}"; // add to context
+              const keyBytes = Uint8Array.from(atob(keyB64), c => c.charCodeAt(0));
+              const key = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);
+
+              const encoder = new TextEncoder();
+              const iv = crypto.getRandomValues(new Uint8Array(12));
+              const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoder.encode(message));
+
+              return {
+                ciphertext: btoa(String.fromCharCode(...new Uint8Array(ciphertext))),
+                nonce: btoa(String.fromCharCode(...iv))
+              };
+            }
+
+            document.querySelector("form").addEventListener("submit", async (e) => {
+              const input = document.querySelector("input[name='message']");
+              const plain = input.value.trim();
+              if (!plain) return;
+
+              e.preventDefault();
+              const encrypted = await encryptMessage(plain);
+              const form = new FormData();
+              form.append("csrfmiddlewaretoken", "{{ csrf_token }}");
+              form.append("message", JSON.stringify(encrypted));
+              await fetch(location.href, { method: "POST", body: form });
+              location.reload();
+            });
+          </script>
+
         </div>
       </div><!-- /.card -->
       {% else %}
@@ -361,4 +392,5 @@
     modal.show();
   }
 </script>
+
 {% endblock %}
