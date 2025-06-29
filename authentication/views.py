@@ -5,7 +5,7 @@ import json
 import os
 import random
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional  # ← used in a few type-hints
 
 # ✦ Third-party libraries
@@ -18,6 +18,11 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Content, Email, Mail, Personalization
 from functools import lru_cache
 from urllib.parse import quote
+
+from cryptography.fernet import InvalidToken
+from cryptography.exceptions import InvalidTag
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from base64 import b64encode, b64decode
 
 
 # ✦ Django core
@@ -629,25 +634,107 @@ def mongo():
     return client[settings.MONGO_DB]
 
 COL = mongo().messages   # <-- Each message is its own document
+KEY = mongo().encryption_keys  # <-- Collection for encryption keys
+
+def get_aes_key_from_mongo():
+    key_doc = KEY.find_one({ "key_id": "default" })
+    if not key_doc:
+        raise ValueError("Encryption key not found.")
+    
+    # Check expiry if exists
+    if "expires_at" in key_doc:
+        expiry = datetime.fromisoformat(key_doc["expires_at"].replace("Z", "+00:00"))
+        if datetime.now(timezone.utc) > expiry:
+            raise ValueError("Encryption key has expired.")
+
+    return b64decode(key_doc["key"])
+
+# def fetch_messages(match, limit=None):
+#     q = {"match_id": str(match.match_id)}
+#     cursor = COL.find(q).sort("sent_at", 1)
+#     if limit:
+#         cursor = cursor.limit(limit)
+#     return list(cursor)
+
+def decrypt_aes_gcm(cipher_b64, nonce_b64):
+    try:
+        # aesgcm = AESGCM(settings.AES_KEY)
+        aesgcm = AESGCM(get_aes_key_from_mongo())
+        nonce = b64decode(nonce_b64)
+        ciphertext = b64decode(cipher_b64)
+        return aesgcm.decrypt(nonce, ciphertext, None).decode()
+    except Exception as e:
+        return "[decryption failed]"
 
 def fetch_messages(match, limit=None):
     q = {"match_id": str(match.match_id)}
     cursor = COL.find(q).sort("sent_at", 1)
     if limit:
         cursor = cursor.limit(limit)
-    return list(cursor)
+
+    messages = []
+
+    for doc in cursor:
+        raw = doc.get("ciphertext", "")
+        nonce = doc.get("nonce", "")
+
+        try:
+            if (
+                doc.get("encryption_meta", {}).get("alg") == "AES-GCM"
+                and raw and nonce
+            ):
+                doc["ciphertext"] = decrypt_aes_gcm(raw, nonce)
+            else:
+                # fallback: show raw text even if not encrypted
+                doc["ciphertext"] = raw or "[empty]"
+        except (InvalidToken, InvalidTag, Exception):
+            doc["ciphertext"] = raw or "[decryption failed]"
+
+        # try:
+        #     raw = doc.get("ciphertext", "")
+        #     nonce = doc.get("nonce", "")
+        #     doc["ciphertext"] = decrypt_aes_gcm(raw, nonce) if raw and nonce else "[missing ciphertext]"
+        # except Exception:
+        #     doc["ciphertext"] = "[error]"
+
+        messages.append(doc)
+
+    return messages
+
+# def append_message(match, sender_id, text):
+#     msg = {
+#         "match_id": str(match.match_id),
+#         "message_id": str(uuid.uuid4()),
+#         "sender_user_id": sender_id,
+#         "ciphertext": text,
+#         "sent_at": datetime.utcnow().isoformat(timespec="seconds"),
+#         "is_read": False,
+#         "encryption_meta": {
+#             "key_id": "default", "version": 1
+#         },
+#     }
+#     COL.insert_one(msg)
+#     return msg
 
 def append_message(match, sender_id, text):
+    # text should be encrypted JSON from frontend: { ciphertext, nonce }
+    try:
+        data = json.loads(text)
+        cipher = data.get("ciphertext", "")
+        nonce = data.get("nonce", "")
+    except Exception:
+        cipher = text
+        nonce = ""
+
     msg = {
         "match_id": str(match.match_id),
         "message_id": str(uuid.uuid4()),
         "sender_user_id": sender_id,
-        "ciphertext": text,
-        "sent_at": datetime.utcnow().isoformat(timespec="seconds"),
+        "ciphertext": cipher,
+        "nonce": nonce,
+        "sent_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "is_read": False,
-        "encryption_meta": {
-            "key_id": "default", "version": 1
-        },
+        "encryption_meta": {"alg": "AES-GCM", "version": 1},
     }
     COL.insert_one(msg)
     return msg
@@ -794,6 +881,7 @@ def messages_with(request, user_id):
         "messages":        messages,
         "user":            request.user,
     }
+    context["AES_JS_KEY"] = b64encode(get_aes_key_from_mongo()).decode()
     return render(request, "pages/messages.html", context)
 
 
