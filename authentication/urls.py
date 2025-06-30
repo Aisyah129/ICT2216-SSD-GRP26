@@ -33,7 +33,7 @@ urlpatterns = [
     path("stripe/webhook/", stripe_webhook, name="stripe_webhook"),
 
     path('user/', user_dashboard, name="user_dashboard"),
-    path('admin/', admin_dashboard, name="admin_dashboard"),
+    path('admin_dashboard/', admin_dashboard, name="admin_dashboard"),
     path('likes/', likes_page, name="likes"),
 
     path('browse/', browse_one_profile, name='browse_one'),
