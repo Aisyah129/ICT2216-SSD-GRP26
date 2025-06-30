@@ -516,6 +516,14 @@ def get_blurred_image_url(original_url):
     return f"{settings.IMAGEKIT_URL_ENDPOINT}tr:bl-20/{quote(filename)}"
 
 
+def get_safe_profile_image_url(image, is_premium):
+    default_url = '/static/images/default-avatar.jpg'
+    blurred_default_url = '/static/images/blurred-default-avatar.jpg'
+    if is_premium:
+        return image.image_url if image else default_url
+    return get_blurred_image_url(image.image_url) if image else blurred_default_url
+
+
 @never_cache
 @login_required
 @user_only
@@ -547,7 +555,8 @@ def likes_page(request):
                     'name': profile.name if user.is_premium else None,
                     'age': profile.age if user.is_premium else None,
                     'liked_date': like.liked_at if user.is_premium else None,
-                    'image_url': image.image_url if user.is_premium else get_blurred_image_url(image.image_url),
+                    'image_url': get_safe_profile_image_url(image, user.is_premium),
+
                     'gender': profile.gender if user.is_premium else None,
                     'location': profile.location if user.is_premium else None,
                     'pronouns': profile.pronouns if user.is_premium else None,
