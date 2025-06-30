@@ -12,7 +12,8 @@ urlpatterns = [
     path("reset/verify/", verify_reset_code, name="verify_reset_code"),
     path("reset/confirm/", set_new_password, name="set_new_password"),
 
-    path('logout/', LogoutView.as_view(next_page='login'), name="logout"),
+    #path('logout/', LogoutView.as_view(next_page='login'), name="logout"),
+    path('logout/', logout_view, name="logout"),
     path('profile/', profile_view, name="profile"),
 
     path('profile/upload-image/', upload_profile_image, name="upload_profile_image"),
@@ -33,7 +34,7 @@ urlpatterns = [
     path("stripe/webhook/", stripe_webhook, name="stripe_webhook"),
 
     path('user/', user_dashboard, name="user_dashboard"),
-    path('admin/', admin_dashboard, name="admin_dashboard"),
+    path('admin_dashboard/', admin_dashboard, name="admin_dashboard"),
     path('likes/', likes_page, name="likes"),
 
     path('browse/', browse_one_profile, name='browse_one'),
