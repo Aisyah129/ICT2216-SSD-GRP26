@@ -24,15 +24,17 @@ from urllib.parse import quote
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.hashers import make_password  
 from django.core.paginator import Paginator
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_http_methods
+from django.views.decorators.cache import never_cache
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
@@ -49,12 +51,24 @@ from .forms import (
     SignUpForm,
     VerificationCodeForm,
 )
-
+from .models import User
+from authentication.decorators import user_only
 
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
-# LOGIN view using Django auth
+def is_admin(user):
+    return user.is_authenticated and user.role == 'admin'
+
 def login_view(request):
+    if request.session.get('user_id'):
+        # Already logged in — redirect based on role
+        try:
+            user = User.objects.get(user_id=request.session['user_id'])
+            return redirect('browse' if user.role == 'user' else 'admin_dashboard')
+
+        except User.DoesNotExist:
+            pass  # fall through to login screen if session is stale
+
     form = LoginForm(request.POST or None)
     msg = None
 
@@ -65,16 +79,21 @@ def login_view(request):
 
             try:
                 user = User.objects.get(email=email)
-                if user.check_password(password):  # using AbstractBaseUser
+                if user.check_password(password):  # Custom user with AbstractBaseUser
                     auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-                    request.session['user_id'] = user.user_id  # ✅ this makes your existing views work
-                    return redirect('browse' if user.role == 'user' else 'admin_dashboard')
+                    request.session['user_id'] = user.user_id
+                    
+                    # 🚀 Redirect based on role
+                    if user.role == 'admin':
+                        return redirect('admin_dashboard')  # Must match your `path(name='admin_dashboard', ...)`
+                    else:
+                        return redirect('browse')  # or whatever page normal users should land on
                 else:
-                    msg = "Please try again."
+                    msg = "Incorrect email or password."
             except User.DoesNotExist:
-                msg = "Please try again."
+                msg = "Incorrect email or password."
         else:
-            msg = "Please try again."
+            msg = "Please correct the errors below."
 
     return render(request, "accounts/login.html", {"form": form, "msg": msg})
 
@@ -123,6 +142,8 @@ def send_reset_code_email(to_email, code):
 
 
 def verify_reset_code(request):
+    if request.session.get('user_id'):
+        return redirect('browse')
     form = VerificationCodeForm(request.POST or None)
     msg = None
 
@@ -216,6 +237,8 @@ def send_welcome_email(to_email, user_name):
 
 # REGISTER: store data temporarily and send code
 def register_user(request):
+    if request.session.get('user_id'):
+        return redirect('browse')
     form = SignUpForm(request.POST or None)
     msg = None
 
@@ -243,6 +266,9 @@ def register_user(request):
 
 # VERIFY: confirm code, then store to DB
 def verify_email(request):
+
+    if request.session.get('user_id'):
+        return redirect('browse')
     msg = None
 
     if request.method == "POST":
@@ -289,6 +315,7 @@ def verify_email(request):
 
 
 # USER DASHBOARD — use @login_required
+@never_cache
 @login_required
 def user_dashboard(request):
     user = request.user  # automatically available
@@ -304,7 +331,7 @@ def user_dashboard(request):
         'matches': matches
     })
 
-
+@never_cache
 @login_required
 def profile_view(request):
     profile = get_object_or_404(Profile, user_id_fk=request.user)
@@ -467,7 +494,9 @@ def delete_profile_image(request, pk):
         return JsonResponse({"success": False, "error": "Image not found"}, status=404)
 
 # ADMIN DASHBOARD
+@never_cache
 @login_required
+@user_passes_test(is_admin)
 def admin_dashboard(request):
     users = User.objects.filter(role='user')
     return render(request, 'accounts/admin_dashboard.html', {'users': users})
@@ -487,7 +516,17 @@ def get_blurred_image_url(original_url):
     return f"{settings.IMAGEKIT_URL_ENDPOINT}tr:bl-20/{quote(filename)}"
 
 
+def get_safe_profile_image_url(image, is_premium):
+    default_url = '/static/images/default-avatar.jpg'
+    blurred_default_url = '/static/images/blurred-default-avatar.jpg'
+    if is_premium:
+        return image.image_url if image else default_url
+    return get_blurred_image_url(image.image_url) if image else blurred_default_url
+
+
+@never_cache
 @login_required
+@user_only
 def likes_page(request):
     user = request.user
     current_user_id = user.user_id
@@ -516,7 +555,8 @@ def likes_page(request):
                     'name': profile.name if user.is_premium else None,
                     'age': profile.age if user.is_premium else None,
                     'liked_date': like.liked_at if user.is_premium else None,
-                    'image_url': image.image_url if user.is_premium else get_blurred_image_url(image.image_url),
+                    'image_url': get_safe_profile_image_url(image, user.is_premium),
+
                     'gender': profile.gender if user.is_premium else None,
                     'location': profile.location if user.is_premium else None,
                     'pronouns': profile.pronouns if user.is_premium else None,
@@ -713,7 +753,9 @@ def get_conversations_for(user):
     return conversations
 
 # add near messages_with
+@never_cache
 @login_required
+@user_only
 def messages_home(request):
     convos = get_conversations_for(request.user)
     if convos:
@@ -729,6 +771,7 @@ def messages_home(request):
 })
 
 # --- Main View ---
+@never_cache
 @login_required
 def messages_with(request, user_id):
     """Chat view between the logged-in user and `other_user`."""
@@ -796,7 +839,7 @@ def messages_with(request, user_id):
     }
     return render(request, "pages/messages.html", context)
 
-
+@never_cache
 @login_required
 def messages_json(request, user_id):
     """
@@ -1043,7 +1086,7 @@ def upgrade_premium(request):
     ]
     return render(request, "accounts/upgrade_premium.html", {"plans": plans})
 
-
+@never_cache
 @login_required
 def browse_one_profile(request):
     user_id = request.session.get('user_id')
@@ -1305,9 +1348,22 @@ def browse_one_profile(request):
     scored_profiles = priority_profiles + secondary_profiles
 
 
-    index = int(request.GET.get('index', 0))
+    # index = int(request.GET.get('index', 0))
+    # if index >= len(scored_profiles):
+    #     return redirect('/browse/?index=0')     
+    
+
+    if request.method == "POST":
+        index = request.session.get('browse_index', 0)
+        request.session['browse_index'] = index + 1  # Only update on POST
+    else:
+        index = request.session.get('browse_index', 0)
+
     if index >= len(scored_profiles):
-        return redirect('/browse/?index=0')     
+        index = 0
+        request.session['browse_index'] = 1  # Set to next after resetting
+
+
 
 
     match_popup = request.session.pop('match_popup', None)
@@ -1428,8 +1484,11 @@ def like_profile(request):
         if request.POST.get("from_likes") == "1":
             return redirect('/likes/?tab=incoming')
 
-        next_index = int(request.GET.get("index", 0)) + 1
-        return redirect(f"/browse/?index={next_index}")
+        # next_index = int(request.GET.get("index", 0)) + 1
+        # return redirect(f"/browse/?index={next_index}")
+
+        return redirect('browse_one')  # use the name of the URL
+
 
 
 
@@ -1516,9 +1575,12 @@ def dislike_profile(request):
             )
 
         # Optional: maintain index if using browsing
-        index = int(request.POST.get("index") or request.GET.get("index", 0))
+        # index = int(request.POST.get("index") or request.GET.get("index", 0))
 
         if 'from_likes' in request.POST:
             return redirect('/likes/?tab=outgoing')
 
-        return redirect(f"/browse/?index={index}")
+        # return redirect(f"/browse/?index={index}")
+
+        return redirect('browse_one')
+
