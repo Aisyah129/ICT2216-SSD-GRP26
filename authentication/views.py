@@ -358,19 +358,48 @@ def profile_view(request):
         return redirect('profile')
 
     # --------- GET: display page ---------
-    primary_image = profile.profileimage_set.filter(is_primary=True).first()
+
+    def extract_s3_key(image_url):
+        prefix = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/"
+        return image_url.replace(prefix, "") if image_url.startswith(prefix) else None
+
+    def generate_presigned_get_url(key):
+        s3 = boto3.client(
+            "s3",
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_S3_REGION_NAME,
+        )
+        return s3.generate_presigned_url(
+            ClientMethod='get_object',
+            Params={
+                'Bucket': settings.AWS_STORAGE_BUCKET_NAME,
+                'Key': key
+            },
+            ExpiresIn=3600  # 1 hour
+        )
+
     all_images = profile.profileimage_set.order_by('-uploaded_at')
+    for img in all_images:
+        key = extract_s3_key(img.image_url)
+        img.signed_url = generate_presigned_get_url(key) if key else img.image_url
+
+    primary_image = all_images.filter(is_primary=True).first()
+    if primary_image:
+        key = extract_s3_key(primary_image.image_url)
+        primary_image.signed_url = generate_presigned_get_url(key) if key else primary_image.image_url
 
     languages = [pl.language_id_fk.language_name for pl in profile.languages.all()]
-    pets      = [pp.pet_id_fk.pet_type for pp in profile.profilepet_set.all()]
+    pets = [pp.pet_id_fk.pet_type for pp in profile.profilepet_set.all()]
 
     return render(request, "pages/profile.html", {
         "profile":       profile,
         "primary_image": primary_image,
-        "images":        all_images,      # ✅ Send to frontend
+        "images":        all_images,
         "languages":     languages,
         "pets":          pets,
     })
+
 
 MAX_IMAGES = 6          # ← change here if you ever want a different limit
 
@@ -448,9 +477,35 @@ def upload_profile_image(request):
 # 🟩 Get all profile images for this user (JSON)
 @login_required
 def profile_images_json(request):
-    images = ProfileImage.objects.filter(profile_id_fk=request.user.profile)\
-                                 .values('image_id', 'image_url', 'is_primary')
-    return JsonResponse(list(images), safe=False)
+    def extract_s3_key(image_url):
+        prefix = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/"
+        return image_url.replace(prefix, "") if image_url.startswith(prefix) else None
+
+    def generate_presigned_get_url(key):
+        s3 = boto3.client(
+            "s3",
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_S3_REGION_NAME,
+        )
+        return s3.generate_presigned_url(
+            ClientMethod='get_object',
+            Params={'Bucket': settings.AWS_STORAGE_BUCKET_NAME, 'Key': key},
+            ExpiresIn=3600
+        )
+
+    images = ProfileImage.objects.filter(profile_id_fk=request.user.profile)
+    result = []
+    for img in images:
+        key = extract_s3_key(img.image_url)
+        signed = generate_presigned_get_url(key) if key else img.image_url
+        result.append({
+            "image_id": img.image_id,
+            "image_url": signed,
+            "is_primary": img.is_primary,
+        })
+
+    return JsonResponse(result, safe=False)
 
 
 # 🟩 Set selected image as primary

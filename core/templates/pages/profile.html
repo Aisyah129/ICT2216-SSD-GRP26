@@ -32,9 +32,9 @@
             <div class="card-profile-image">
               <a href="#">
                 {% if primary_image %}
-                <img src="{{ primary_image.image_url }}" class="rounded-circle shadow-lg"
-                  style="object-fit: cover; width: 140px; height: 140px; margin-top: -30px; margin-bottom: 20px; border: 3px solid white;"
-                  alt="{{ profile.name }}">
+                <img src="{{ primary_image.signed_url }}" class="rounded-circle shadow-lg"
+                style="object-fit: cover; width: 140px; height: 140px; margin-top: -30px; margin-bottom: 20px; border: 3px solid white;"
+                alt="{{ profile.name }}">
                 {% else %}
                 <img src="{% static 'images/default-avatar.jpg' %}" class="rounded-circle shadow-lg"
                   style="object-fit: cover; width: 140px; height: 140px; margin-top: -30px; margin-bottom: 20px; border: 3px solid white;"
@@ -88,8 +88,8 @@
               {% for img in images %}
               <div class="col-md-4 col-sm-6 mb-4 gallery-item" data-id="{{ img.image_id }}">
                 <div class="card shadow-sm position-relative h-100">
-                  <img src="{{ img.image_url }}" class="card-img-top rounded-top"
-                    style="object-fit: cover; height: 250px;" alt="Profile image">
+                <img src="{{ img.signed_url }}" class="card-img-top rounded-top"
+                 style="object-fit: cover; height: 250px;" alt="Profile image">
                   {% if img.is_primary %}
                   <span class="badge badge-success position-absolute"
                     style="top: 10px; left: 10px; font-size: 0.75rem;">PRIMARY</span>
@@ -116,7 +116,7 @@
     </div>
   </div>
   <div class="col-xl-8 order-xl-1">
-    <div class="card bg-secondary shadow">
+<div class="card bg-white shadow-sm border-0">
       <div class="card-header bg-white border-0">
         <div class="row align-items-center">
           <div class="col-8">
@@ -469,10 +469,13 @@
       if (res.success) refreshGallery();
     });
 
-    /* ✨ 3. sync avatar */
     const avatar = document.querySelector('.card-profile-image img');
     const primary = imgs.find(i => i.is_primary === 1);
-    if (primary && avatar) avatar.src = primary.image_url;
+    if (primary && avatar) {
+      // Force refresh with cache buster
+      avatar.src = primary.image_url + "?t=" + new Date().getTime();
+    }
+
   }
 
   // 2-c: Handle upload via "+" card
