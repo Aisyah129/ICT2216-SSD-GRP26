@@ -18,7 +18,7 @@ jobs:
       with:
         host: 3.129.248.34
         username: student26
-        key: ${{ secrets.EC2_SSH_KEY }}
+        key: ${{ secrets.EC2_KEY }}
         port: 22
         source: "."  # Everything
         target: "~/ICT2216-SSD-GRP26"
@@ -28,7 +28,7 @@ jobs:
       with:
         host: 3.129.248.34
         username: student26
-        key: ${{ secrets.EC2_SSH_KEY }}
+        key: ${{ secrets.EC2_KEY }}
         port: 22
         script: |
           cd ~/ICT2216-SSD-GRP26
