@@ -1,12 +1,17 @@
 asgiref==3.8.1
-Django==4.2.21
-PyMySQL==1.1.1
+boto3==1.38.44
+django==5.2.3
+iso8601==2.1.0
+pymongo==4.13.2
+pymysql==1.1.1
 python-decouple==3.8
 python-dotenv==1.1.0
 python-http-client==3.3.7
-sendgrid==6.11.0
-sendgrid-django==4.2.0
+scikit-learn==1.7.0
+sendgrid==6.12.4
+# sendgrid-django==4.2.0
+stripe==12.2.0
 sqlparse==0.5.3
 typing_extensions==4.13.2
 tzdata==2025.2
-Unipath==1.1
+unipath==1.1
