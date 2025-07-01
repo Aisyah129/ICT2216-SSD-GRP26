@@ -12,7 +12,8 @@ urlpatterns = [
     path("reset/verify/", verify_reset_code, name="verify_reset_code"),
     path("reset/confirm/", set_new_password, name="set_new_password"),
 
-    path('logout/', LogoutView.as_view(next_page='login'), name="logout"),
+    #path('logout/', LogoutView.as_view(next_page='login'), name="logout"),
+    path('logout/', logout_view, name="logout"),
     path('profile/', profile_view, name="profile"),
 
     path('profile/upload-image/', upload_profile_image, name="upload_profile_image"),

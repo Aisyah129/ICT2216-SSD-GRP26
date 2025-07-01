@@ -24,6 +24,9 @@ from urllib.parse import quote
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
+from django.contrib.auth import logout
+from django.shortcuts import redirect
+from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.hashers import make_password  
 from django.core.paginator import Paginator
@@ -43,6 +46,7 @@ from django.db.models import Q
 
 # ✦ Project-local
 from authentication.models import *
+from .utils import log_action
 from .forms import (
     LoginForm,
     PasswordResetEmailForm,
@@ -51,8 +55,10 @@ from .forms import (
     SignUpForm,
     VerificationCodeForm,
 )
+
 from .models import User
 from authentication.decorators import user_only
+
 
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
@@ -65,7 +71,6 @@ def login_view(request):
         try:
             user = User.objects.get(user_id=request.session['user_id'])
             return redirect('browse' if user.role == 'user' else 'admin_dashboard')
-
         except User.DoesNotExist:
             pass  # fall through to login screen if session is stale
 
@@ -79,23 +84,34 @@ def login_view(request):
 
             try:
                 user = User.objects.get(email=email)
-                if user.check_password(password):  # Custom user with AbstractBaseUser
+                if user.check_password(password):
                     auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     request.session['user_id'] = user.user_id
-                    
-                    # 🚀 Redirect based on role
-                    if user.role == 'admin':
-                        return redirect('admin_dashboard')  # Must match your `path(name='admin_dashboard', ...)`
-                    else:
-                        return redirect('browse')  # or whatever page normal users should land on
+
+                    # ✅ LOG success
+                    log_action(user, "User logged in", "INFO", request)
+
+                    return redirect('admin_dashboard' if user.role == 'admin' else 'browse')
                 else:
+                    # ✅ LOG wrong password
+                    log_action(user, "Failed login attempt (wrong password)", "WARNING", request)
                     msg = "Incorrect email or password."
             except User.DoesNotExist:
+                # ✅ LOG invalid email (no such user)
+                log_action(None, "Failed login - user not found", "WARNING", request, metadata={"email": email})
                 msg = "Incorrect email or password."
         else:
             msg = "Please correct the errors below."
 
     return render(request, "accounts/login.html", {"form": form, "msg": msg})
+
+
+@csrf_protect
+def logout_view(request):
+    if request.user.is_authenticated:
+        log_action(request.user, "User logged out", "INFO", request)
+    logout(request)
+    return redirect('login')
 
 
 def request_password_reset(request):
@@ -110,6 +126,7 @@ def request_password_reset(request):
             request.session['reset_email'] = email
             request.session['reset_code'] = code
             send_reset_code_email(email, code)
+            log_action(user, "Requested password reset", "INFO", request) # ✅ Log password reset requested
             return redirect('verify_reset_code')
         except User.DoesNotExist:
             msg = "Invalid email address."
@@ -142,16 +159,23 @@ def send_reset_code_email(to_email, code):
 
 
 def verify_reset_code(request):
-    if request.session.get('user_id'):
-        return redirect('browse')
     form = VerificationCodeForm(request.POST or None)
     msg = None
 
     if request.method == "POST" and form.is_valid():
         entered_code = form.cleaned_data['code']
-        if entered_code == request.session.get('reset_code'):
+        stored_code = request.session.get('reset_code')
+        email = request.session.get('reset_email')
+
+        if entered_code == stored_code:
+            try:
+                user = User.objects.get(email=email)
+                log_action(user, "Verified reset code", "INFO", request)
+            except User.DoesNotExist:
+                log_action(None, f"Reset code verified but user {email} not found", "WARNING", request)
             return redirect('set_new_password')
         else:
+            log_action(None, f"Failed reset code attempt for {email}", "WARNING", request)
             msg = "Invalid verification code."
 
     return render(request, "accounts/password_reset_verify.html", {"form": form, "msg": msg})
@@ -168,6 +192,7 @@ def set_new_password(request):
             user = User.objects.get(email=email)
             user.set_password(form.cleaned_data['new_password'])
             user.save()
+            log_action(user, "Password reset successful", "CRITICAL", request)
             # Clear session
             del request.session['reset_email']
             del request.session['reset_code']
@@ -175,6 +200,7 @@ def set_new_password(request):
             return redirect('login')
         except User.DoesNotExist:
             msg = "User not found."
+            log_action(None, f"Password reset failed - user not found: {email}", "CRITICAL", request)
 
     return render(request, "accounts/set_new_password.html", {"form": form, "msg": msg})
 
@@ -237,8 +263,6 @@ def send_welcome_email(to_email, user_name):
 
 # REGISTER: store data temporarily and send code
 def register_user(request):
-    if request.session.get('user_id'):
-        return redirect('browse')
     form = SignUpForm(request.POST or None)
     msg = None
 
@@ -257,18 +281,19 @@ def register_user(request):
         verification_code = str(random.randint(100000, 999999))
         request.session['verification_code'] = verification_code
 
+        log_action(None, f"Registration initiated for {form.cleaned_data['email']}", "INFO", request) # Log for Initiated Registration
         send_verification_email(form.cleaned_data['email'], verification_code)
 
         return redirect('verify_email')
+    
+    else:
+        log_action(None, "Failed registration attempt", "WARNING", request, metadata=form.errors.get_json_data()) # Log invalid form data attempt
 
     return render(request, "accounts/register.html", {"form": form, "msg": msg})
 
 
 # VERIFY: confirm code, then store to DB
 def verify_email(request):
-
-    if request.session.get('user_id'):
-        return redirect('browse')
     msg = None
 
     if request.method == "POST":
@@ -305,6 +330,7 @@ def verify_email(request):
 
             auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             request.session['user_id'] = user.user_id  # ensure session is set
+            log_action(user, "User account created and verified", "INFO", request) # Log successful account creation
             return redirect('browse_one')  # this triggers browse_one_profile()
 
         else:
@@ -331,6 +357,7 @@ def user_dashboard(request):
         'matches': matches
     })
 
+
 @never_cache
 @login_required
 def profile_view(request):
@@ -355,6 +382,7 @@ def profile_view(request):
         profile.save(update_fields=editable_fields + ['last_updated'])
 
         messages.success(request, "Profile updated!")
+        log_action(request.user, "Updated profile information", "INFO", request) # Log Profile Changes
         return redirect('profile')
 
     # --------- GET: display page ---------
@@ -387,6 +415,7 @@ def upload_profile_image(request):
     """
     file = request.FILES.get("image")
     if not file:
+        log_action(request.user, "Failed image upload - no image provided", "WARNING", request)
         return JsonResponse(
             {"success": False, "error": "No image uploaded"}, status=400)
 
@@ -396,6 +425,10 @@ def upload_profile_image(request):
     current_count = ProfileImage.objects.filter(
         profile_id_fk=profile).count()
     if current_count >= MAX_IMAGES:
+        log_action(request.user, "Rejected profile image - image limit reached", "WARNING", request, metadata={
+            "current_count": current_count,
+            "max_limit": MAX_IMAGES
+        })
         return JsonResponse(
             {"success": False,
              "error": f"Limit of {MAX_IMAGES} images reached"},
@@ -442,6 +475,11 @@ def upload_profile_image(request):
         uploaded_at   = timezone.now(),
     )
 
+    log_action(request.user, "Uploaded new profile image", "INFO", request, metadata={
+        "filename": filename,
+        "content_type": file.content_type,
+        "is_primary": bool(primary_flag)
+    }) # Log Profile Image Updates
     return JsonResponse({"success": True, "image_url": image_url})
 
 
@@ -461,6 +499,7 @@ def set_primary_image(request, pk):
     ProfileImage.objects.filter(profile_id_fk=profile).update(is_primary=False)
     updated = ProfileImage.objects.filter(profile_id_fk=profile, pk=pk).update(is_primary=True)
 
+    log_action(request.user, f"Set image {pk} as primary", "INFO", request) 
     return JsonResponse({"success": bool(updated)})
 
 
@@ -488,9 +527,11 @@ def delete_profile_image(request, pk):
 
         # Delete from DB
         image.delete()
+        log_action(request.user, f"Deleted profile image {pk}", "INFO", request, metadata={"image_url": image.image_url})
         return JsonResponse({"success": True})
 
     except ProfileImage.DoesNotExist:
+        log_action(request.user, f"Tried to delete non-existent profile image {pk}", "WARNING", request)
         return JsonResponse({"success": False, "error": "Image not found"}, status=404)
 
 # ADMIN DASHBOARD
@@ -499,7 +540,23 @@ def delete_profile_image(request, pk):
 @user_passes_test(is_admin)
 def admin_dashboard(request):
     users = User.objects.filter(role='user')
-    return render(request, 'accounts/admin_dashboard.html', {'users': users})
+    logs = ActionLog.objects.order_by('-timestamp')
+
+    # 🔍 Filtering
+    user_email = request.GET.get('user_email')
+    severity = request.GET.get('severity')
+
+    if user_email:
+        logs = logs.filter(user__email__icontains=user_email)
+    if severity:
+        logs = logs.filter(severity=severity)
+
+    # 📄 Pagination (10 logs per page)
+    paginator = Paginator(logs, 10)
+    page_number = request.GET.get("page")
+    logs = paginator.get_page(page_number)
+
+    return render(request, 'accounts/admin_dashboard.html', {'users': users, 'logs': logs})
 
 
 def get_primary_image(profile_id):
@@ -514,7 +571,6 @@ def get_blurred_image_url(original_url):
 
     # Compose ImageKit URL
     return f"{settings.IMAGEKIT_URL_ENDPOINT}tr:bl-20/{quote(filename)}"
-
 
 def get_safe_profile_image_url(image, is_premium):
     default_url = '/static/images/default-avatar.jpg'
@@ -556,7 +612,6 @@ def likes_page(request):
                     'age': profile.age if user.is_premium else None,
                     'liked_date': like.liked_at if user.is_premium else None,
                     'image_url': get_safe_profile_image_url(image, user.is_premium),
-
                     'gender': profile.gender if user.is_premium else None,
                     'location': profile.location if user.is_premium else None,
                     'pronouns': profile.pronouns if user.is_premium else None,
@@ -649,13 +704,14 @@ def likes_page(request):
             'match_popup': match_popup
         })
 
-
+@login_required
 def upgrade_premium(request):
     plans = [
         {'id': 'week', 'name': '1 Week', 'price': 4.99, 'description': 'Short-term access to premium features'},
         {'id': 'month', 'name': '1 Month', 'price': 9.99, 'description': 'Unlock premium features for a month'},
         {'id': 'quarter', 'name': '3 Months', 'price': 24.99, 'description': 'Save more with a 3-month plan'},
     ]
+    log_action(request.user, "Visited premium upgrade page", "INFO", request) # not working currently
     return render(request, 'accounts/upgrade_premium.html', {'plans': plans})
 
 def checkout_premium(request, plan_id):
@@ -817,6 +873,7 @@ def messages_with(request, user_id):
         body = request.POST.get("message", "").strip()
         if body:
             append_message(match, str(request.user.user_id), body)
+            log_action(request.user, f"Sent message to user {user_id}", "INFO", request, metadata={"message_length": len(body)})
         # after sending, redirect to GET avoids resubmission on refresh
         return redirect("messages_with", user_id=other_user.user_id)
 
@@ -838,6 +895,7 @@ def messages_with(request, user_id):
         "user":            request.user,
     }
     return render(request, "pages/messages.html", context)
+
 
 @never_cache
 @login_required
@@ -942,12 +1000,14 @@ def create_checkout_session(request, plan: str):
 # ─────────────  2)  Success / cancel splash pages  ─────────────
 @login_required
 def checkout_success(request):
+    log_action(request.user, "Visited Stripe success page", "INFO", request)
     messages.success(request, "🎉 Thanks! Your Premium is now active.")
     return render(request, "billing/success.html")
 
 
 @login_required
 def checkout_cancel(request):
+    log_action(request.user, "Visited Stripe cancel page", "WARNING", request)
     messages.warning(request, "Payment cancelled.")
     return render(request, "billing/cancel.html")
 
@@ -1085,6 +1145,7 @@ def upgrade_premium(request):
         },
     ]
     return render(request, "accounts/upgrade_premium.html", {"plans": plans})
+
 
 @never_cache
 @login_required
@@ -1348,22 +1409,9 @@ def browse_one_profile(request):
     scored_profiles = priority_profiles + secondary_profiles
 
 
-    # index = int(request.GET.get('index', 0))
-    # if index >= len(scored_profiles):
-    #     return redirect('/browse/?index=0')     
-    
-
-    if request.method == "POST":
-        index = request.session.get('browse_index', 0)
-        request.session['browse_index'] = index + 1  # Only update on POST
-    else:
-        index = request.session.get('browse_index', 0)
-
+    index = int(request.GET.get('index', 0))
     if index >= len(scored_profiles):
-        index = 0
-        request.session['browse_index'] = 1  # Set to next after resetting
-
-
+        return redirect('/browse/?index=0')     
 
 
     match_popup = request.session.pop('match_popup', None)
@@ -1484,11 +1532,8 @@ def like_profile(request):
         if request.POST.get("from_likes") == "1":
             return redirect('/likes/?tab=incoming')
 
-        # next_index = int(request.GET.get("index", 0)) + 1
-        # return redirect(f"/browse/?index={next_index}")
-
-        return redirect('browse_one')  # use the name of the URL
-
+        next_index = int(request.GET.get("index", 0)) + 1
+        return redirect(f"/browse/?index={next_index}")
 
 
 
@@ -1575,12 +1620,9 @@ def dislike_profile(request):
             )
 
         # Optional: maintain index if using browsing
-        # index = int(request.POST.get("index") or request.GET.get("index", 0))
+        index = int(request.POST.get("index") or request.GET.get("index", 0))
 
         if 'from_likes' in request.POST:
             return redirect('/likes/?tab=outgoing')
 
-        # return redirect(f"/browse/?index={index}")
-
-        return redirect('browse_one')
-
+        return redirect(f"/browse/?index={index}")
