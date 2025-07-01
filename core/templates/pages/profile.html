@@ -174,8 +174,13 @@
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Sexual Orientation</label>
-                  <input name="sexual_orientation" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.sexual_orientation|default:'' }}" placeholder="e.g. Straight, Gay">
+                  <select name="sexual_orientation" class="form-control form-control-alternative">
+  <option value="">Select Orientation</option>
+  {% for option in sexual_orientation_options %}
+    <option value="{{ option }}" {% if profile.sexual_orientation == option %}selected{% endif %}>{{ option }}</option>
+  {% endfor %}
+</select>
+
                 </div>
               </div>
               <div class="col-lg-6">

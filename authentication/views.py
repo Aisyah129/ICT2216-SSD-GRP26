@@ -365,12 +365,39 @@ def profile_view(request):
     pets      = [pp.pet_id_fk.pet_type for pp in profile.profilepet_set.all()]
 
     return render(request, "pages/profile.html", {
-        "profile":       profile,
+        "profile": profile,
         "primary_image": primary_image,
-        "images":        all_images,      # ✅ Send to frontend
-        "languages":     languages,
-        "pets":          pets,
+        "images": all_images,
+        "languages": languages,
+        "pets": pets,
+
+        "ages": range(18, 121),
+        "height_options": range(140, 221),
+        "gender_options": ["Male", "Female", "Non-binary", "Prefer not to say"],
+        "sexual_orientation_options": [
+            "Straight", "Gay", "Lesbian", "Bisexual", "Asexual", "Pansexual", "Queer",
+            "Questioning", "Prefer not to say"
+        ],
+        "pronoun_options": ["He/Him", "She/Her", "They/Them", "Other", "Prefer not to say"],
+        "body_type_options": ["Slim", "Athletic", "Average", "Curvy", "Plus Size", "Prefer not to say"],
+        "education_options": ["Primary", "Secondary", "Polytechnic", "Junior College", "University", "Masters", "PhD",
+                              "Other"],
+        "occupation_options": ["Student", "Engineer", "Designer", "Doctor", "Nurse", "Lawyer", "Teacher",
+                               "Entrepreneur", "Other"],
+        "religion_options": ["Christian", "Muslim", "Hindu", "Buddhist", "Jewish", "Atheist", "Agnostic", "Spiritual",
+                             "Other"],
+        "ethnicity_options": ["Chinese", "Malay", "Indian", "Eurasian", "Others"],
+        "politics_options": ["Conservative", "Moderate", "Liberal", "Libertarian", "Apolitical", "Prefer not to say"],
+        "smoking_options": ["Never", "Occasionally", "Regularly", "Trying to quit"],
+        "drinking_options": ["Never", "Socially", "Regularly"],
+        "drug_use_options": ["Never", "Occasionally", "Prefer not to say"],
+        "has_kids_options": ["0", "1", "2", "3", "4", "5+"],
+        "wants_kids_options": ["Yes", "Someday", "Not sure", "No"],
+        "zodiac_options": ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius",
+                           "Capricorn", "Aquarius", "Pisces"],
+        "relationship_options": ["Short-term", "Long-term", "Friendship", "Casual", "Marriage", "Not sure"],
     })
+
 
 MAX_IMAGES = 6          # ← change here if you ever want a different limit
 
@@ -836,6 +863,30 @@ def messages_with(request, user_id):
         "selected_avatar": avatar_url,
         "messages":        messages,
         "user":            request.user,
+        "profile": profile,
+        "ages": range(18, 121),
+        "height_options": range(140, 221),
+        "gender_options": ["Male", "Female", "Non-binary", "Prefer not to say"],
+        "sexual_orientation_options": ["Straight", "Gay", "Lesbian", "Bisexual", "Asexual", "Pansexual", "Queer",
+                                       "Questioning", "Prefer not to say"],
+        "pronoun_options": ["He/Him", "She/Her", "They/Them", "Other", "Prefer not to say"],
+        "body_type_options": ["Slim", "Athletic", "Average", "Curvy", "Plus Size", "Prefer not to say"],
+        "education_options": ["Primary", "Secondary", "Polytechnic", "Junior College", "University", "Masters", "PhD",
+                              "Other"],
+        "occupation_options": ["Student", "Engineer", "Designer", "Doctor", "Nurse", "Lawyer", "Teacher",
+                               "Entrepreneur", "Other"],
+        "religion_options": ["Christian", "Muslim", "Hindu", "Buddhist", "Jewish", "Atheist", "Agnostic", "Spiritual",
+                             "Other"],
+        "ethnicity_options": ["Chinese", "Malay", "Indian", "Eurasian", "Others"],
+        "politics_options": ["Conservative", "Moderate", "Liberal", "Libertarian", "Apolitical", "Prefer not to say"],
+        "smoking_options": ["Never", "Occasionally", "Regularly", "Trying to quit"],
+        "drinking_options": ["Never", "Socially", "Regularly"],
+        "drug_use_options": ["Never", "Occasionally", "Prefer not to say"],
+        "has_kids_options": ["0", "1", "2", "3", "4", "5+"],
+        "wants_kids_options": ["Yes", "Someday", "Not sure", "No"],
+        "zodiac_options": ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius",
+                           "Capricorn", "Aquarius", "Pisces"],
+        "relationship_options": ["Short-term", "Long-term", "Friendship", "Casual", "Marriage", "Not sure"],
     }
     return render(request, "pages/messages.html", context)
 
