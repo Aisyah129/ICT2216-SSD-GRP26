@@ -382,60 +382,68 @@ def profile_view(request):
         profile.save(update_fields=editable_fields + ['last_updated'])
 
         messages.success(request, "Profile updated!")
-        log_action(request.user, "Updated profile information", "INFO", request) # Log Profile Changes
+        log_action(request.user, "Updated profile information", "INFO", request)  # Log Profile Changes
         return redirect('profile')
 
     # --------- GET: display page ---------
+
+    # Always show full image quality on own profile
     primary_image = profile.profileimage_set.filter(is_primary=True).first()
-    all_images = profile.profileimage_set.order_by('-uploaded_at')
+    primary_image_url = get_safe_profile_image_url(primary_image, True)
+
+    all_images = [
+        {
+            "id": img.image_id,
+            "url": get_safe_profile_image_url(img, True),  # No blur
+            "is_primary": img.is_primary
+        }
+        for img in profile.profileimage_set.order_by('-uploaded_at')
+    ]
 
     languages = [pl.language_id_fk.language_name for pl in profile.languages.all()]
     pets      = [pp.pet_id_fk.pet_type for pp in profile.profilepet_set.all()]
 
     return render(request, "pages/profile.html", {
         "profile":       profile,
-        "primary_image": primary_image,
-        "images":        all_images,      # ✅ Send to frontend
+        "primary_image": primary_image_url,
+        "images":        all_images,
         "languages":     languages,
         "pets":          pets,
     })
 
-MAX_IMAGES = 6          # ← change here if you ever want a different limit
+MAX_IMAGES = 6  # ← adjust if needed
 
 # ------------------------------------------------------------------
-#  Upload profile image                                   (replace)
+#  Upload profile image                                   (updated)
 # ------------------------------------------------------------------
 @login_required
 @require_POST
 def upload_profile_image(request):
     """
-    1. Hard-cap at MAX_IMAGES per user
-    2. Always keep exactly ONE primary photo
-    3. Return JSON {success:bool, error?:str, image_url?:str}
+    Upload profile image to private S3 and store only the filename.
+    - Max limit enforced
+    - Always ensure 1 primary
+    - Returns public ImageKit URL for frontend use
     """
     file = request.FILES.get("image")
     if not file:
         log_action(request.user, "Failed image upload - no image provided", "WARNING", request)
-        return JsonResponse(
-            {"success": False, "error": "No image uploaded"}, status=400)
+        return JsonResponse({"success": False, "error": "No image uploaded"}, status=400)
 
     profile = request.user.profile
 
-    # ───────── 1) Reject if already at the limit ──────────
-    current_count = ProfileImage.objects.filter(
-        profile_id_fk=profile).count()
+    # ───────── 1) Check image limit ──────────
+    current_count = ProfileImage.objects.filter(profile_id_fk=profile).count()
     if current_count >= MAX_IMAGES:
         log_action(request.user, "Rejected profile image - image limit reached", "WARNING", request, metadata={
             "current_count": current_count,
             "max_limit": MAX_IMAGES
         })
-        return JsonResponse(
-            {"success": False,
-             "error": f"Limit of {MAX_IMAGES} images reached"},
-            status=400)
+        return JsonResponse({"success": False, "error": f"Limit of {MAX_IMAGES} images reached"}, status=400)
 
     # ───────── 2) Upload to S3 ──────────
-    filename = f"profile_{profile.profile_id}_{uuid.uuid4()}.{file.name.split('.')[-1]}"
+    extension = file.name.split('.')[-1]
+    filename = f"profile_{profile.profile_id}_{uuid.uuid4()}.{extension}"
 
     s3 = boto3.client(
         "s3",
@@ -448,29 +456,24 @@ def upload_profile_image(request):
         file,
         settings.AWS_STORAGE_BUCKET_NAME,
         filename,
-        ExtraArgs={"ContentType": file.content_type},
+        ExtraArgs={"ACL": "private", "ContentType": file.content_type}
     )
 
-    image_url    = f"{settings.AWS_S3_ENDPOINT}/{filename}"
     want_primary = request.POST.get("is_primary") in ("1", "true", "on")
 
-    # ───────── 3) Guarantee ONE primary ──────────
-    has_primary  = ProfileImage.objects.filter(
-        profile_id_fk=profile, is_primary=1).exists()
-
-    # • If user asks for primary OR no primary exists yet → promote new one
+    # ───────── 3) Ensure ONE primary ──────────
+    has_primary = ProfileImage.objects.filter(profile_id_fk=profile, is_primary=True).exists()
     if want_primary or not has_primary:
-        ProfileImage.objects.filter(
-            profile_id_fk=profile, is_primary=1).update(is_primary=0)
-        primary_flag = 1
+        ProfileImage.objects.filter(profile_id_fk=profile).update(is_primary=False)
+        primary_flag = True
     else:
-        primary_flag = 0
+        primary_flag = False
 
-    # ───────── 4) Create DB row ──────────
-    ProfileImage.objects.create(
+    # ───────── 4) Save DB record (only filename) ──────────
+    new_image = ProfileImage.objects.create(
         image_id      = str(uuid.uuid4()),
         profile_id_fk = profile,
-        image_url     = image_url,
+        image_url     = filename,  # ✅ only the filename!
         is_primary    = primary_flag,
         uploaded_at   = timezone.now(),
     )
@@ -478,17 +481,30 @@ def upload_profile_image(request):
     log_action(request.user, "Uploaded new profile image", "INFO", request, metadata={
         "filename": filename,
         "content_type": file.content_type,
-        "is_primary": bool(primary_flag)
-    }) # Log Profile Image Updates
-    return JsonResponse({"success": True, "image_url": image_url})
+        "is_primary": primary_flag
+    })
+
+    # Generate ImageKit public URL
+    public_url = get_safe_profile_image_url(new_image, request.user.is_premium)
+
+    return JsonResponse({"success": True, "image_url": public_url})
+
 
 
 # 🟩 Get all profile images for this user (JSON)
 @login_required
 def profile_images_json(request):
-    images = ProfileImage.objects.filter(profile_id_fk=request.user.profile)\
-                                 .values('image_id', 'image_url', 'is_primary')
-    return JsonResponse(list(images), safe=False)
+    profile = request.user.profile
+    images = ProfileImage.objects.filter(profile_id_fk=profile).order_by('-uploaded_at')
+
+    return JsonResponse([
+        {
+            "image_id": str(img.image_id),  # ensure string for JS
+            "image_url": get_safe_profile_image_url(img, request.user.is_premium),
+            "is_primary": img.is_primary,
+        }
+        for img in images
+    ], safe=False)
 
 
 # 🟩 Set selected image as primary
@@ -496,10 +512,16 @@ def profile_images_json(request):
 @require_POST
 def set_primary_image(request, pk):
     profile = request.user.profile
+
+    # Unset all existing
     ProfileImage.objects.filter(profile_id_fk=profile).update(is_primary=False)
+
+    # Set new primary
     updated = ProfileImage.objects.filter(profile_id_fk=profile, pk=pk).update(is_primary=True)
 
-    log_action(request.user, f"Set image {pk} as primary", "INFO", request) 
+    if updated:
+        log_action(request.user, f"Set image {pk} as primary", "INFO", request)
+
     return JsonResponse({"success": bool(updated)})
 
 
@@ -511,29 +533,26 @@ def delete_profile_image(request, pk):
         profile = request.user.profile
         image = ProfileImage.objects.get(profile_id_fk=profile, pk=pk)
 
-        # Extract S3 key from image URL
-        bucket_prefix = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/"
-        if image.image_url.startswith(bucket_prefix):
-            s3_key = image.image_url.replace(bucket_prefix, "")
+        # Assume image_url is just the filename, e.g., "profile_abc123.jpg"
+        filename = image.image_url.strip("/")
 
-            # Delete from S3
-            s3 = boto3.client(
-                "s3",
-                aws_access_key_id     = settings.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key = settings.AWS_SECRET_ACCESS_KEY,
-                region_name           = settings.AWS_S3_REGION_NAME,
-            )
-            s3.delete_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=s3_key)
+        # Delete from S3 (private bucket)
+        s3 = boto3.client(
+            "s3",
+            aws_access_key_id     = settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key = settings.AWS_SECRET_ACCESS_KEY,
+            region_name           = settings.AWS_S3_REGION_NAME,
+        )
+        s3.delete_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=filename)
 
         # Delete from DB
         image.delete()
-        log_action(request.user, f"Deleted profile image {pk}", "INFO", request, metadata={"image_url": image.image_url})
+        log_action(request.user, f"Deleted profile image {pk}", "INFO", request, metadata={"filename": filename})
         return JsonResponse({"success": True})
 
     except ProfileImage.DoesNotExist:
         log_action(request.user, f"Tried to delete non-existent profile image {pk}", "WARNING", request)
         return JsonResponse({"success": False, "error": "Image not found"}, status=404)
-
 # ADMIN DASHBOARD
 @never_cache
 @login_required
@@ -575,9 +594,17 @@ def get_blurred_image_url(original_url):
 def get_safe_profile_image_url(image, is_premium):
     default_url = '/static/images/default-avatar.jpg'
     blurred_default_url = '/static/images/blurred-default-avatar.jpg'
+
+    if not image:
+        return default_url if is_premium else blurred_default_url
+
+    filename = image.image_url.lstrip("/") 
+    print(image.image_url)
+
     if is_premium:
-        return image.image_url if image else default_url
-    return get_blurred_image_url(image.image_url) if image else blurred_default_url
+        return f"{settings.IMAGEKIT_URL_ENDPOINT}{quote(filename)}"
+    else:
+        return f"{settings.IMAGEKIT_URL_ENDPOINT}tr:bl-20/{quote(filename)}"
 
 
 @never_cache
@@ -1154,56 +1181,37 @@ def browse_one_profile(request):
     if not user_id:
         return redirect('login')
 
-    # Fetch current user's profile to exclude from feed
     try:
         current_profile = Profile.objects.get(user_id_fk=user_id)
         profiles = Profile.objects.exclude(profile_id=current_profile.profile_id).order_by('-last_updated')
     except Profile.DoesNotExist:
         return redirect('login')
 
-    # ✨ Orientation-based gender filtering (with fallback)
+    # Orientation-based filtering
     user_gender = current_profile.gender
     user_orientation = current_profile.sexual_orientation
-
     if user_gender and user_orientation:
         if user_orientation == "straight":
             profiles = profiles.filter(gender="female" if user_gender == "male" else "male")
         elif user_orientation == "gay":
             profiles = profiles.filter(gender=user_gender)
-        elif user_orientation == "bisexual":
-            pass  # no gender filter
-        else:
-            print("⚠️ Unknown orientation, skipping filtering.")
-    else:
-        print("🟡 New user or incomplete profile — skipping gender/orientation filter.")
+    # Skip filtering if unknown
 
-
-    # 🧠 STEP: Filter profiles based on like/dislike history
     rated_likes = Like.objects.filter(liker_user_id=user_id)
     liked_user_ids = rated_likes.filter(like_status="liked").values_list('liked_user_id', flat=True)
     disliked_user_ids = rated_likes.filter(like_status="passed").values_list('liked_user_id', flat=True)
-
-    # Get all available profile user IDs (excluding current user)
     all_profile_ids = profiles.values_list('user_id_fk', flat=True)
-
-    # Determine unseen and remaining disliked IDs
     unseen_ids = set(all_profile_ids) - set(liked_user_ids) - set(disliked_user_ids)
     remaining_disliked_ids = set(disliked_user_ids) & set(all_profile_ids)
-
-    print("📉 unseen_ids:", len(unseen_ids))
-    print("📉 remaining_disliked_ids:", len(remaining_disliked_ids))
 
     preferences = Preferences.objects.filter(profile_id_fk=current_profile).first()
 
     def fetch_pref(model, field):
         obj = model.objects.filter(preference_id_fk=preferences).first()
         return getattr(obj, field, None) if obj else None
-        
 
-    # 👀 If all profiles have been rated and fewer than 5 disliked remain, show browse_done
     if len(unseen_ids) == 0:
         if len(remaining_disliked_ids) < 3:
-            print("🔚 No profiles left and fewer than 5 disliked to reuse.")
             return render(request, 'pages/browse_done.html', {
                 'preferences': preferences,
                 'languages': Language.objects.all(),
@@ -1234,38 +1242,26 @@ def browse_one_profile(request):
                 'relationship_choices': PreferencesRelationship._meta.get_field("relationship_type").choices,
             })
         else:
-            print("🔁 No unseen profiles, falling back to disliked.")
             profiles = profiles.filter(user_id_fk__in=remaining_disliked_ids)
     else:
         profiles = profiles.filter(user_id_fk__in=unseen_ids)
 
-
-
-    # Prioritize unseen profiles
     unseen_profiles = profiles.exclude(user_id_fk__in=liked_user_ids).exclude(user_id_fk__in=disliked_user_ids)
-
     if unseen_profiles.exists():
         profiles = unseen_profiles
     else:
-        # Only fallback to disliked if 5 or more are available
         profiles = profiles.filter(user_id_fk__in=remaining_disliked_ids)
 
-
-    # 🔁 Retrieve profiles the user has previously liked
     liked_profiles = Profile.objects.filter(
         user_id_fk__in=Like.objects.filter(liker_user_id=user_id, like_status="liked").values_list('liked_user_id', flat=True)
     )
 
-
-    # 🎯 Define scoring weights
     weights = {
         "height": 2, "gender": 3, "body": 1, "education": 1,
         "religion": 1, "politics": 1, "smoking": 1, "drinking": 1,
         "drug": 1, "has_kids": 1, "wants_kids": 1, "zodiac": 0.5,
         "relationship": 2.5, "language": 2,
     }
-
-    preferences = Preferences.objects.filter(profile_id_fk=current_profile).first()
 
     def profile_to_vector(profile):
         gender_vec = [1 if profile.gender == 'male' else 0, 1 if profile.gender == 'female' else 0]
@@ -1279,12 +1275,10 @@ def browse_one_profile(request):
         tag_vec = [hash(tag) % 100 for tag in tags if tag]
         return np.array(gender_vec + age_vec + tag_vec, dtype='float64')
 
-
     def compute_match_score(profile, preferences, weights):
         score = 0
-
         if not preferences:
-            return score  # no preferences to match, return score 0 
+            return score
 
         if preferences.preferred_height_min and preferences.preferred_height_max and profile.height_cm:
             if preferences.preferred_height_min <= profile.height_cm <= preferences.preferred_height_max:
@@ -1294,7 +1288,6 @@ def browse_one_profile(request):
             if not pref_model:
                 return 0
             return weights.get(weight_key, 0) if getattr(pref_model, field, None) == profile_value else 0
-
 
         score += match_field(PreferencesGender.objects.filter(preference_id_fk=preferences).first(), profile.gender, "gender_type", "gender")
         score += match_field(PreferencesBodyType.objects.filter(preference_id_fk=preferences).first(), profile.body_type, "body_type_value", "body")
@@ -1315,11 +1308,7 @@ def browse_one_profile(request):
             if pref_lang.language_id_fk_id in user_lang_ids:
                 score += weights["language"]
 
-
         return score
-    
-    # 💡 Build vectors for liked profiles
-    liked_vectors = [profile_to_vector(lp) for lp in liked_profiles]
 
     def compute_knn_score(candidate_profile, liked_profiles, top_k=3):
         def construct_vector(profile):
@@ -1339,80 +1328,60 @@ def browse_one_profile(request):
                     1 if profile.politics == "liberal" else 0,
                     1 if profile.religion == "agnostic" else 0,
                 ])
-            except Exception as e:
-                print(f"❌ Vector construction failed: {e}, input was: {profile}")
-                return None  # avoid converting to ndarray again
-
+            except:
+                return None
 
         candidate_vec = construct_vector(candidate_profile)
         if candidate_vec is None:
-            return 0  # fallback
+            return 0
 
         candidate_vec = candidate_vec.reshape(1, -1)
-        liked_vectors = []
-
-        for lp in liked_profiles:
-            if isinstance(lp, np.ndarray):
-                vec = lp  # Already a vector, no need to reconstruct
-            else:
-                vec = construct_vector(lp)
-
-            if isinstance(vec, np.ndarray) and vec.shape[0] == candidate_vec.shape[1]:
-                liked_vectors.append(vec)
-
+        liked_vectors = [construct_vector(lp) for lp in liked_profiles if construct_vector(lp) is not None]
 
         if not liked_vectors:
-            return 0  # no comparison possible
+            return 0
 
-        # Cosine similarity calculation
         similarities = [
             cosine_similarity(candidate_vec, lp.reshape(1, -1))[0][0]
             for lp in liked_vectors
         ]
 
-        # Sort and average top-k
         top_k_similarities = sorted(similarities, reverse=True)[:top_k]
-        knn_score = sum(top_k_similarities) / len(top_k_similarities)
-
-        return knn_score
-
+        return sum(top_k_similarities) / len(top_k_similarities)
 
     priority_profiles = []
     secondary_profiles = []
 
     for profile in profiles:
-        images = ProfileImage.objects.filter(profile_id_fk=profile.profile_id)
-        # score = compute_match_score(profile, preferences, weights)
+        primary_image = ProfileImage.objects.filter(profile_id_fk=profile.profile_id, is_primary=True).first()
+        image_url = get_safe_profile_image_url(primary_image, is_premium=True)  # No blur needed
 
         score = compute_match_score(profile, preferences, weights)
-        knn_score = compute_knn_score(profile, liked_vectors)
-
-        score += knn_score * 10  # You can tune this multiplier
-
+        knn_score = compute_knn_score(profile, liked_profiles)
+        score += knn_score * 10
         normalized_score = int((score / 19) * 100)
 
-        # 🎯 If age preference is set, split by age match
+        entry = {
+            'profile': profile,
+            'image_url': image_url,
+            'score': normalized_score
+        }
+
         if preferences and preferences.preferred_age_min and preferences.preferred_age_max:
             if preferences.preferred_age_min <= profile.age <= preferences.preferred_age_max:
-                priority_profiles.append({'profile': profile, 'images': images, 'score': normalized_score})
+                priority_profiles.append(entry)
             else:
-                secondary_profiles.append({'profile': profile, 'images': images, 'score': normalized_score})
+                secondary_profiles.append(entry)
         else:
-            # If no age preference, treat everyone as priority
-            priority_profiles.append({'profile': profile, 'images': images, 'score': normalized_score})
+            priority_profiles.append(entry)
 
-    # Sort both groups by weighted score
     priority_profiles.sort(key=lambda x: x['score'], reverse=True)
     secondary_profiles.sort(key=lambda x: x['score'], reverse=True)
-
-    # Combine final feed
     scored_profiles = priority_profiles + secondary_profiles
-
 
     index = int(request.GET.get('index', 0))
     if index >= len(scored_profiles):
         return redirect('/browse/?index=0')     
-
 
     match_popup = request.session.pop('match_popup', None)
     entry = scored_profiles[index]
@@ -1423,13 +1392,6 @@ def browse_one_profile(request):
         'match_popup': match_popup,
         'preferences': preferences,
         'languages': Language.objects.all(),
-    }
-
-    def fetch_pref(model, field):
-        obj = model.objects.filter(preference_id_fk=preferences).first()
-        return getattr(obj, field, None) if obj else None
-
-    context.update({
         'gender': fetch_pref(PreferencesGender, 'gender_type'),
         'body_type': fetch_pref(PreferencesBodyType, 'body_type_value'),
         'education': fetch_pref(PreferencesEducation, 'education_level'),
@@ -1455,7 +1417,7 @@ def browse_one_profile(request):
         'wants_kids_choices': PreferencesWantsKids._meta.get_field("wants_kids_type").choices,
         'zodiac_choices': PreferencesZodiac._meta.get_field("zodiac_type").choices,
         'relationship_choices': PreferencesRelationship._meta.get_field("relationship_type").choices,
-    })
+    }
 
     return render(request, 'pages/browse.html', context)
 
