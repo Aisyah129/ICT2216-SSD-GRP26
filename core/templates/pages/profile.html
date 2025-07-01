@@ -1,5 +1,6 @@
 {% extends 'layouts/base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 
 {% block title %} Profile {% endblock title %}
@@ -134,8 +135,13 @@
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Age</label>
-                  <input name="age" type="number" class="form-control form-control-alternative"
-                    value="{{ profile.age|default:'' }}" placeholder="Your age">
+                  <select name="age" class="form-control form-control-alternative">
+  <option value="">Select Age</option>
+  {% for age in 18|to_range:121 %}
+    <option value="{{ age }}" {% if profile.age == age %}selected{% endif %}>{{ age }}</option>
+  {% endfor %}
+</select>
+
                 </div>
               </div>
               <div class="col-lg-4">
