@@ -186,8 +186,13 @@
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Pronouns</label>
-                  <input name="pronouns" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.pronouns|default:'' }}" placeholder="e.g. He/Him">
+                  <select name="pronouns" class="form-control form-control-alternative">
+  <option value="">Select Pronouns</option>
+  {% for option in pronoun_options %}
+    <option value="{{ option }}" {% if profile.pronouns == option %}selected{% endif %}>{{ option }}</option>
+  {% endfor %}
+</select>
+
                 </div>
               </div>
             </div>
@@ -196,8 +201,13 @@
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Body Type</label>
-                  <input name="body_type" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.body_type|default:'' }}" placeholder="e.g. Athletic">
+                  <select name="body_type" class="form-control form-control-alternative">
+  <option value="">Select Body Type</option>
+  {% for option in body_type_options %}
+    <option value="{{ option }}" {% if profile.body_type == option %}selected{% endif %}>{{ option }}</option>
+  {% endfor %}
+</select>
+
                 </div>
               </div>
               <div class="col-lg-6">
@@ -213,15 +223,25 @@
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Education Level</label>
-                  <input name="education_level" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.education_level|default:'' }}" placeholder="e.g. University">
+                  <select name="education" class="form-control form-control-alternative">
+  <option value="">Select Education Level</option>
+  {% for option in education_options %}
+    <option value="{{ option }}" {% if profile.education == option %}selected{% endif %}>{{ option }}</option>
+  {% endfor %}
+</select>
+
                 </div>
               </div>
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Occupation</label>
-                  <input name="occupation" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.occupation|default:'' }}" placeholder="e.g. Software Engineer">
+                  <select name="occupation" class="form-control form-control-alternative">
+  <option value="">Select Occupation</option>
+  {% for option in occupation_options %}
+    <option value="{{ option }}" {% if profile.occupation == option %}selected{% endif %}>{{ option }}</option>
+  {% endfor %}
+</select>
+
                 </div>
               </div>
             </div>
@@ -230,22 +250,37 @@
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Religion</label>
-                  <input name="religion" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.religion|default:'' }}" placeholder="e.g. Christian">
+                  <select name="religion" class="form-control form-control-alternative">
+  <option value="">Select Religion</option>
+  {% for option in religion_options %}
+    <option value="{{ option }}" {% if profile.religion == option %}selected{% endif %}>{{ option }}</option>
+  {% endfor %}
+</select>
+
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Ethnicity</label>
-                  <input name="ethnicity" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.ethnicity|default:'' }}" placeholder="e.g. Chinese">
+                  <select name="ethnicity" class="form-control form-control-alternative">
+  <option value="">Select Ethnicity</option>
+  {% for option in ethnicity_options %}
+    <option value="{{ option }}" {% if profile.ethnicity == option %}selected{% endif %}>{{ option }}</option>
+  {% endfor %}
+</select>
+
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Politics</label>
-                  <input name="politics" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.politics|default:'' }}" placeholder="e.g. Moderate">
+                  <select name="politics" class="form-control form-control-alternative">
+  <option value="">Select Political View</option>
+  {% for option in politics_options %}
+    <option value="{{ option }}" {% if profile.politics == option %}selected{% endif %}>{{ option }}</option>
+  {% endfor %}
+</select>
+
                 </div>
               </div>
             </div>
@@ -254,22 +289,37 @@
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Smoking</label>
-                  <input name="smoking" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.smoking|default:'' }}" placeholder="e.g. Never">
+                  <select name="smoking" class="form-control form-control-alternative">
+  <option value="">Smoking Habit</option>
+  {% for option in smoking_options %}
+    <option value="{{ option }}" {% if profile.smoking == option %}selected{% endif %}>{{ option }}</option>
+  {% endfor %}
+</select>
+
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Drinking</label>
-                  <input name="drinking" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.drinking|default:'' }}" placeholder="e.g. Socially">
+                  <select name="drinking" class="form-control form-control-alternative">
+  <option value="">Drinking Habit</option>
+  {% for option in drinking_options %}
+    <option value="{{ option }}" {% if profile.drinking == option %}selected{% endif %}>{{ option }}</option>
+  {% endfor %}
+</select>
+
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Drug Use</label>
-                  <input name="drug_use" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.drug_use|default:'' }}" placeholder="e.g. Never">
+                  <select name="drug_use" class="form-control form-control-alternative">
+  <option value="">Drug Use</option>
+  {% for option in drug_use_options %}
+    <option value="{{ option }}" {% if profile.drug_use == option %}selected{% endif %}>{{ option }}</option>
+  {% endfor %}
+</select>
+
                 </div>
               </div>
             </div>
@@ -278,15 +328,25 @@
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Has Kids</label>
-                  <input name="has_kids" type="number" class="form-control form-control-alternative"
-                    value="{{ profile.has_kids|default:'' }}" placeholder="e.g. 0 or 1">
+                  <select name="has_kids" class="form-control form-control-alternative">
+  <option value="">Number of Kids</option>
+  {% for option in has_kids_options %}
+    <option value="{{ option }}" {% if profile.has_kids == option %}selected{% endif %}>{{ option }}</option>
+  {% endfor %}
+</select>
+
                 </div>
               </div>
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Wants Kids</label>
-                  <input name="wants_kids" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.wants_kids|default:'' }}" placeholder="e.g. Someday">
+                  <select name="wants_kids" class="form-control form-control-alternative">
+  <option value="">Do You Want Kids?</option>
+  {% for option in wants_kids_options %}
+    <option value="{{ option }}" {% if profile.wants_kids == option %}selected{% endif %}>{{ option }}</option>
+  {% endfor %}
+</select>
+
                 </div>
               </div>
             </div>
@@ -295,15 +355,25 @@
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Zodiac Sign</label>
-                  <input name="zodiac_sign" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.zodiac_sign|default:'' }}" placeholder="e.g. Aries">
+                 <select name="zodiac" class="form-control form-control-alternative">
+  <option value="">Select Zodiac</option>
+  {% for option in zodiac_options %}
+    <option value="{{ option }}" {% if profile.zodiac == option %}selected{% endif %}>{{ option }}</option>
+  {% endfor %}
+</select>
+
                 </div>
               </div>
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Relationship Goals</label>
-                  <input name="relationship_goals" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.relationship_goals|default:'' }}" placeholder="e.g. Long-term">
+                  <select name="relationship_goal" class="form-control form-control-alternative">
+  <option value="">Relationship Goal</option>
+  {% for option in relationship_options %}
+    <option value="{{ option }}" {% if profile.relationship_goal == option %}selected{% endif %}>{{ option }}</option>
+  {% endfor %}
+</select>
+
                 </div>
               </div>
             </div>
