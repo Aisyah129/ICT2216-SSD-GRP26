@@ -1,0 +1,11 @@
+.pagination .page-link {
+    min-width: 80px;
+    text-align: center;
+    padding: 6px 12px;
+    font-size: 0.875rem;
+}
+
+.pagination .page-item.disabled .page-link {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
