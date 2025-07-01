@@ -31,9 +31,9 @@
               <td>{{ user.role }}</td>
               <td>
                 {% if user.is_premium %}
-                  <span class="badge badge-success">Yes</span>
+                <span class="badge badge-success">Yes</span>
                 {% else %}
-                  <span class="badge badge-secondary">No</span>
+                <span class="badge badge-secondary">No</span>
                 {% endif %}
               </td>
               <td>{{ user.created_at|date:"Y-m-d H:i" }}</td>
@@ -53,5 +53,123 @@
     </div>
 
   </div>
+</div>
+
+<div class="row mt-5">
+  <div class="col">
+    <h2 class="mb-4">🛡️ Security Logs</h2>
+
+    <div class="card shadow">
+      <div class="card-header border-0 d-flex justify-content-between align-items-center flex-wrap">
+        <h3 class="mb-0">Recent Activity</h3>
+        <form method="get" class="form-inline">
+          <input type="text" name="user_email" placeholder="Search by user email" class="form-control mr-2 mb-1"
+            value="{{ request.GET.user_email }}">
+
+          {% with severity_value=request.GET.severity %}
+          <select name="severity" class="form-control mr-2 mb-1">
+            <option value="">All Severities</option>
+
+            {% if severity_value == "INFO" %}
+            <option value="INFO" selected>INFO</option>
+            {% else %}
+            <option value="INFO">INFO</option>
+            {% endif %}
+
+            {% if severity_value == "WARNING" %}
+            <option value="WARNING" selected>WARNING</option>
+            {% else %}
+            <option value="WARNING">WARNING</option>
+            {% endif %}
+
+            {% if severity_value == "CRITICAL" %}
+            <option value="CRITICAL" selected>CRITICAL</option>
+            {% else %}
+            <option value="CRITICAL">CRITICAL</option>
+            {% endif %}
+          </select>
+
+          {% endwith %}
+
+          <button type="submit" class="btn btn-primary mb-1">Filter</button>
+        </form>
+        <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary mb-1">Clear</a>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-items-center">
+          <thead class="thead-light">
+            <tr>
+              <th scope="col">Timestamp</th>
+              <th scope="col">User</th>
+              <th scope="col">Action</th>
+              <th scope="col">Severity</th>
+              <th scope="col">IP Address</th>
+              <th scope="col">Metadata</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in logs %}
+            <tr>
+              <td>{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+              <td>
+                {% if log.user %}
+                {{ log.user.email }}
+                {% else %}
+                Anonymous
+                {% endif %}
+              </td>
+              <td>{{ log.action_type }}</td>
+              <td>
+                {% if log.severity == "CRITICAL" %}
+                <span class="badge badge-danger">{{ log.severity }}</span>
+                {% elif log.severity == "WARNING" %}
+                <span class="badge badge-warning">{{ log.severity }}</span>
+                {% else %}
+                <span class="badge badge-info">{{ log.severity }}</span>
+                {% endif %}
+              </td>
+              <td>{{ log.ip_address|default:"-" }}</td>
+              <td>
+                {% if log.metadata %}
+                <code style="white-space: pre-wrap;">{{ log.metadata|safe }}</code>
+                {% else %}
+                -
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted">No logs found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <!-- Pagination -->
+      <nav>
+        <ul class="pagination justify-content-center mt-3">
+          {% if logs.has_previous %}
+          <li class="page-item">
+            <a class="page-link"
+              href="?page={{ logs.previous_page_number }}&severity={{ request.GET.severity }}&user_email={{ request.GET.user_email }}">Previous</a>
+          </li>
+          {% endif %}
+
+          <li class="page-item disabled">
+            <span class="page-link">Page {{ logs.number }} of {{ logs.paginator.num_pages }}</span>
+          </li>
+
+          {% if logs.has_next %}
+          <li class="page-item">
+            <a class="page-link"
+              href="?page={{ logs.next_page_number }}&severity={{ request.GET.severity }}&user_email={{ request.GET.user_email }}">Next</a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
 </div>
 {% endblock %}
