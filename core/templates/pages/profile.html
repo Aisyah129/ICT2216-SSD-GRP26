@@ -147,8 +147,14 @@
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Gender</label>
-                  <input name="gender" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.gender|default:'' }}" placeholder="e.g. Male, Female">
+                  <select name="gender" class="form-control form-control-alternative">
+  <option value="">Select Gender</option>
+  <option value="Male" {% if profile.gender == "Male" %}selected{% endif %}>Male</option>
+  <option value="Female" {% if profile.gender == "Female" %}selected{% endif %}>Female</option>
+  <option value="Non-binary" {% if profile.gender == "Non-binary" %}selected{% endif %}>Non-binary</option>
+  <option value="Prefer not to say" {% if profile.gender == "Prefer not to say" %}selected{% endif %}>Prefer not to say</option>
+</select>
+
                 </div>
               </div>
               <div class="col-lg-4">
