@@ -160,8 +160,12 @@
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Height (cm)</label>
-                  <input name="height_cm" type="number" class="form-control form-control-alternative"
-                    value="{{ profile.height_cm|default:'' }}" placeholder="e.g. 170">
+                 <select name="height_cm" class="form-control form-control-alternative">
+  <option value="">Select Height (cm)</option>
+  {% for cm in 140|to_range:221 %}
+    <option value="{{ cm }}" {% if profile.height_cm == cm %}selected{% endif %}>{{ cm }} cm</option>
+  {% endfor %}
+</select>
                 </div>
               </div>
             </div>
