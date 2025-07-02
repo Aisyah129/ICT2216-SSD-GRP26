@@ -362,31 +362,15 @@
     modal.show();
   }
 
-  async function encryptMessage(message) {
-    const keyB64 = "{{ AES_JS_KEY|default:'' }}"; // add to context
-    const keyBytes = Uint8Array.from(atob(keyB64), c => c.charCodeAt(0));
-    const key = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);
-
-    const encoder = new TextEncoder();
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoder.encode(message));
-
-    return {
-      ciphertext: btoa(String.fromCharCode(...new Uint8Array(ciphertext))),
-      nonce: btoa(String.fromCharCode(...iv))
-    };
-  }
-
   document.querySelector("form").addEventListener("submit", async (e) => {
     const input = document.querySelector("input[name='message']");
     const plain = input.value.trim();
     if (!plain) return;
 
     e.preventDefault();
-    const encrypted = await encryptMessage(plain);
     const form = new FormData();
     form.append("csrfmiddlewaretoken", "{{ csrf_token }}");
-    form.append("message", JSON.stringify(encrypted));
+    form.append("message", plain);
     await fetch(location.href, { method: "POST", body: form });
     location.reload();
   });
