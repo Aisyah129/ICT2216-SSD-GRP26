@@ -9,3 +9,8 @@
     background-color: #f8f9fa;
     color: #6c757d;
 }
+
+.nav-link.active {
+  border-bottom: 2px solid #007bff;
+}
+
