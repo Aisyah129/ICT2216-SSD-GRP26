@@ -5,7 +5,7 @@ import json
 import os
 import random
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional  # ← used in a few type-hints
 
 # ✦ Third-party libraries
@@ -810,7 +810,7 @@ def append_message(match, sender_id, text):
         "sender_user_id": sender_id,
         "ciphertext": cipher_b64,
         "nonce": nonce_b64,
-        "sent_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "sent_at": timezone.now().isoformat(timespec="seconds"),
         "is_read": False,
         "encryption_meta": {"alg": "AES-GCM", "version": 1},
     }
