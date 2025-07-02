@@ -186,16 +186,42 @@
   }
 </style>
 
+{% if messages %}
+<div class="container mt-3"
+  style="position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 2000; width: 90%; max-width: 500px;">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
 
 <div class="profile-container">
   <!-- LEFT: Profile Image/Carousel -->
   <div class="profile-left">
     <span class="match-score">🔥 Match Score: {{ entry.score }}%</span>
 
-    <button class="btn btn-outline-primary preferences-button" data-bs-toggle="modal"
-      data-bs-target="#preferencesModal">
-      ⚙️ Preferences
-    </button>
+    <div class="d-flex justify-content-end mb-3 gap-2">
+      <button class="btn btn-outline-primary preferences-button" data-bs-toggle="modal"
+        data-bs-target="#preferencesModal">
+        ⚙️ Preferences
+      </button>
+    </div>
+
+    <!-- Report Button (move to bottom-right of the profile section) -->
+    <div class="d-flex justify-content-end mt-3">
+      {% if already_reported %}
+      <button class="btn btn-outline-danger btn-sm" disabled title="You've already reported this user.">
+        <i class="fa fa-flag"></i> Already Reported
+      </button>
+      {% else %}
+      <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#reportModal">
+        <i class="fa fa-flag"></i> Report
+      </button>
+      {% endif %}
+    </div>
 
     {% with images=entry.images %}
     {% if images|length > 1 %}
@@ -203,7 +229,7 @@
       <div class="carousel-inner">
         {% for image in images %}
         <div class="carousel-item {% if forloop.first %}active{% endif %}">
-          <img src="{{ image.image_url }}" class="d-block w-100" alt="Profile image">
+          <img src="{{ image.url }}" class="d-block w-100" alt="Profile image">
         </div>
         {% endfor %}
       </div>
@@ -215,7 +241,7 @@
       </button>
     </div>
     {% elif images %}
-    <img src="{{ images.0.image_url }}" alt="Profile image">
+    <img src="{{ images.0.url }}" alt="Profile image">
     {% else %}
     <img src="{% static 'images/default-avatar.jpg' %}" alt="Default avatar">
     {% endif %}
@@ -326,8 +352,21 @@
 {% endif %}
 
 {% include "pages/preferences_modal_form.html" %}
+{% include "pages/report_modal_form.html" with profile=entry.profile %}
 {% endblock %}
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Auto-dismiss Bootstrap alerts after 3 seconds with fade out
+  setTimeout(() => {
+    document.querySelectorAll('.alert').forEach(alert => {
+      alert.classList.add('fade');
+      alert.classList.add('show');
+      alert.style.transition = 'opacity 0.5s ease';
+      alert.style.opacity = '0';
+      setTimeout(() => alert.remove(), 500); // Remove after fade
+    });
+  }, 3000);
+</script>
 {% endblock %}

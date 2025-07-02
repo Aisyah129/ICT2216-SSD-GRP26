@@ -110,7 +110,6 @@
             style="max-height: 200px; object-fit: cover;" 
             alt="Blurred Profile Picture">
 
-
           <h5 class="card-title">{{ user.name }}, {{ user.age }}</h5>
           <p class="card-text text-muted">Liked you on {{ user.liked_date|date:"d M Y" }}</p>
 
@@ -167,7 +166,6 @@
             class="img-fluid rounded mb-2"
             style="max-height: 200px; object-fit: cover;">
 
-
           <h5 class="card-title">{{ user.name }}, {{ user.age }}</h5>
           <p class="card-text text-muted">You liked them on {{ user.liked_date|date:"d M Y" }}</p>
 
@@ -200,7 +198,7 @@
       <div class="modal-body d-flex flex-column flex-md-row px-4 py-4" style="height: 85vh; overflow: hidden;">
         <!-- Left: Profile Image Section (50%) -->
         <div class="d-flex flex-column align-items-center justify-content-center text-center" style="flex: 1;">
-          <img id="modalImage"
+           <img id="modalImage"
             class="img-fluid rounded shadow mb-3"
             style="max-height: 500px; object-fit: cover; border-radius: 1rem;"
             alt="Profile"
@@ -504,7 +502,7 @@
     document.getElementById("modalTitle").innerText = `Profile of ${name}`;
     document.getElementById("modalDate").innerText = `Liked on ${date}`;
     document.getElementById("modalNameAge").innerText = `${name}, ${age}`;
-    
+
     const modalImage = document.getElementById("modalImage");
     modalImage.src = "";
     modalImage.onerror = null;
@@ -514,8 +512,6 @@
       this.onerror = null;
       this.src = "/static/images/default-avatar.jpg";
     };
-
-
 
     const profileDiv = document.getElementById(`user-${card.dataset.userId}`);
     if (!profileDiv) return;
