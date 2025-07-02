@@ -13,7 +13,6 @@
           <h4 class="mb-0">💬 Conversations</h4>
         </div>
 
-
         <div class="list-group list-group-flush">
           {% for convo in conversations %}
           <a href="{% url 'messages_with' convo.user_id %}" class="list-group-item list-group-item-action d-flex align-items-center
@@ -75,7 +74,6 @@
         <div id="chat-window" class="card-body flex-grow-1 overflow-auto px-4"
           style="scroll-behavior: smooth; min-height: 0;">
 
-
           <div id="message-list">
             {% for message in messages %}
             {% if message.sender_user_id == user.user_id %}
@@ -115,37 +113,6 @@
               </div>
             </div>
           </form>
-
-          <script>
-            async function encryptMessage(message) {
-              const keyB64 = "{{ AES_JS_KEY|default:'' }}"; // add to context
-              const keyBytes = Uint8Array.from(atob(keyB64), c => c.charCodeAt(0));
-              const key = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);
-
-              const encoder = new TextEncoder();
-              const iv = crypto.getRandomValues(new Uint8Array(12));
-              const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoder.encode(message));
-
-              return {
-                ciphertext: btoa(String.fromCharCode(...new Uint8Array(ciphertext))),
-                nonce: btoa(String.fromCharCode(...iv))
-              };
-            }
-
-            document.querySelector("form").addEventListener("submit", async (e) => {
-              const input = document.querySelector("input[name='message']");
-              const plain = input.value.trim();
-              if (!plain) return;
-
-              e.preventDefault();
-              const encrypted = await encryptMessage(plain);
-              const form = new FormData();
-              form.append("csrfmiddlewaretoken", "{{ csrf_token }}");
-              form.append("message", JSON.stringify(encrypted));
-              await fetch(location.href, { method: "POST", body: form });
-              location.reload();
-            });
-          </script>
 
         </div>
       </div><!-- /.card -->
@@ -245,10 +212,12 @@
 <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-xl custom-wide-modal">
     <div class="modal-content">
+
       <div class="modal-header">
         <h5 class="modal-title" id="modalTitle">Profile</h5>
         <button type="button" class="custom-close-button" data-bs-dismiss="modal" aria-label="Close">×</button>
       </div>
+
       <div class="modal-body d-flex flex-column flex-md-row px-4 py-4" style="height: 85vh; overflow: hidden;">
         <!-- Left: Profile Image Section -->
         <div class="d-flex flex-column align-items-center justify-content-center text-center" style="flex: 1;">
@@ -333,6 +302,7 @@
 
 
 {% block javascripts %}
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -391,6 +361,36 @@
     const modal = new bootstrap.Modal(document.getElementById("profileModal"));
     modal.show();
   }
+
+  async function encryptMessage(message) {
+    const keyB64 = "{{ AES_JS_KEY|default:'' }}"; // add to context
+    const keyBytes = Uint8Array.from(atob(keyB64), c => c.charCodeAt(0));
+    const key = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);
+
+    const encoder = new TextEncoder();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoder.encode(message));
+
+    return {
+      ciphertext: btoa(String.fromCharCode(...new Uint8Array(ciphertext))),
+      nonce: btoa(String.fromCharCode(...iv))
+    };
+  }
+
+  document.querySelector("form").addEventListener("submit", async (e) => {
+    const input = document.querySelector("input[name='message']");
+    const plain = input.value.trim();
+    if (!plain) return;
+
+    e.preventDefault();
+    const encrypted = await encryptMessage(plain);
+    const form = new FormData();
+    form.append("csrfmiddlewaretoken", "{{ csrf_token }}");
+    form.append("message", JSON.stringify(encrypted));
+    await fetch(location.href, { method: "POST", body: form });
+    location.reload();
+  });
+
 </script>
 
 {% endblock %}

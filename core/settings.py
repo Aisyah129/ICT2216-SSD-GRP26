@@ -8,6 +8,9 @@ import os
 from decouple import config
 from unipath import Path
 import pymysql
+from base64 import b64decode
+
+AES_KEY = b64decode(config('AES_KEY'))  # This will load the AES key from .env
 
 pymysql.install_as_MySQLdb()
 
@@ -104,7 +107,6 @@ AWS_STORAGE_BUCKET_NAME  = config("AWS_STORAGE_BUCKET_NAME")
 AWS_S3_REGION_NAME       = config("AWS_S3_REGION_NAME", default="ap-southeast-1")
 AWS_S3_ENDPOINT          = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
 
-
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
 
@@ -122,7 +124,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
@@ -156,7 +157,6 @@ LOGOUT_REDIRECT_URL = 'login'
 
 # ImageKit Settings
 IMAGEKIT_URL_ENDPOINT = config('IMAGEKIT_URL_ENDPOINT')
-
 
 SENDGRID_API_KEY = config("SENDGRID_API_KEY")
 DEFAULT_FROM_EMAIL = config("FROM_EMAIL")
