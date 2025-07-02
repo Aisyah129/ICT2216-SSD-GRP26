@@ -59,8 +59,17 @@
 
           <div class="mb-3">
             <label for="details" class="form-label">Description</label>
-            <textarea class="form-control" name="details" id="details" rows="3"
-              placeholder="Provide more context..." required></textarea>
+            <textarea
+              class="form-control"
+              name="details"
+              id="details"
+              rows="3"
+              placeholder="Provide more context..."
+              minlength="10"
+              maxlength="300"
+              required
+            ></textarea>
+            <small id="detailsFeedback" class="text-error"></small>
           </div>
         </div>
         <div class="modal-footer">
@@ -71,3 +80,34 @@
     </div>
   </div>
 </div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form    = document.querySelector('#reportModal form');
+  const details = document.getElementById('details');
+  const feedback= document.getElementById('detailsFeedback');
+
+  const validate = () => {
+    const len = details.value.trim().length;
+    if (len < 10) {
+      details.setCustomValidity('Please enter at least 10 characters.');
+      feedback.textContent = `Minimum 10 chars required (${len}/10).`;
+    } else {
+      details.setCustomValidity('');
+      feedback.textContent = '';
+    }
+  };
+
+  // Live check on input
+  details.addEventListener('input', validate);
+
+  // Final check on submit
+  form.addEventListener('submit', e => {
+    validate();
+    if (!form.checkValidity()) {
+      e.preventDefault();
+      details.reportValidity();
+    }
+  });
+});

@@ -108,17 +108,27 @@
 
             <!-- Name -->
             <div class="form-group">
-
+              <label for="id_name">Name</label>
               <div class="input-group input-group-alternative mb-3">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="ni ni-single-02"></i></span>
                 </div>
-                {{ form.name }}
+                <input
+                  type="text"
+                  name="name"
+                  id="id_name"
+                  class="form-control"
+                  placeholder="Name"
+                  pattern="[A-Za-z\s\-]+"
+                  title="Only letters, spaces, and hyphens"
+                  required
+                >
               </div>
               {% for error in form.name.errors %}
                 <span class="text-error">{{ error }}</span>
               {% endfor %}
             </div>
+
 
             <!-- Age -->
             <div class="form-group">
@@ -143,17 +153,27 @@
 
             <!-- Location -->
             <div class="form-group">
-
+              <label for="id_location">Location</label>
               <div class="input-group input-group-alternative mb-3">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="ni ni-pin-3"></i></span>
                 </div>
-                {{ form.location }}
+                <input
+                  type="text"
+                  name="location"
+                  id="id_location"
+                  class="form-control"
+                  placeholder="e.g. Singapore, Kuala Lumpur"
+                  pattern="[A-Za-z,\s]{2,50}"
+                  title="Only letters, commas, and spaces (2–50 chars)"
+                  maxlength="50"
+                >
               </div>
               {% for error in form.location.errors %}
                 <span class="text-error">{{ error }}</span>
               {% endfor %}
             </div>
+
 
 
             <!-- Privacy Checkbox -->
