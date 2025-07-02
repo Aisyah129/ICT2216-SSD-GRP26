@@ -1,6 +1,7 @@
 # authentication/forms.py
 
 from django import forms
+from django.contrib.auth.password_validation import validate_password
 from authentication.models import Profile  
 import re
 
@@ -36,18 +37,29 @@ class VerificationCodeForm(forms.Form):
 class SetNewPasswordForm(forms.Form):
     new_password = forms.CharField(widget=forms.PasswordInput(attrs={
         'class': 'form-control form-control-alternative',
-        'placeholder': 'New Password'
-    }))
+        'placeholder': 'New Password',
+        'minlength': '8',
+        'maxlength': '64',
+        'pattern': '.{8,64}',
+        'title': '8–64 characters'
+    }), help_text="Use 8–64 characters; a memorable passphrase is best.")
     confirm_password = forms.CharField(widget=forms.PasswordInput(attrs={
         'class': 'form-control form-control-alternative',
-        'placeholder': 'Confirm Password'
+        'placeholder': 'Confirm Password',
+        'minlength': '8',
+        'maxlength': '64',
+        'title': 'Repeat your password'
     }))
 
     def clean(self):
         cleaned_data = super().clean()
-        if cleaned_data['new_password'] != cleaned_data['confirm_password']:
+        pwd = cleaned_data.get('new_password')
+        cpwd = cleaned_data.get('confirm_password')
+        if pwd and cpwd and pwd != cpwd:
             raise forms.ValidationError("Passwords do not match.")
-
+        # Validate length and common/breach via validators
+        validate_password(pwd)
+        return cleaned_data
 
 
 class SignUpForm(forms.Form):
@@ -61,14 +73,22 @@ class SignUpForm(forms.Form):
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Password'
-        })
+            'placeholder': 'Password',
+            'minlength': '8',
+            'maxlength': '64',
+            'pattern': '.{8,64}',
+            'title': '8–64 characters'
+        }),
+        help_text="Use 8–64 characters; a memorable passphrase is best."
     )
 
     confirm_password = forms.CharField(
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Confirm Password'
+            'placeholder': 'Confirm Password',
+            'minlength': '8',
+            'maxlength': '64',
+            'title': 'Repeat your password'
         })
     )
 
@@ -105,19 +125,23 @@ class SignUpForm(forms.Form):
         })
     )
 
+    def clean_password(self):
+        pwd = self.cleaned_data.get('password')
+        validate_password(pwd)
+        return pwd
+
+    def clean_confirm_password(self):
+        pwd  = self.cleaned_data.get('password')
+        cpwd = self.cleaned_data.get('confirm_password')
+        if pwd and cpwd and pwd != cpwd:
+            raise forms.ValidationError("Passwords do not match.")
+        return cpwd
+
     def clean_name(self):
         name = self.cleaned_data.get('name')
         if not re.match(r'^[A-Za-z\s]+$', name):
             raise forms.ValidationError("Name can only contain letters and spaces.")
         return name
-    
-    def clean_confirm_password(self):
-        password = self.cleaned_data.get("password")
-        confirm_password = self.cleaned_data.get("confirm_password")
-
-        if password and confirm_password and password != confirm_password:
-            raise forms.ValidationError("Passwords do not match.")
-        return confirm_password
 
 
 class ProfileForm(forms.ModelForm):
