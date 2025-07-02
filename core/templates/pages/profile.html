@@ -134,21 +134,23 @@
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Age</label>
-                  <input name="age" type="number" class="form-control form-control-alternative"
+                  <input name="age" type="number" min="18" max="90" class="form-control form-control-alternative"
                     value="{{ profile.age|default:'' }}" placeholder="Your age">
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Gender</label>
-                  <input name="gender" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.gender|default:'' }}" placeholder="e.g. Male, Female">
+                  <select name="gender" class="form-control form-control-alternative" disabled>
+                    <option value="male" {% if profile.gender == "male" %}selected{% endif %}>Male</option>
+                    <option value="female" {% if profile.gender == "female" %}selected{% endif %}>Female</option>
+                  </select>
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Height (cm)</label>
-                  <input name="height_cm" type="number" class="form-control form-control-alternative"
+                  <input name="height_cm" type="number" min="100" max="250" class="form-control form-control-alternative"
                     value="{{ profile.height_cm|default:'' }}" placeholder="e.g. 170">
                 </div>
               </div>
@@ -158,15 +160,23 @@
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Sexual Orientation</label>
-                  <input name="sexual_orientation" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.sexual_orientation|default:'' }}" placeholder="e.g. Straight, Gay">
+                  <select name="sexual-orientation" class="form-select" disabled>
+                    <option value="">-- Select Sexual Orientation --</option>
+                    <option value="straight" {% if profile.sexual_orientation == "straight" %}selected{% endif %}>Straight</option>
+                    <option value="gay" {% if profile.sexual_orientation == "gay" %}selected{% endif %}>Gay</option>
+                    <option value="bisexual" {% if profile.sexual_orientation == "bisexual" %}selected{% endif %}>Bisexual</option>
+                  </select>
                 </div>
               </div>
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Pronouns</label>
-                  <input name="pronouns" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.pronouns|default:'' }}" placeholder="e.g. He/Him">
+                  <select name="pronouns" class="form-select">
+                    <option value="">-- Select Pronouns --</option>
+                    <option value="he/him" {% if profile.pronouns == "he/him" %}selected{% endif %}>He/Him</option>
+                    <option value="she/her" {% if profile.pronouns == "she/her" %}selected{% endif %}>She/Her</option>
+                    <option value="they/them" {% if profile.pronouns == "they/them" %}selected{% endif %}>They/Them</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -175,8 +185,19 @@
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Body Type</label>
-                  <input name="body_type" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.body_type|default:'' }}" placeholder="e.g. Athletic">
+                  <select name="body_type" class="form-select">
+                    <option value="">-- Select Body Type --</option>
+                    <option value="thin" {% if profile.body_type == "thin" %}selected{% endif %}>Thin</option>
+                    <option value="skinny" {% if profile.body_type == "skinny" %}selected{% endif %}>Skinny</option>
+                    <option value="fit" {% if profile.body_type == "fit" %}selected{% endif %}>Fit</option>
+                    <option value="athletic" {% if profile.body_type == "athletic" %}selected{% endif %}>Athletic</option>
+                    <option value="jacked" {% if profile.body_type == "jacked" %}selected{% endif %}>Jacked</option>
+                    <option value="average" {% if profile.body_type == "average" %}selected{% endif %}>Average</option>
+                    <option value="curvy" {% if profile.body_type == "curvy" %}selected{% endif %}>Curvy</option>
+                    <option value="a little extra" {% if profile.body_type == "a little extra" %}selected{% endif %}>A little extra</option>
+                    <option value="full figured" {% if profile.body_type == "full figured" %}selected{% endif %}>Full figured</option>
+                    <option value="overweight" {% if profile.body_type == "overweight" %}selected{% endif %}>Overweight</option>
+                  </select>
                 </div>
               </div>
               <div class="col-lg-6">
@@ -192,8 +213,13 @@
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Education Level</label>
-                  <input name="education_level" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.education_level|default:'' }}" placeholder="e.g. University">
+                  <select name="education_level" class="form-select">
+                    <option value="">-- Select Education Level --</option>
+                    <option value="secondary school" {% if profile.education_level == "secondary school" %}selected{% endif %}>Secondary School</option>
+                    <option value="diploma" {% if profile.education_level == "diploma" %}selected{% endif %}>Diploma</option>
+                    <option value="undergraduate" {% if profile.education_level == "undergraduate" %}selected{% endif %}>Undergraduate</option>
+                    <option value="postgraduate" {% if profile.education_level == "postgraduate" %}selected{% endif %}>Postgraduate</option>
+                  </select>
                 </div>
               </div>
               <div class="col-lg-6">
@@ -209,22 +235,46 @@
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Religion</label>
-                  <input name="religion" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.religion|default:'' }}" placeholder="e.g. Christian">
+                  <select name="religion" class="form-select">
+                    <option value="">-- Select Religion --</option>
+                    <option value="agnostic" {% if profile.religion == "agnostic" %}selected{% endif %}>Agnostic</option>
+                    <option value="atheist" {% if profile.religion == "atheist" %}selected{% endif %}>Atheist</option>
+                    <option value="buddhist" {% if profile.religion == "buddhist" %}selected{% endif %}>Buddhist</option>
+                    <option value="catholic" {% if profile.religion == "catholic" %}selected{% endif %}>Catholic</option>
+                    <option value="christian" {% if profile.religion == "christian" %}selected{% endif %}>Christian</option>
+                    <option value="hindu" {% if profile.religion == "hindu" %}selected{% endif %}>Hindu</option>
+                    <option value="islam" {% if profile.religion == "islam" %}selected{% endif %}>Islam</option>
+                    <option value="jewish" {% if profile.religion == "jewish" %}selected{% endif %}>Jewish</option>
+                    <option value="others" {% if profile.religion == "others" %}selected{% endif %}>Others</option>
+                  </select>
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Ethnicity</label>
-                  <input name="ethnicity" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.ethnicity|default:'' }}" placeholder="e.g. Chinese">
+                  <select name="ethnicity" class="form-select" {% if not is_editing %}disabled{% endif %}>
+                    <option value="">-- Select Ethnicity --</option>
+                    <option value="asian" {% if profile.ethnicity == "asian" %}selected{% endif %}>Asian</option>
+                    <option value="black" {% if profile.ethnicity == "black" %}selected{% endif %}>Black</option>
+                    <option value="hispanic" {% if profile.ethnicity == "hispanic" %}selected{% endif %}>Hispanic</option>
+                    <option value="middle eastern" {% if profile.ethnicity == "middle eastern" %}selected{% endif %}>Middle Eastern</option>
+                    <option value="white" {% if profile.ethnicity == "white" %}selected{% endif %}>White</option>
+                    <option value="mixed" {% if profile.ethnicity == "mixed" %}selected{% endif %}>Mixed</option>
+                    <option value="other" {% if profile.ethnicity == "other" %}selected{% endif %}>Other</option>
+                  </select>
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Politics</label>
-                  <input name="politics" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.politics|default:'' }}" placeholder="e.g. Moderate">
+                  <select name="politics" class="form-select" {% if not is_editing %}disabled{% endif %}>
+                    <option value="">-- Select Political View --</option>
+                    <option value="liberal" {% if profile.politics == "liberal" %}selected{% endif %}>Liberal</option>
+                    <option value="moderate" {% if profile.politics == "moderate" %}selected{% endif %}>Moderate</option>
+                    <option value="conservative" {% if profile.politics == "conservative" %}selected{% endif %}>Conservative</option>
+                    <option value="not political" {% if profile.politics == "not political" %}selected{% endif %}>Not Political</option>
+                    <option value="other" {% if profile.politics == "other" %}selected{% endif %}>Other</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -233,22 +283,34 @@
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Smoking</label>
-                  <input name="smoking" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.smoking|default:'' }}" placeholder="e.g. Never">
+                  <select name="smoking" class="form-select" {% if not is_editing %}disabled{% endif %}>
+                    <option value="">-- Select Smoking Habit --</option>
+                    <option value="yes" {% if profile.smoking == "yes" %}selected{% endif %}>Yes</option>
+                    <option value="sometimes" {% if profile.smoking == "sometimes" %}selected{% endif %}>Sometimes</option>
+                    <option value="no" {% if profile.smoking == "no" %}selected{% endif %}>No</option>
+                  </select>
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Drinking</label>
-                  <input name="drinking" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.drinking|default:'' }}" placeholder="e.g. Socially">
+                  <select name="drinking" class="form-select" {% if not is_editing %}disabled{% endif %}>
+                    <option value="">-- Select Drinking Habit --</option>
+                    <option value="yes" {% if profile.drinking == "yes" %}selected{% endif %}>Yes</option>
+                    <option value="sometimes" {% if profile.drinking == "sometimes" %}selected{% endif %}>Sometimes</option>
+                    <option value="no" {% if profile.drinking == "no" %}selected{% endif %}>No</option>
+                  </select>
                 </div>
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Drug Use</label>
-                  <input name="drug_use" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.drug_use|default:'' }}" placeholder="e.g. Never">
+                  <select name="drug_use" class="form-select" {% if not is_editing %}disabled{% endif %}>
+                    <option value="">-- Select Drug Use --</option>
+                    <option value="yes" {% if profile.drug_use == "yes" %}selected{% endif %}>Yes</option>
+                    <option value="sometimes" {% if profile.drug_use == "sometimes" %}selected{% endif %}>Sometimes</option>
+                    <option value="no" {% if profile.drug_use == "no" %}selected{% endif %}>No</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -257,15 +319,22 @@
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Has Kids</label>
-                  <input name="has_kids" type="number" class="form-control form-control-alternative"
-                    value="{{ profile.has_kids|default:'' }}" placeholder="e.g. 0 or 1">
+                  <select name="has_kids" class="form-select" {% if not is_editing %}disabled{% endif %}>
+                    <option value="">-- Select Option --</option>
+                    <option value="1" {% if profile.has_kids == 1 %}selected{% endif %}>Yes</option>
+                    <option value="0" {% if profile.has_kids == 0 %}selected{% endif %}>No</option>
+                  </select>
                 </div>
               </div>
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Wants Kids</label>
-                  <input name="wants_kids" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.wants_kids|default:'' }}" placeholder="e.g. Someday">
+                  <select name="wants_kids" class="form-select" {% if not is_editing %}disabled{% endif %}>
+                    <option value="">-- Select Option --</option>
+                    <option value="don't want kids" {% if profile.wants_kids == "don't want kids" %}selected{% endif %}>Don't want kids</option>
+                    <option value="open to kids" {% if profile.wants_kids == "open to kids" %}selected{% endif %}>Open to kids</option>
+                    <option value="want kids" {% if profile.wants_kids == "want kids" %}selected{% endif %}>Want kids</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -274,15 +343,33 @@
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Zodiac Sign</label>
-                  <input name="zodiac_sign" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.zodiac_sign|default:'' }}" placeholder="e.g. Aries">
+                  <select name="zodiac_sign" class="form-select" {% if not is_editing %}disabled{% endif %}>
+                    <option value="">-- Select Sign --</option>
+                    <option value="aries" {% if profile.zodiac_sign == "aries" %}selected{% endif %}>Aries</option>
+                    <option value="taurus" {% if profile.zodiac_sign == "taurus" %}selected{% endif %}>Taurus</option>
+                    <option value="gemini" {% if profile.zodiac_sign == "gemini" %}selected{% endif %}>Gemini</option>
+                    <option value="cancer" {% if profile.zodiac_sign == "cancer" %}selected{% endif %}>Cancer</option>
+                    <option value="leo" {% if profile.zodiac_sign == "leo" %}selected{% endif %}>Leo</option>
+                    <option value="virgo" {% if profile.zodiac_sign == "virgo" %}selected{% endif %}>Virgo</option>
+                    <option value="libra" {% if profile.zodiac_sign == "libra" %}selected{% endif %}>Libra</option>
+                    <option value="scorpio" {% if profile.zodiac_sign == "scorpio" %}selected{% endif %}>Scorpio</option>
+                    <option value="sagittarius" {% if profile.zodiac_sign == "sagittarius" %}selected{% endif %}>Sagittarius</option>
+                    <option value="capricorn" {% if profile.zodiac_sign == "capricorn" %}selected{% endif %}>Capricorn</option>
+                    <option value="aquarius" {% if profile.zodiac_sign == "aquarius" %}selected{% endif %}>Aquarius</option>
+                    <option value="pisces" {% if profile.zodiac_sign == "pisces" %}selected{% endif %}>Pisces</option>
+                  </select>
                 </div>
               </div>
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Relationship Goals</label>
-                  <input name="relationship_goals" type="text" class="form-control form-control-alternative"
-                    value="{{ profile.relationship_goals|default:'' }}" placeholder="e.g. Long-term">
+                  <select name="relationship_goals" class="form-select" {% if not is_editing %}disabled{% endif %}>
+                    <option value="">-- Select Goal --</option>
+                    <option value="life partner" {% if profile.relationship_goals == "life partner" %}selected{% endif %}>Life Partner</option>
+                    <option value="long-term relationship" {% if profile.relationship_goals == "long-term relationship" %}selected{% endif %}>Long-Term Relationship</option>
+                    <option value="short-term relationship" {% if profile.relationship_goals == "short-term relationship" %}selected{% endif %}>Short-Term Relationship</option>
+                    <option value="casual" {% if profile.relationship_goals == "casual" %}selected{% endif %}>Casual</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -325,7 +412,7 @@
     const editBtn = document.getElementById('editProfileBtn');
     const saveBtn = document.getElementById('saveProfileBtn');
     const cancelBtn = document.getElementById('cancelProfileBtn');
-    const inputs = form.querySelectorAll('input, textarea');
+    const inputs = form.querySelectorAll('input, textarea, select');
 
     const setDisabled = (state) => {
       inputs.forEach(el => state
