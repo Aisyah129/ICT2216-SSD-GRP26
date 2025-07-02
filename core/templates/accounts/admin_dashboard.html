@@ -8,9 +8,30 @@
     <h2 class="mb-4">👤 User Account Management</h2>
 
     <div class="card shadow">
-      <div class="card-header border-0">
+      <div class="card-header border-0 d-flex justify-content-between align-items-center flex-wrap">
         <h3 class="mb-0">Registered Users</h3>
+        <form method="get" class="form-inline">
+          <input type="text" name="search_user" placeholder="Search email" class="form-control mr-2 mb-1"
+            value="{{ request.GET.search_user }}">
+
+          <select name="role" class="form-control mr-2 mb-1">
+            <option value="">All Roles</option>
+            <option value="user" {% if role_filter == "user" %}selected{% endif %}>User</option>
+            <option value="admin" {% if role_filter == "admin" %}selected{% endif %}>Admin</option>
+          </select>
+
+          <select name="is_premium" class="form-control mr-2 mb-1">
+            <option value="">All Plans</option>
+            <option value="true" {% if premium_filter == "true" %}selected{% endif %}>Premium</option>
+            <option value="false" {% if premium_filter == "false" %}selected{% endif %}>Free</option>
+          </select>
+
+          <button type="submit" class="btn btn-primary mb-1">Filter</button>
+        </form>
+        <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary mb-1">Clear</a>
       </div>
+
+
       <div class="table-responsive">
         <table class="table align-items-center table-flush">
           <thead class="thead-light">
@@ -20,6 +41,7 @@
               <th scope="col">Role</th>
               <th scope="col">Premium</th>
               <th scope="col">Created At</th>
+              <th scope="col">Last Login</th>
               <th scope="col">Actions</th>
             </tr>
           </thead>
@@ -37,6 +59,7 @@
                 {% endif %}
               </td>
               <td>{{ user.created_at|date:"Y-m-d H:i" }}</td>
+              <td>{{ user.last_login|date:"Y-m-d H:i" }}</td>
               <td>
                 <form method="POST" action="{% url 'admin_toggle_premium' user.user_id %}">
                   {% csrf_token %}
