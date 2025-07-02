@@ -38,8 +38,18 @@
               </td>
               <td>{{ user.created_at|date:"Y-m-d H:i" }}</td>
               <td>
-                <a href="#" class="btn btn-sm btn-info">Upgrade</a>
-                <a href="#" class="btn btn-sm btn-danger">Delete</a>
+                <form method="POST" action="{% url 'admin_toggle_premium' user.user_id %}">
+                  {% csrf_token %}
+                  <button class="btn btn-sm {% if user.is_premium %}btn-light{% else %}btn-primary{% endif %}">
+                    {% if user.is_premium %}⬇ Downgrade{% else %}⬆ Upgrade{% endif %}
+                  </button>
+                </form>
+
+                <form method="POST" action="{% url 'admin_delete_user' user.user_id %}"
+                  onsubmit="return confirm('Delete {{ user.email }} permanently?');">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-danger">🗑 Delete</button>
+                </form>
               </td>
             </tr>
             {% empty %}
