@@ -696,7 +696,8 @@ def likes_page(request):
                     'name': profile.name,
                     'age': profile.age,
                     'liked_date': like.liked_at,
-                    'image_url': image.image_url if image else None,
+                    'image_url': f"{settings.IMAGEKIT_URL_ENDPOINT}{image.image_url}" if image else settings.STATIC_URL + 'images/default-avatar.jpg',
+
                     'gender': profile.gender,
                     'location': profile.location,
                     'pronouns': profile.pronouns ,
@@ -825,7 +826,12 @@ def get_conversations_for(user):
                           .only("image_url")
                           .filter(profile_id_fk=profile, is_primary=1)
                           .first())
-        img_url = img.image_url if img else static("/static/images/default-avatar.jpg")
+        img_url = (
+            f"{settings.IMAGEKIT_URL_ENDPOINT}{img.image_url}"
+            if img else settings.STATIC_URL + "/static/images/default-avatar.jpg"
+        )
+
+
 
         conversations.append({
             "user_id":   other_uuid,
@@ -878,7 +884,12 @@ def messages_with(request, user_id):
         .filter(profile_id_fk=other_profile, is_primary=1)
         .first()
     )
-    avatar_url = img.image_url if img else settings.STATIC_URL + "img/avatar-placeholder.png"
+    avatar_url = (
+        f"{settings.IMAGEKIT_URL_ENDPOINT}{img.image_url}"
+        if img else settings.STATIC_URL + "img/avatar-placeholder.png"
+    )
+
+    #avatar_url = img.image_url if img else settings.STATIC_URL + "img/avatar-placeholder.png"#
 
     # ------------------------------------------------------------------
     # 1️⃣  Find the *active* Match row involving these two users
