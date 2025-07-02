@@ -141,7 +141,8 @@
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Gender</label>
-                  <select name="gender" class="form-control form-control-alternative" disabled>
+                  <select name="gender" class="form-select">
+                    <option value="">-- Select Gender --</option>
                     <option value="male" {% if profile.gender == "male" %}selected{% endif %}>Male</option>
                     <option value="female" {% if profile.gender == "female" %}selected{% endif %}>Female</option>
                   </select>
@@ -160,7 +161,7 @@
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>Sexual Orientation</label>
-                  <select name="sexual-orientation" class="form-select" disabled>
+                  <select name="sexual_orientation" class="form-select">
                     <option value="">-- Select Sexual Orientation --</option>
                     <option value="straight" {% if profile.sexual_orientation == "straight" %}selected{% endif %}>Straight</option>
                     <option value="gay" {% if profile.sexual_orientation == "gay" %}selected{% endif %}>Gay</option>
