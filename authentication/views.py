@@ -5,7 +5,7 @@ import json
 import os
 import random
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional  # ← used in a few type-hints
 
 # ✦ Third-party libraries
@@ -19,6 +19,10 @@ from sendgrid.helpers.mail import Content, Email, Mail, Personalization
 from functools import lru_cache
 from urllib.parse import quote
 
+from cryptography.fernet import InvalidToken
+from cryptography.exceptions import InvalidTag
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from base64 import b64encode, b64decode
 
 # ✦ Django core
 from django.conf import settings
@@ -42,6 +46,8 @@ from django.templatetags.static import static
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
+from django.db import transaction
+
 # ✦ Django ORM
 from django.db.models import Q
 
@@ -59,7 +65,6 @@ from .forms import (
 
 from .models import User, Report
 from authentication.decorators import user_only
-
 
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
@@ -106,14 +111,12 @@ def login_view(request):
 
     return render(request, "accounts/login.html", {"form": form, "msg": msg})
 
-
 @csrf_protect
 def logout_view(request):
     if request.user.is_authenticated:
         log_action(request.user, "User logged out", "INFO", request)
     logout(request)
     return redirect('login')
-
 
 def request_password_reset(request):
     form = PasswordResetEmailForm(request.POST or None)
@@ -133,7 +136,6 @@ def request_password_reset(request):
             msg = "Invalid email address."
 
     return render(request, "accounts/password_reset_request.html", {"form": form, "msg": msg})
-
 
 def send_reset_code_email(to_email, code):
     sg = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
@@ -157,8 +159,6 @@ def send_reset_code_email(to_email, code):
     except Exception as e:
         print("❌ SendGrid error:", str(e))
 
-
-
 def verify_reset_code(request):
     form = VerificationCodeForm(request.POST or None)
     msg = None
@@ -180,7 +180,6 @@ def verify_reset_code(request):
             msg = "Invalid verification code."
 
     return render(request, "accounts/password_reset_verify.html", {"form": form, "msg": msg})
-
 
 def set_new_password(request):
     form = SetNewPasswordForm(request.POST or 
@@ -204,9 +203,6 @@ def set_new_password(request):
 
     return render(request, "accounts/set_new_password.html", {"form": form, "msg": msg})
 
-
-
-
 def send_verification_email(to_email, code):
     sg = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
 
@@ -228,7 +224,6 @@ def send_verification_email(to_email, code):
         print("✅ Email sent with status code:", response.status_code)
     except Exception as e:
         print("❌ SendGrid error:", str(e))
-
 
 def send_welcome_email(to_email, user_name):
     sg = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
@@ -257,9 +252,6 @@ def send_welcome_email(to_email, user_name):
         print("✅ Welcome email sent:", response.status_code)
     except Exception as e:
         print("❌ SendGrid welcome email error:", str(e))
-
-
-
 
 # REGISTER: store data temporarily and send code
 def register_user(request):
@@ -290,7 +282,6 @@ def register_user(request):
         log_action(None, "Failed registration attempt", "WARNING", request, metadata=form.errors.get_json_data()) # Log invalid form data attempt
 
     return render(request, "accounts/register.html", {"form": form, "msg": msg})
-
 
 # VERIFY: confirm code, then store to DB
 def verify_email(request):
@@ -337,8 +328,6 @@ def verify_email(request):
             msg = "Invalid verification code."
 
     return render(request, "accounts/verify.html", {"msg": msg})
-
-
 
 # USER DASHBOARD — use @login_required
 @never_cache
@@ -490,7 +479,6 @@ def upload_profile_image(request):
 
     return JsonResponse({"success": True, "image_url": public_url})
 
-
 # 🟩 Get all profile images for this user (JSON)
 @login_required
 def profile_images_json(request):
@@ -505,7 +493,6 @@ def profile_images_json(request):
         }
         for img in images
     ], safe=False)
-
 
 # 🟩 Set selected image as primary
 @login_required
@@ -523,7 +510,6 @@ def set_primary_image(request, pk):
         log_action(request.user, f"Set image {pk} as primary", "INFO", request)
 
     return JsonResponse({"success": bool(updated)})
-
 
 # 🟥 Delete selected image from DB and S3
 @login_required
@@ -554,7 +540,6 @@ def delete_profile_image(request, pk):
         log_action(request.user, f"Tried to delete non-existent profile image {pk}", "WARNING", request)
         return JsonResponse({"success": False, "error": "Image not found"}, status=404)
 
-# ADMIN DASHBOARD
 # ADMIN DASHBOARD
 @never_cache
 @login_required
@@ -598,11 +583,8 @@ def admin_dashboard(request):
         'user_email': user_email,
     })
 
-
-
 def get_primary_image(profile_id):
     return ProfileImage.objects.filter(profile_id_fk=profile_id, is_primary=1).first()
-
 
 def get_blurred_image_url(original_url):
     if not original_url:
@@ -628,7 +610,6 @@ def get_safe_profile_image_url(image, is_premium):
     else:
         return f"{settings.IMAGEKIT_URL_ENDPOINT}tr:bl-20/{quote(filename)}"
 
-
 @never_cache
 @login_required
 @user_only
@@ -642,7 +623,6 @@ def likes_page(request):
     outgoing_likes = []
 
     match_popup = request.session.pop('match_popup_likes', None)
-
 
     if tab == 'incoming':
         incoming_likes_raw = Like.objects.filter(liked_user_id=user).order_by('-liked_at')
@@ -681,8 +661,7 @@ def likes_page(request):
                     'hobbies': profile.hobbies if user.is_premium else None,
                     'relationship_goals': profile.relationship_goals if user.is_premium else None,
                     'bio': profile.bio if user.is_premium else None,
-                }
-                )
+                })
             except Profile.DoesNotExist:
                 continue
 
@@ -696,7 +675,6 @@ def likes_page(request):
             'active_tab': 'incoming',
             'page_obj': page_obj,
             'match_popup': match_popup
-
         })
 
     elif tab == 'outgoing':
@@ -736,8 +714,7 @@ def likes_page(request):
                     'hobbies': profile.hobbies ,
                     'relationship_goals': profile.relationship_goals ,
                     'bio': profile.bio
-                }
-                )
+                })
             except Profile.DoesNotExist:
                 continue
 
@@ -752,7 +729,7 @@ def likes_page(request):
             'page_obj': page_obj,
             'match_popup': match_popup
         })
-
+    
 @login_required
 def upgrade_premium(request):
     plans = [
@@ -766,7 +743,6 @@ def upgrade_premium(request):
 def checkout_premium(request, plan_id):
     return HttpResponse(f"Stripe checkout for plan: {plan_id}")
 
-
 # --- MongoDB Connection ---
 @lru_cache
 def mongo():
@@ -775,25 +751,70 @@ def mongo():
 
 COL = mongo().messages   # <-- Each message is its own document
 
+def decrypt_aes_gcm(cipher_b64, nonce_b64):
+    try:
+        aesgcm = AESGCM(settings.AES_KEY)
+        nonce = b64decode(nonce_b64)
+        ciphertext = b64decode(cipher_b64)
+        return aesgcm.decrypt(nonce, ciphertext, None).decode()
+    except Exception as e:
+        return "[decryption failed]"
+
 def fetch_messages(match, limit=None):
     q = {"match_id": str(match.match_id)}
     cursor = COL.find(q).sort("sent_at", 1)
     if limit:
         cursor = cursor.limit(limit)
-    return list(cursor)
+
+    messages = []
+
+    for doc in cursor:
+        raw = doc.get("ciphertext", "")
+        nonce = doc.get("nonce", "")
+
+        try:
+            if (
+                doc.get("encryption_meta", {}).get("alg") == "AES-GCM"
+                and raw and nonce
+            ):
+                doc["ciphertext"] = decrypt_aes_gcm(raw, nonce)
+            else:
+                # fallback: show raw text even if not encrypted
+                doc["ciphertext"] = raw or "[empty]"
+        except (InvalidToken, InvalidTag, Exception):
+            doc["ciphertext"] = raw or "[decryption failed]"
+
+        # try:
+        #     raw = doc.get("ciphertext", "")
+        #     nonce = doc.get("nonce", "")
+        #     doc["ciphertext"] = decrypt_aes_gcm(raw, nonce) if raw and nonce else "[missing ciphertext]"
+        # except Exception:
+        #     doc["ciphertext"] = "[error]"
+
+        messages.append(doc)
+
+    return messages
 
 def append_message(match, sender_id, text):
+    # Encrypt the plaintext on the backend
+    aesgcm = AESGCM(settings.AES_KEY)
+    nonce = os.urandom(12)  # AES-GCM standard nonce size
+    ciphertext = aesgcm.encrypt(nonce, text.encode(), None)
+
+    cipher_b64 = b64encode(ciphertext).decode()
+    nonce_b64 = b64encode(nonce).decode()
+
     msg = {
         "match_id": str(match.match_id),
         "message_id": str(uuid.uuid4()),
         "sender_user_id": sender_id,
-        "ciphertext": text,
-        "sent_at": datetime.utcnow().isoformat(timespec="seconds"),
+        "ciphertext": cipher_b64,
+        "nonce": nonce_b64,
+        "sent_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "is_read": False,
-        "encryption_meta": {
-            "key_id": "default", "version": 1
-        },
+        "encryption_meta": {"alg": "AES-GCM", "version": 1},
     }
+
     COL.insert_one(msg)
     return msg
 
@@ -953,7 +974,6 @@ def messages_with(request, user_id):
     }
     return render(request, "pages/messages.html", context)
 
-
 @never_cache
 @login_required
 def messages_json(request, user_id):
@@ -992,13 +1012,13 @@ def messages_json(request, user_id):
     # send back **only** the fields the browser needs
     lite = [{
         "id":    m["message_id"],
-        "text":  m["ciphertext"],
+        "text":  m.get("ciphertext", "[missing]"),
+        "nonce": m.get("nonce", ""),
         "ts":    m["sent_at"],
         "from":  m["sender_user_id"],
     } for m in msgs]
 
     return JsonResponse({"messages": lite})
-
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -1053,19 +1073,16 @@ def create_checkout_session(request, plan: str):
 
     return redirect(session.url)
 
-
 # ─────────────  2)  Success / cancel splash pages  ─────────────
 @login_required
 def checkout_success(request):
     log_action(request.user, "Visited Stripe success page", "INFO", request)
     return render(request, "billing/success.html")
 
-
 @login_required
 def checkout_cancel(request):
     log_action(request.user, "Visited Stripe cancel page", "WARNING", request)
     return render(request, "billing/cancel.html")
-
 
 # ─────────────  3)  Stripe web-hook  ─────────────
 @csrf_exempt
@@ -1104,7 +1121,6 @@ def stripe_webhook(request):
         _check_status(event["data"]["object"]["id"])
 
     return HttpResponse(status=200)
-
 
 # ─────────────  4)  Helpers  ─────────────
 def _create_sub_record(
@@ -1146,7 +1162,6 @@ def _create_sub_record(
     user.is_premium = True
     user.save(update_fields=["is_premium"])
 
-
 def _update_next_renewal(stripe_sub_id: str):
     sub_json = stripe.Subscription.retrieve(stripe_sub_id)
     try:
@@ -1161,7 +1176,6 @@ def _update_next_renewal(stripe_sub_id: str):
         db_sub.save(update_fields=["expires_at", "status"])
     except Subscription.DoesNotExist:
         pass
-
 
 def _check_status(stripe_sub_id: str):
     sub_json = stripe.Subscription.retrieve(stripe_sub_id)
@@ -1200,7 +1214,6 @@ def upgrade_premium(request):
         },
     ]
     return render(request, "accounts/upgrade_premium.html", {"plans": plans})
-
 
 @never_cache
 @login_required
@@ -1276,7 +1289,6 @@ def browse_one_profile(request):
     else:
         profiles = profiles.filter(user_id_fk__in=unseen_ids)
 
-
     unseen_profiles = profiles.exclude(user_id_fk__in=liked_user_ids).exclude(user_id_fk__in=disliked_user_ids)
 
     if unseen_profiles.exists():
@@ -1295,7 +1307,6 @@ def browse_one_profile(request):
         "relationship": 2.5, "language": 2,
     }
 
-
     def profile_to_vector(profile):
         gender_vec = [1 if profile.gender == 'male' else 0, 1 if profile.gender == 'female' else 0]
         age_vec = [profile.age or 0]
@@ -1307,7 +1318,6 @@ def browse_one_profile(request):
         ]
         tag_vec = [hash(tag) % 100 for tag in tags if tag]
         return np.array(gender_vec + age_vec + tag_vec, dtype='float64')
-
 
     def compute_match_score(profile, preferences, weights):
         score = 0
@@ -1345,7 +1355,6 @@ def browse_one_profile(request):
 
         return score
     
-
     def compute_knn_score(candidate_profile, liked_profiles, top_k=3):
         def construct_vector(profile):
             try:
@@ -1372,6 +1381,17 @@ def browse_one_profile(request):
             return 0 
 
         candidate_vec = candidate_vec.reshape(1, -1)
+        liked_vectors = []
+
+        for lp in liked_profiles:
+            if isinstance(lp, np.ndarray):
+                vec = lp  # Already a vector, no need to reconstruct
+            else:
+                vec = construct_vector(lp)
+
+            if isinstance(vec, np.ndarray) and vec.shape[0] == candidate_vec.shape[1]:
+                liked_vectors.append(vec)
+
         liked_vectors = [construct_vector(lp) for lp in liked_profiles if construct_vector(lp) is not None]
 
         if not liked_vectors:
@@ -1553,8 +1573,6 @@ def like_profile(request):
         next_index = int(request.GET.get("index", 0)) + 1
         return redirect(f"/browse/?index={next_index}")
 
-
-
 @login_required
 def save_preferences(request):
     if request.method == 'POST':
@@ -1645,7 +1663,6 @@ def dislike_profile(request):
 
         return redirect(f"/browse/?index={index}")
     
-
 @login_required
 def submit_report(request):
     if request.method == 'POST':
@@ -1688,8 +1705,6 @@ def submit_report(request):
         messages.error(request, "Profile mismatch. Report rejected.")
     return redirect(f'/browse/?index={request.GET.get("index", 0)}')
 
-
-
 # Admin Reports Functionalities
 @never_cache
 @login_required
@@ -1724,7 +1739,6 @@ def admin_report_dashboard(request):
         'reason_filter': reason_filter or '',
     })
 
-
 @never_cache
 @login_required
 @user_passes_test(is_admin)
@@ -1746,7 +1760,6 @@ def toggle_report_status(request, report_id):
         request=request, target_id=report.report_id, target_type="Report")
     return redirect('admin_report_dashboard')
 
-
 @never_cache
 @login_required
 @user_passes_test(is_admin)
@@ -1758,7 +1771,6 @@ def delete_report(request, report_id):
     report.delete()
     print(request, "Report deleted.")
     return redirect('admin_report_dashboard')
-
 
 @never_cache
 @login_required
@@ -1773,9 +1785,6 @@ def admin_toggle_premium(request, user_id):
     log_action(request.user, f"Toggled premium status for {user.email} to {user.is_premium}", severity="INFO",
         request=request, target_id=user.user_id, target_type="User")
     return redirect('admin_dashboard')  
-
-
-from django.db import transaction
 
 @never_cache
 @login_required
@@ -1797,4 +1806,3 @@ def admin_delete_user(request, user_id):
         print(request, f"Failed to delete user: {str(e)}")
 
     return redirect('admin_dashboard')
-
