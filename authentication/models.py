@@ -431,3 +431,36 @@ class ActionLog(models.Model):
 
     class Meta:
         db_table = 'ActionLog' 
+
+class Report(models.Model):
+    report_id = models.CharField(primary_key=True, max_length=36)  # UUID as char, not UUIDField
+    reporter_user = models.ForeignKey(
+        User,
+        on_delete=models.DO_NOTHING,
+        db_column='reporter_user_id',
+        related_name='reports_made',
+        to_field='user_id'
+    )
+    reported_user_id = models.CharField(max_length=36)  # Just a raw user_id string
+    reason = models.CharField(max_length=100)
+    details = models.TextField()
+    status = models.CharField(max_length=20, default='Pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolved_by_user = models.ForeignKey(
+        User,
+        on_delete=models.DO_NOTHING,
+        null=True,
+        blank=True,
+        db_column='resolved_by_user_id',
+        to_field='user_id',
+        related_name='reports_resolved'
+    )
+
+    class Meta:
+        managed = False  # Matches your DB style
+        db_table = 'Report'
+
+    def __str__(self):
+        return f"Report by {self.reporter_user.email} on {self.reported_user_id} ({self.reason})"
+

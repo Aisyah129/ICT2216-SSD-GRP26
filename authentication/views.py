@@ -57,7 +57,7 @@ from .forms import (
     VerificationCodeForm,
 )
 
-from .models import User
+from .models import User, Report
 from authentication.decorators import user_only
 
 
@@ -383,13 +383,14 @@ def profile_view(request):
         profile.save(update_fields=editable_fields + ['last_updated'])
 
         messages.success(request, "Profile updated!")
-        log_action(request.user, "Updated profile information", "INFO", request)  # Log Profile Changes
+        log_action(request.user, "Updated profile information", "INFO", request) # Log Profile Changes
         return redirect('profile')
 
     # --------- GET: display page ---------
 
     # Always show full image quality on own profile
     primary_image = profile.profileimage_set.filter(is_primary=True).first()
+
     primary_image_url = get_safe_profile_image_url(primary_image, True)
 
     all_images = [
@@ -407,12 +408,12 @@ def profile_view(request):
     return render(request, "pages/profile.html", {
         "profile":       profile,
         "primary_image": primary_image_url,
-        "images":        all_images,
+        "images":        all_images,      
         "languages":     languages,
         "pets":          pets,
     })
 
-MAX_IMAGES = 6  # ← adjust if needed
+MAX_IMAGES = 6 # ← adjust if needed
 
 # ------------------------------------------------------------------
 #  Upload profile image                                   (updated)
@@ -421,7 +422,7 @@ MAX_IMAGES = 6  # ← adjust if needed
 @require_POST
 def upload_profile_image(request):
     """
-    Upload profile image to private S3 and store only the filename.
+     Upload profile image to private S3 and store only the filename.Add commentMore actions
     - Max limit enforced
     - Always ensure 1 primary
     - Returns public ImageKit URL for frontend use
@@ -462,8 +463,9 @@ def upload_profile_image(request):
 
     want_primary = request.POST.get("is_primary") in ("1", "true", "on")
 
-    # ───────── 3) Ensure ONE primary ──────────
+     # ───────── 3) Ensure ONE primary ──────────
     has_primary = ProfileImage.objects.filter(profile_id_fk=profile, is_primary=True).exists()
+
     if want_primary or not has_primary:
         ProfileImage.objects.filter(profile_id_fk=profile).update(is_primary=False)
         primary_flag = True
@@ -474,7 +476,7 @@ def upload_profile_image(request):
     new_image = ProfileImage.objects.create(
         image_id      = str(uuid.uuid4()),
         profile_id_fk = profile,
-        image_url     = filename,  # ✅ only the filename!
+        image_url     = filename, # ✅ only the filename!
         is_primary    = primary_flag,
         uploaded_at   = timezone.now(),
     )
@@ -489,7 +491,6 @@ def upload_profile_image(request):
     public_url = get_safe_profile_image_url(new_image, request.user.is_premium)
 
     return JsonResponse({"success": True, "image_url": public_url})
-
 
 
 # 🟩 Get all profile images for this user (JSON)
@@ -534,7 +535,7 @@ def delete_profile_image(request, pk):
         profile = request.user.profile
         image = ProfileImage.objects.get(profile_id_fk=profile, pk=pk)
 
-        # Assume image_url is just the filename, e.g., "profile_abc123.jpg"
+        # Assume image_url is just the filename, e.g., "profile_abc123.jpg"Add commentMore actions
         filename = image.image_url.strip("/")
 
         # Delete from S3 (private bucket)
@@ -554,6 +555,7 @@ def delete_profile_image(request, pk):
     except ProfileImage.DoesNotExist:
         log_action(request.user, f"Tried to delete non-existent profile image {pk}", "WARNING", request)
         return JsonResponse({"success": False, "error": "Image not found"}, status=404)
+
 # ADMIN DASHBOARD
 @never_cache
 @login_required
@@ -1178,6 +1180,9 @@ def upgrade_premium(request):
 @never_cache
 @login_required
 def browse_one_profile(request):
+    # Clear unrelated messages
+    list(messages.get_messages(request))  # This consumes and clears messages
+
     user_id = request.session.get('user_id')
     if not user_id:
         return redirect('login')
@@ -1188,9 +1193,10 @@ def browse_one_profile(request):
     except Profile.DoesNotExist:
         return redirect('login')
 
-    # Orientation-based filtering
+    # Orientation-based filtering 
     user_gender = current_profile.gender
     user_orientation = current_profile.sexual_orientation
+
     if user_gender and user_orientation:
         if user_orientation == "straight":
             profiles = profiles.filter(gender="female" if user_gender == "male" else "male")
@@ -1210,6 +1216,7 @@ def browse_one_profile(request):
     def fetch_pref(model, field):
         obj = model.objects.filter(preference_id_fk=preferences).first()
         return getattr(obj, field, None) if obj else None
+        
 
     if len(unseen_ids) == 0:
         if len(remaining_disliked_ids) < 3:
@@ -1247,7 +1254,9 @@ def browse_one_profile(request):
     else:
         profiles = profiles.filter(user_id_fk__in=unseen_ids)
 
+
     unseen_profiles = profiles.exclude(user_id_fk__in=liked_user_ids).exclude(user_id_fk__in=disliked_user_ids)
+
     if unseen_profiles.exists():
         profiles = unseen_profiles
     else:
@@ -1264,6 +1273,7 @@ def browse_one_profile(request):
         "relationship": 2.5, "language": 2,
     }
 
+
     def profile_to_vector(profile):
         gender_vec = [1 if profile.gender == 'male' else 0, 1 if profile.gender == 'female' else 0]
         age_vec = [profile.age or 0]
@@ -1276,10 +1286,12 @@ def browse_one_profile(request):
         tag_vec = [hash(tag) % 100 for tag in tags if tag]
         return np.array(gender_vec + age_vec + tag_vec, dtype='float64')
 
+
     def compute_match_score(profile, preferences, weights):
         score = 0
+
         if not preferences:
-            return score
+            return score  
 
         if preferences.preferred_height_min and preferences.preferred_height_max and profile.height_cm:
             if preferences.preferred_height_min <= profile.height_cm <= preferences.preferred_height_max:
@@ -1310,6 +1322,7 @@ def browse_one_profile(request):
                 score += weights["language"]
 
         return score
+    
 
     def compute_knn_score(candidate_profile, liked_profiles, top_k=3):
         def construct_vector(profile):
@@ -1334,13 +1347,13 @@ def browse_one_profile(request):
 
         candidate_vec = construct_vector(candidate_profile)
         if candidate_vec is None:
-            return 0
+            return 0 
 
         candidate_vec = candidate_vec.reshape(1, -1)
         liked_vectors = [construct_vector(lp) for lp in liked_profiles if construct_vector(lp) is not None]
 
         if not liked_vectors:
-            return 0
+            return 0 
 
         similarities = [
             cosine_similarity(candidate_vec, lp.reshape(1, -1))[0][0]
@@ -1360,12 +1373,20 @@ def browse_one_profile(request):
         score = compute_match_score(profile, preferences, weights)
         knn_score = compute_knn_score(profile, liked_profiles)
         score += knn_score * 10
+
         normalized_score = int((score / 19) * 100)
 
         entry = {
             'profile': profile,
             'image_url': image_url,
-            'score': normalized_score
+            'score': normalized_score,
+            'images': [
+                {
+                    'url': get_safe_profile_image_url(img, True),
+                    'is_primary': img.is_primary,
+                }
+                for img in ProfileImage.objects.filter(profile_id_fk=profile.profile_id).order_by('-uploaded_at')
+            ]
         }
 
         if preferences and preferences.preferred_age_min and preferences.preferred_age_max:
@@ -1420,6 +1441,18 @@ def browse_one_profile(request):
         'relationship_choices': PreferencesRelationship._meta.get_field("relationship_type").choices,
     }
 
+    # Check if current user has already reported the current profile
+    current_profile_user_id = entry['profile'].user_id_fk.user_id  # profile being shown
+    already_reported = Report.objects.filter(
+    reporter_user=request.user,
+    reported_user_id=current_profile_user_id
+    ).exists()
+
+    # 🔐 Store the currently shown profile for report validation
+    request.session['last_profile_id'] = entry['profile'].user_id_fk.user_id
+
+    context['already_reported'] = already_reported
+    context['profile'] = entry['profile']
     return render(request, 'pages/browse.html', context)
 
 @login_required
@@ -1483,7 +1516,6 @@ def like_profile(request):
                 popup_data = {
                     'name': profile.name,
                     'image': image.image_url if image and image.image_url else '/static/images/default-avatar.jpg'
-
                 }
 
                 # 💡 Store modal popup in correct session key
@@ -1590,3 +1622,157 @@ def dislike_profile(request):
             return redirect('/likes/?tab=outgoing')
 
         return redirect(f"/browse/?index={index}")
+    
+
+@login_required
+def submit_report(request):
+    if request.method == 'POST':
+        reason = request.POST.get('reason')
+        details = request.POST.get('details')
+        reported_profile_id = request.POST.get('reported_profile_id')
+        print("📥 POST data:", request.POST)
+
+        if reason and reported_profile_id:
+            # Check for existing report by this user on this profile
+            existing_report = Report.objects.filter(
+            reporter_user=request.user,
+            reported_user_id=reported_profile_id
+            ).first()
+
+            if existing_report:
+                messages.warning(request, "⚠️ You've already reported this user.")
+                print("⚠️ Duplicate report attempt.")
+            else:
+                report = Report(
+                    report_id=uuid.uuid4(),
+                    reporter_user=request.user,
+                    reported_user_id=reported_profile_id,
+                    reason=reason,
+                    details=details or '',
+                    created_at=timezone.now()
+                )
+                report.save()
+                log_action(user=request.user, action_type=f"Submitted report on user {reported_profile_id}", severity="WARNING",
+                    request=request, target_id=reported_profile_id, target_type="User", metadata={"reason": reason, "details": details})
+                messages.success(request, "🚩 Report submitted successfully.")
+                print(f"✅ Report saved: {report.report_id}")
+        else:
+            messages.error(request, "❌ Please fill in all required fields.")
+            print("❌ Missing reason or reported_profile_id")
+    else:
+        print("❌ Not a POST request")
+
+    if request.POST.get('reported_profile_id') != request.session.get('last_profile_id'):
+        messages.error(request, "Profile mismatch. Report rejected.")
+    return redirect(f'/browse/?index={request.GET.get("index", 0)}')
+
+
+
+# Admin Reports Functionalities
+@never_cache
+@login_required
+@user_passes_test(is_admin)
+def admin_report_dashboard(request):
+    reports = Report.objects.select_related('reporter_user').order_by('-created_at')
+
+    # Optional filtering
+    status_filter = request.GET.get('status')
+    reporter_filter = request.GET.get('reporter')
+    reported_user_filter = request.GET.get('reported')
+    reason_filter = request.GET.get('reason')
+
+    if status_filter:
+        reports = reports.filter(status=status_filter)
+    if reporter_filter:
+        reports = reports.filter(reporter_user__email__icontains=reporter_filter)
+    if reported_user_filter:
+        reports = reports.filter(reported_user_id__icontains=reported_user_filter)
+    if reason_filter:
+        reports = reports.filter(reason__icontains=reason_filter)
+
+    paginator = Paginator(reports, 10)
+    page_number = request.GET.get("page")
+    reports_page = paginator.get_page(page_number)
+
+    return render(request, 'accounts/admin_report_dashboard.html', {
+        'reports': reports_page,
+        'status_filter': status_filter or '',
+        'reporter_filter': reporter_filter or '',
+        'reported_user_filter': reported_user_filter or '',
+        'reason_filter': reason_filter or '',
+    })
+
+
+@never_cache
+@login_required
+@user_passes_test(is_admin)
+def toggle_report_status(request, report_id):
+    report = get_object_or_404(Report, report_id=report_id)
+
+    if report.status == "resolved":
+        action = "Unresolved"
+        report.status = "pending"
+        report.resolved_at = None
+        report.resolved_by_user = None
+    else:
+        action = "Resolved"
+        report.status = "resolved"
+        report.resolved_at = timezone.now()
+        report.resolved_by_user = request.user
+    report.save()
+    log_action(user=request.user, action_type=f"{action} report {report.report_id}", severity="INFO",
+        request=request, target_id=report.report_id, target_type="Report")
+    return redirect('admin_report_dashboard')
+
+
+@never_cache
+@login_required
+@user_passes_test(is_admin)
+@require_POST
+def delete_report(request, report_id):
+    report = get_object_or_404(Report, report_id=report_id)
+    log_action(user=request.user, action_type=f"Deleted report {report.report_id}", severity="WARNING", request=request,
+        target_id=report.report_id, target_type="Report")
+    report.delete()
+    print(request, "Report deleted.")
+    return redirect('admin_report_dashboard')
+
+
+@never_cache
+@login_required
+@user_passes_test(is_admin)
+def admin_toggle_premium(request, user_id):
+    user = get_object_or_404(User, user_id=user_id)
+    user.is_premium = not user.is_premium
+    user.save()
+
+    status = "upgraded to Premium" if user.is_premium else "downgraded to Free"
+    print(request, f"User {user.email} {status}.")
+    log_action(request.user, f"Toggled premium status for {user.email} to {user.is_premium}", severity="INFO",
+        request=request, target_id=user.user_id, target_type="User")
+    return redirect('admin_dashboard')  
+
+
+from django.db import transaction
+
+@never_cache
+@login_required
+@user_passes_test(is_admin)
+@require_POST
+def admin_delete_user(request, user_id):
+    user = get_object_or_404(User, user_id=user_id)
+
+    try:
+        with transaction.atomic():
+            # Delete related profile first
+            user.profile.delete()
+            user.delete()
+
+        print(request, f"User {user.email} account deleted.")
+        log_action(request.user, f"Deleted user account {user.email}", severity="WARNING",
+            request=request, target_id=user_id, target_type="User")
+    except Exception as e:
+        messages.error(request, f"Failed to delete user: {str(e)}")
+
+    return redirect('admin_dashboard')
+

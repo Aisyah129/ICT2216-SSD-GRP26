@@ -12,7 +12,6 @@ urlpatterns = [
     path("reset/verify/", verify_reset_code, name="verify_reset_code"),
     path("reset/confirm/", set_new_password, name="set_new_password"),
 
-    #path('logout/', LogoutView.as_view(next_page='login'), name="logout"),
     path('logout/', logout_view, name="logout"),
     path('profile/', profile_view, name="profile"),
 
@@ -41,4 +40,10 @@ urlpatterns = [
     path('like/', like_profile, name='like_profile'),
     path('preferences/save/', save_preferences, name='save_preferences'),
     path("dislike/", dislike_profile, name="dislike_profile"),
+    path('report/submit/', submit_report, name='submit_report'),
+    path('admin_report_dashboard/', admin_report_dashboard, name='admin_report_dashboard'),
+    path("admin_report/delete/<uuid:report_id>/", delete_report, name="delete_report"),
+    path("toggle_report_status/<uuid:report_id>/", toggle_report_status, name="toggle_report_status"),
+    path('admin_toggle_premium/<uuid:user_id>/', admin_toggle_premium, name='admin_toggle_premium'),
+    path('admin_delete_user/<uuid:user_id>/', admin_delete_user, name='admin_delete_user'),
 ]
