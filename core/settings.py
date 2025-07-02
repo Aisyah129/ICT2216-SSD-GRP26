@@ -160,3 +160,6 @@ IMAGEKIT_URL_ENDPOINT = config('IMAGEKIT_URL_ENDPOINT')
 
 SENDGRID_API_KEY = config("SENDGRID_API_KEY")
 DEFAULT_FROM_EMAIL = config("FROM_EMAIL")
+
+# if someone tries to access a login-protected page, redirect them to /login/
+LOGIN_URL = '/login/'
