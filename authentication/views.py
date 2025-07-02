@@ -38,6 +38,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.cache import never_cache
+from django.templatetags.static import static
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
@@ -822,7 +823,7 @@ def get_conversations_for(user):
                           .only("image_url")
                           .filter(profile_id_fk=profile, is_primary=1)
                           .first())
-        img_url = img.image_url if img else settings.STATIC_URL + "img/avatar-placeholder.png"
+        img_url = img.image_url if img else static("/static/images/default-avatar.jpg")
 
         conversations.append({
             "user_id":   other_uuid,
@@ -1481,7 +1482,8 @@ def like_profile(request):
                 image = profile.profileimage_set.filter(is_primary=True).first()
                 popup_data = {
                     'name': profile.name,
-                    'image': image.image_url if image else ""
+                    'image': image.image_url if image and image.image_url else '/static/images/default-avatar.jpg'
+
                 }
 
                 # 💡 Store modal popup in correct session key

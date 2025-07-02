@@ -19,8 +19,9 @@
           <a href="{% url 'messages_with' convo.user_id %}" class="list-group-item list-group-item-action d-flex align-items-center
                       {% if convo.user_id == selected_user.user_id %}active text-white{% endif %}">
             <img src="{{ convo.avatar }}" class="rounded-circle mr-3 clickable-card"
+              onerror="this.onerror=null;this.src='/static/images/default-avatar.jpg';"
               style="width:42px;height:42px;object-fit:cover; cursor:pointer;" data-user-id="{{ convo.user_id }}"
-              data-user-name="{{ convo.name }}" data-user-age="{{ convo.age }}" data-user-image="{{ convo.avatar }}"
+              data-user-name="{{ convo.name }}" data-user-age="{{ convo.age }}" data-user-image="{{ convo.avatar|default:'/static/images/default-avatar.jpg' }}"
               data-user-date="{{ convo.last_message_date|default:"" }}">
 
             <!-- Hidden profile data for modal -->
@@ -54,6 +55,7 @@
         <!-- header -->
         <div class="card-header bg-white border-bottom d-flex align-items-center">
           <img src="{{ selected_avatar|default:'/static/img/default-avatar.png' }}"
+            onerror="this.onerror=null;this.src='/static/images/default-avatar.jpg';"
             class="rounded-circle mr-3 clickable-card" style="width:48px;height:48px;object-fit:cover; cursor:pointer;"
             data-user-id="{{ selected_user.user_id }}" data-user-name="{{ selected_name }}"
             data-user-age="{{ selected_user.age }}" data-user-image="{{ selected_avatar }}" data-user-date="">
@@ -221,8 +223,11 @@
       <div class="modal-body d-flex flex-column flex-md-row px-4 py-4" style="height: 85vh; overflow: hidden;">
         <!-- Left: Profile Image Section -->
         <div class="d-flex flex-column align-items-center justify-content-center text-center" style="flex: 1;">
-          <img id="modalImage" class="img-fluid rounded shadow mb-3"
-            style="max-height: 500px; object-fit: cover; border-radius: 1rem;" alt="Profile"><br>
+          <img id="modalImage"
+            class="img-fluid rounded shadow mb-3"
+            style="max-height: 500px; object-fit: cover; border-radius: 1rem;"
+            alt="Profile"
+            onerror="this.onerror=null;this.src='/static/images/default-avatar.jpg';">
           <h4 class="fw-semibold mb-0" id="modalNameAge">Name, Age</h4><br>
           <span id="modalDate" class="badge bg-secondary text-uppercase small px-3 py-1">LIKED ON</span>
         </div>
@@ -317,9 +322,19 @@
     const image = card.dataset.userImage;
 
     document.getElementById("modalTitle").innerText = `Profile of ${name}`;
-    document.getElementById("modalImage").src = image || "/static/images/default-avatar.jpg";
+
     document.getElementById("modalDate").innerText = date ? `Liked on ${date}` : '';
     document.getElementById("modalNameAge").innerText = `${name}, ${age || ''}`;
+
+    const modalImage = document.getElementById("modalImage");
+    modalImage.src = "";
+    modalImage.onerror = null;
+
+    modalImage.src = image || "/static/images/default-avatar.jpg";
+    modalImage.onerror = function () {
+      this.onerror = null;
+      this.src = "/static/images/default-avatar.jpg";
+    };
 
     const profileDiv = document.getElementById(`user-${card.dataset.userId}`);
     if (!profileDiv) return;

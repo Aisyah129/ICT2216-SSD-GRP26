@@ -58,8 +58,11 @@
       <div class="col-md-4 mb-3">
         <div class="card shadow-sm text-center">
           <div class="card-body">
-            <img src="{{ user.image_url|default:'/static/images/default-avatar.jpg' }}" class="img-fluid rounded mb-2"
-              style="max-height: 200px; object-fit: cover;" alt="Profile Picture">
+            <img src="{{ user.image_url }}"
+              onerror="this.onerror=null;this.src='/static/images/default-avatar.jpg';"
+              alt="Profile Picture"
+              class="img-fluid rounded mb-2"
+              style="max-height: 200px; object-fit: cover;">
 
             <div class="placeholder-bar name-bar mb-2"></div>
             <div class="placeholder-bar date-bar"></div>
@@ -101,8 +104,12 @@
         </div>
 
         <div class="card-body">
-          <img src="{{ user.image_url|default:'/static/images/default-avatar.png' }}" class="img-fluid rounded mb-2"
-            style="max-height: 200px; object-fit: cover;" alt="Blurred Profile Picture">
+          <img src="{{ user.image_url }}"
+            onerror="this.onerror=null;this.src='/static/images/blurred-default-avatar.jpg';"
+            class="img-fluid rounded mb-2"
+            style="max-height: 200px; object-fit: cover;" 
+            alt="Blurred Profile Picture">
+
 
           <h5 class="card-title">{{ user.name }}, {{ user.age }}</h5>
           <p class="card-text text-muted">Liked you on {{ user.liked_date|date:"d M Y" }}</p>
@@ -154,8 +161,12 @@
         </div>
 
         <div class="card-body">
-          <img src="{{ user.image_url|default:'/static/images/default-avatar.jpg' }}" class="img-fluid rounded mb-2"
-            style="max-height: 200px; object-fit: cover;" alt="Profile Picture">
+          <img src="{{ user.image_url }}"
+            onerror="this.onerror=null;this.src='/static/images/default-avatar.jpg';"
+            alt="Profile Picture"
+            class="img-fluid rounded mb-2"
+            style="max-height: 200px; object-fit: cover;">
+
 
           <h5 class="card-title">{{ user.name }}, {{ user.age }}</h5>
           <p class="card-text text-muted">You liked them on {{ user.liked_date|date:"d M Y" }}</p>
@@ -189,8 +200,12 @@
       <div class="modal-body d-flex flex-column flex-md-row px-4 py-4" style="height: 85vh; overflow: hidden;">
         <!-- Left: Profile Image Section (50%) -->
         <div class="d-flex flex-column align-items-center justify-content-center text-center" style="flex: 1;">
-          <img id="modalImage" class="img-fluid rounded shadow mb-3"
-            style="max-height: 500px; object-fit: cover; border-radius: 1rem;" alt="Profile"><br>
+          <img id="modalImage"
+            class="img-fluid rounded shadow mb-3"
+            style="max-height: 500px; object-fit: cover; border-radius: 1rem;"
+            alt="Profile"
+            onerror="this.onerror=null;this.src='/static/images/default-avatar.jpg';">
+
           <h4 class="fw-semibold mb-0" id="modalNameAge">Name, Age</h4><br>
           <span id="modalDate" class="badge bg-secondary text-uppercase small px-3 py-1">LIKED ON</span>
         </div>
@@ -487,9 +502,19 @@
 
     // Update modal header and image
     document.getElementById("modalTitle").innerText = `Profile of ${name}`;
-    document.getElementById("modalImage").src = image || "/static/images/default-avatar.jpg";
     document.getElementById("modalDate").innerText = `Liked on ${date}`;
     document.getElementById("modalNameAge").innerText = `${name}, ${age}`;
+    
+    const modalImage = document.getElementById("modalImage");
+    modalImage.src = "";
+    modalImage.onerror = null;
+
+    modalImage.src = image || "/static/images/default-avatar.jpg";
+    modalImage.onerror = function () {
+      this.onerror = null;
+      this.src = "/static/images/default-avatar.jpg";
+    };
+
 
 
     const profileDiv = document.getElementById(`user-${card.dataset.userId}`);
