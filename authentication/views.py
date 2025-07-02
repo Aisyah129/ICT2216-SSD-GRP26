@@ -197,7 +197,6 @@ def set_new_password(request):
             # Clear session
             del request.session['reset_email']
             del request.session['reset_code']
-            messages.success(request, "Password reset successful. You can now log in.")
             return redirect('login')
         except User.DoesNotExist:
             msg = "User not found."
@@ -382,7 +381,6 @@ def profile_view(request):
         profile.last_updated = timezone.now()
         profile.save(update_fields=editable_fields + ['last_updated'])
 
-        messages.success(request, "Profile updated!")
         log_action(request.user, "Updated profile information", "INFO", request) # Log Profile Changes
         return redirect('profile')
 
@@ -557,28 +555,49 @@ def delete_profile_image(request, pk):
         return JsonResponse({"success": False, "error": "Image not found"}, status=404)
 
 # ADMIN DASHBOARD
+# ADMIN DASHBOARD
 @never_cache
 @login_required
 @user_passes_test(is_admin)
 def admin_dashboard(request):
-    users = User.objects.filter(role='user')
+    users = User.objects.all().order_by('-created_at')
     logs = ActionLog.objects.order_by('-timestamp')
 
-    # 🔍 Filtering
+    # 🔍 Filter logs
     user_email = request.GET.get('user_email')
     severity = request.GET.get('severity')
-
     if user_email:
         logs = logs.filter(user__email__icontains=user_email)
     if severity:
         logs = logs.filter(severity=severity)
+
+    # 🔍 Filter users
+    search_user = request.GET.get('search_user')
+    role_filter = request.GET.get('role')
+    premium_filter = request.GET.get('is_premium')
+
+    if search_user:
+        users = users.filter(email__icontains=search_user)
+    if role_filter in ['user', 'admin']:
+        users = users.filter(role=role_filter)
+    if premium_filter in ['true', 'false']:
+        users = users.filter(is_premium=(premium_filter == 'true'))
 
     # 📄 Pagination (10 logs per page)
     paginator = Paginator(logs, 10)
     page_number = request.GET.get("page")
     logs = paginator.get_page(page_number)
 
-    return render(request, 'accounts/admin_dashboard.html', {'users': users, 'logs': logs})
+    return render(request, 'accounts/admin_dashboard.html', {
+        'users': users,
+        'logs': logs,
+        'search_user': search_user,
+        'role_filter': role_filter,
+        'premium_filter': premium_filter,
+        'severity': severity,
+        'user_email': user_email,
+    })
+
 
 
 def get_primary_image(profile_id):
@@ -697,7 +716,6 @@ def likes_page(request):
                     'age': profile.age,
                     'liked_date': like.liked_at,
                     'image_url': f"{settings.IMAGEKIT_URL_ENDPOINT}{image.image_url}" if image else settings.STATIC_URL + 'images/default-avatar.jpg',
-
                     'gender': profile.gender,
                     'location': profile.location,
                     'pronouns': profile.pronouns ,
@@ -830,8 +848,6 @@ def get_conversations_for(user):
             f"{settings.IMAGEKIT_URL_ENDPOINT}{img.image_url}"
             if img else settings.STATIC_URL + "/static/images/default-avatar.jpg"
         )
-
-
 
         conversations.append({
             "user_id":   other_uuid,
@@ -1042,14 +1058,12 @@ def create_checkout_session(request, plan: str):
 @login_required
 def checkout_success(request):
     log_action(request.user, "Visited Stripe success page", "INFO", request)
-    messages.success(request, "🎉 Thanks! Your Premium is now active.")
     return render(request, "billing/success.html")
 
 
 @login_required
 def checkout_cancel(request):
     log_action(request.user, "Visited Stripe cancel page", "WARNING", request)
-    messages.warning(request, "Payment cancelled.")
     return render(request, "billing/cancel.html")
 
 
@@ -1191,9 +1205,6 @@ def upgrade_premium(request):
 @never_cache
 @login_required
 def browse_one_profile(request):
-    # Clear unrelated messages
-    list(messages.get_messages(request))  # This consumes and clears messages
-
     user_id = request.session.get('user_id')
     if not user_id:
         return redirect('login')
@@ -1783,7 +1794,7 @@ def admin_delete_user(request, user_id):
         log_action(request.user, f"Deleted user account {user.email}", severity="WARNING",
             request=request, target_id=user_id, target_type="User")
     except Exception as e:
-        messages.error(request, f"Failed to delete user: {str(e)}")
+        print(request, f"Failed to delete user: {str(e)}")
 
     return redirect('admin_dashboard')
 
