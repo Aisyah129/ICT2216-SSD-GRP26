@@ -24,7 +24,6 @@ from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from base64 import b64encode, b64decode
 
-
 # ✦ Django core
 from django.conf import settings
 from django.contrib import messages
@@ -55,7 +54,6 @@ from .forms import (
     VerificationCodeForm,
 )
 
-
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
 # LOGIN view using Django auth
@@ -83,7 +81,6 @@ def login_view(request):
 
     return render(request, "accounts/login.html", {"form": form, "msg": msg})
 
-
 def request_password_reset(request):
     form = PasswordResetEmailForm(request.POST or None)
     msg = None
@@ -101,7 +98,6 @@ def request_password_reset(request):
             msg = "Invalid email address."
 
     return render(request, "accounts/password_reset_request.html", {"form": form, "msg": msg})
-
 
 def send_reset_code_email(to_email, code):
     sg = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
@@ -125,8 +121,6 @@ def send_reset_code_email(to_email, code):
     except Exception as e:
         print("❌ SendGrid error:", str(e))
 
-
-
 def verify_reset_code(request):
     form = VerificationCodeForm(request.POST or None)
     msg = None
@@ -139,7 +133,6 @@ def verify_reset_code(request):
             msg = "Invalid verification code."
 
     return render(request, "accounts/password_reset_verify.html", {"form": form, "msg": msg})
-
 
 def set_new_password(request):
     form = SetNewPasswordForm(request.POST or 
@@ -162,9 +155,6 @@ def set_new_password(request):
 
     return render(request, "accounts/set_new_password.html", {"form": form, "msg": msg})
 
-
-
-
 def send_verification_email(to_email, code):
     sg = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
 
@@ -186,7 +176,6 @@ def send_verification_email(to_email, code):
         print("✅ Email sent with status code:", response.status_code)
     except Exception as e:
         print("❌ SendGrid error:", str(e))
-
 
 def send_welcome_email(to_email, user_name):
     sg = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
@@ -216,9 +205,6 @@ def send_welcome_email(to_email, user_name):
     except Exception as e:
         print("❌ SendGrid welcome email error:", str(e))
 
-
-
-
 # REGISTER: store data temporarily and send code
 def register_user(request):
     form = SignUpForm(request.POST or None)
@@ -244,7 +230,6 @@ def register_user(request):
         return redirect('verify_email')
 
     return render(request, "accounts/register.html", {"form": form, "msg": msg})
-
 
 # VERIFY: confirm code, then store to DB
 def verify_email(request):
@@ -291,8 +276,6 @@ def verify_email(request):
 
     return render(request, "accounts/verify.html", {"msg": msg})
 
-
-
 # USER DASHBOARD — use @login_required
 @login_required
 def user_dashboard(request):
@@ -308,7 +291,6 @@ def user_dashboard(request):
         'user': user,
         'matches': matches
     })
-
 
 @login_required
 def profile_view(request):
@@ -422,14 +404,12 @@ def upload_profile_image(request):
 
     return JsonResponse({"success": True, "image_url": image_url})
 
-
 # 🟩 Get all profile images for this user (JSON)
 @login_required
 def profile_images_json(request):
     images = ProfileImage.objects.filter(profile_id_fk=request.user.profile)\
                                  .values('image_id', 'image_url', 'is_primary')
     return JsonResponse(list(images), safe=False)
-
 
 # 🟩 Set selected image as primary
 @login_required
@@ -440,7 +420,6 @@ def set_primary_image(request, pk):
     updated = ProfileImage.objects.filter(profile_id_fk=profile, pk=pk).update(is_primary=True)
 
     return JsonResponse({"success": bool(updated)})
-
 
 # 🟥 Delete selected image from DB and S3
 @login_required
@@ -477,10 +456,8 @@ def admin_dashboard(request):
     users = User.objects.filter(role='user')
     return render(request, 'accounts/admin_dashboard.html', {'users': users})
 
-
 def get_primary_image(profile_id):
     return ProfileImage.objects.filter(profile_id_fk=profile_id, is_primary=1).first()
-
 
 def get_blurred_image_url(original_url):
     if not original_url:
@@ -490,7 +467,6 @@ def get_blurred_image_url(original_url):
 
     # Compose ImageKit URL
     return f"{settings.IMAGEKIT_URL_ENDPOINT}tr:bl-20/{quote(filename)}"
-
 
 @login_required
 def likes_page(request):
@@ -503,7 +479,6 @@ def likes_page(request):
     outgoing_likes = []
 
     match_popup = request.session.pop('match_popup_likes', None)
-
 
     if tab == 'incoming':
         incoming_likes_raw = Like.objects.filter(liked_user_id=user).order_by('-liked_at')
@@ -542,8 +517,7 @@ def likes_page(request):
                     'hobbies': profile.hobbies if user.is_premium else None,
                     'relationship_goals': profile.relationship_goals if user.is_premium else None,
                     'bio': profile.bio if user.is_premium else None,
-                }
-                )
+                })
             except Profile.DoesNotExist:
                 continue
 
@@ -557,7 +531,6 @@ def likes_page(request):
             'active_tab': 'incoming',
             'page_obj': page_obj,
             'match_popup': match_popup
-
         })
 
     elif tab == 'outgoing':
@@ -597,8 +570,7 @@ def likes_page(request):
                     'hobbies': profile.hobbies ,
                     'relationship_goals': profile.relationship_goals ,
                     'bio': profile.bio
-                }
-                )
+                })
             except Profile.DoesNotExist:
                 continue
 
@@ -614,7 +586,6 @@ def likes_page(request):
             'match_popup': match_popup
         })
 
-
 def upgrade_premium(request):
     plans = [
         {'id': 'week', 'name': '1 Week', 'price': 4.99, 'description': 'Short-term access to premium features'},
@@ -626,7 +597,6 @@ def upgrade_premium(request):
 def checkout_premium(request, plan_id):
     return HttpResponse(f"Stripe checkout for plan: {plan_id}")
 
-
 # --- MongoDB Connection ---
 @lru_cache
 def mongo():
@@ -634,32 +604,26 @@ def mongo():
     return client[settings.MONGO_DB]
 
 COL = mongo().messages   # <-- Each message is its own document
-KEY = mongo().encryption_keys  # <-- Collection for encryption keys
 
-def get_aes_key_from_mongo():
-    key_doc = KEY.find_one({ "key_id": "default" })
-    if not key_doc:
-        raise ValueError("Encryption key not found.")
+# KEY = mongo().encryption_keys  # <-- Collection for encryption keys
+
+# def get_aes_key_from_mongo():
+#     key_doc = KEY.find_one({ "key_id": "default" })
+#     if not key_doc:
+#         raise ValueError("Encryption key not found.")
     
-    # Check expiry if exists
-    if "expires_at" in key_doc:
-        expiry = datetime.fromisoformat(key_doc["expires_at"].replace("Z", "+00:00"))
-        if datetime.now(timezone.utc) > expiry:
-            raise ValueError("Encryption key has expired.")
+#     # Check expiry if exists
+#     if "expires_at" in key_doc:
+#         expiry = datetime.fromisoformat(key_doc["expires_at"].replace("Z", "+00:00"))
+#         if datetime.now(timezone.utc) > expiry:
+#             raise ValueError("Encryption key has expired.")
 
-    return b64decode(key_doc["key"])
-
-# def fetch_messages(match, limit=None):
-#     q = {"match_id": str(match.match_id)}
-#     cursor = COL.find(q).sort("sent_at", 1)
-#     if limit:
-#         cursor = cursor.limit(limit)
-#     return list(cursor)
+#     return b64decode(key_doc["key"])
 
 def decrypt_aes_gcm(cipher_b64, nonce_b64):
     try:
-        # aesgcm = AESGCM(settings.AES_KEY)
-        aesgcm = AESGCM(get_aes_key_from_mongo())
+        aesgcm = AESGCM(settings.AES_KEY)
+        # aesgcm = AESGCM(get_aes_key_from_mongo())
         nonce = b64decode(nonce_b64)
         ciphertext = b64decode(cipher_b64)
         return aesgcm.decrypt(nonce, ciphertext, None).decode()
@@ -700,21 +664,6 @@ def fetch_messages(match, limit=None):
         messages.append(doc)
 
     return messages
-
-# def append_message(match, sender_id, text):
-#     msg = {
-#         "match_id": str(match.match_id),
-#         "message_id": str(uuid.uuid4()),
-#         "sender_user_id": sender_id,
-#         "ciphertext": text,
-#         "sent_at": datetime.utcnow().isoformat(timespec="seconds"),
-#         "is_read": False,
-#         "encryption_meta": {
-#             "key_id": "default", "version": 1
-#         },
-#     }
-#     COL.insert_one(msg)
-#     return msg
 
 def append_message(match, sender_id, text):
     # text should be encrypted JSON from frontend: { ciphertext, nonce }
@@ -881,9 +830,9 @@ def messages_with(request, user_id):
         "messages":        messages,
         "user":            request.user,
     }
-    context["AES_JS_KEY"] = b64encode(get_aes_key_from_mongo()).decode()
+    # context["AES_JS_KEY"] = b64encode(get_aes_key_from_mongo()).decode()
+    context["AES_JS_KEY"] = b64encode(settings.AES_KEY).decode()
     return render(request, "pages/messages.html", context)
-
 
 @login_required
 def messages_json(request, user_id):
@@ -928,7 +877,6 @@ def messages_json(request, user_id):
     } for m in msgs]
 
     return JsonResponse({"messages": lite})
-
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -983,7 +931,6 @@ def create_checkout_session(request, plan: str):
 
     return redirect(session.url)
 
-
 # ─────────────  2)  Success / cancel splash pages  ─────────────
 @login_required
 def checkout_success(request):
@@ -995,7 +942,6 @@ def checkout_success(request):
 def checkout_cancel(request):
     messages.warning(request, "Payment cancelled.")
     return render(request, "billing/cancel.html")
-
 
 # ─────────────  3)  Stripe web-hook  ─────────────
 @csrf_exempt
@@ -1034,7 +980,6 @@ def stripe_webhook(request):
         _check_status(event["data"]["object"]["id"])
 
     return HttpResponse(status=200)
-
 
 # ─────────────  4)  Helpers  ─────────────
 def _create_sub_record(
@@ -1076,7 +1021,6 @@ def _create_sub_record(
     user.is_premium = True
     user.save(update_fields=["is_premium"])
 
-
 def _update_next_renewal(stripe_sub_id: str):
     sub_json = stripe.Subscription.retrieve(stripe_sub_id)
     try:
@@ -1091,7 +1035,6 @@ def _update_next_renewal(stripe_sub_id: str):
         db_sub.save(update_fields=["expires_at", "status"])
     except Subscription.DoesNotExist:
         pass
-
 
 def _check_status(stripe_sub_id: str):
     sub_json = stripe.Subscription.retrieve(stripe_sub_id)
@@ -1131,7 +1074,6 @@ def upgrade_premium(request):
     ]
     return render(request, "accounts/upgrade_premium.html", {"plans": plans})
 
-
 @login_required
 def browse_one_profile(request):
     user_id = request.session.get('user_id')
@@ -1161,7 +1103,6 @@ def browse_one_profile(request):
     else:
         print("🟡 New user or incomplete profile — skipping gender/orientation filter.")
 
-
     # 🧠 STEP: Filter profiles based on like/dislike history
     rated_likes = Like.objects.filter(liker_user_id=user_id)
     liked_user_ids = rated_likes.filter(like_status="liked").values_list('liked_user_id', flat=True)
@@ -1183,7 +1124,6 @@ def browse_one_profile(request):
         obj = model.objects.filter(preference_id_fk=preferences).first()
         return getattr(obj, field, None) if obj else None
         
-
     # 👀 If all profiles have been rated and fewer than 5 disliked remain, show browse_done
     if len(unseen_ids) == 0:
         if len(remaining_disliked_ids) < 3:
@@ -1223,8 +1163,6 @@ def browse_one_profile(request):
     else:
         profiles = profiles.filter(user_id_fk__in=unseen_ids)
 
-
-
     # Prioritize unseen profiles
     unseen_profiles = profiles.exclude(user_id_fk__in=liked_user_ids).exclude(user_id_fk__in=disliked_user_ids)
 
@@ -1234,12 +1172,10 @@ def browse_one_profile(request):
         # Only fallback to disliked if 5 or more are available
         profiles = profiles.filter(user_id_fk__in=remaining_disliked_ids)
 
-
     # 🔁 Retrieve profiles the user has previously liked
     liked_profiles = Profile.objects.filter(
         user_id_fk__in=Like.objects.filter(liker_user_id=user_id, like_status="liked").values_list('liked_user_id', flat=True)
     )
-
 
     # 🎯 Define scoring weights
     weights = {
@@ -1263,7 +1199,6 @@ def browse_one_profile(request):
         tag_vec = [hash(tag) % 100 for tag in tags if tag]
         return np.array(gender_vec + age_vec + tag_vec, dtype='float64')
 
-
     def compute_match_score(profile, preferences, weights):
         score = 0
 
@@ -1278,7 +1213,6 @@ def browse_one_profile(request):
             if not pref_model:
                 return 0
             return weights.get(weight_key, 0) if getattr(pref_model, field, None) == profile_value else 0
-
 
         score += match_field(PreferencesGender.objects.filter(preference_id_fk=preferences).first(), profile.gender, "gender_type", "gender")
         score += match_field(PreferencesBodyType.objects.filter(preference_id_fk=preferences).first(), profile.body_type, "body_type_value", "body")
@@ -1298,8 +1232,6 @@ def browse_one_profile(request):
             user_lang_ids = profile.languages.values_list("language_id_fk_id", flat=True)
             if pref_lang.language_id_fk_id in user_lang_ids:
                 score += weights["language"]
-
-
         return score
     
     # 💡 Build vectors for liked profiles
@@ -1327,7 +1259,6 @@ def browse_one_profile(request):
                 print(f"❌ Vector construction failed: {e}, input was: {profile}")
                 return None  # avoid converting to ndarray again
 
-
         candidate_vec = construct_vector(candidate_profile)
         if candidate_vec is None:
             return 0  # fallback
@@ -1344,7 +1275,6 @@ def browse_one_profile(request):
             if isinstance(vec, np.ndarray) and vec.shape[0] == candidate_vec.shape[1]:
                 liked_vectors.append(vec)
 
-
         if not liked_vectors:
             return 0  # no comparison possible
 
@@ -1359,7 +1289,6 @@ def browse_one_profile(request):
         knn_score = sum(top_k_similarities) / len(top_k_similarities)
 
         return knn_score
-
 
     priority_profiles = []
     secondary_profiles = []
@@ -1396,7 +1325,6 @@ def browse_one_profile(request):
     index = int(request.GET.get('index', 0))
     if index >= len(scored_profiles):
         return redirect('/browse/?index=0')     
-
 
     match_popup = request.session.pop('match_popup', None)
     entry = scored_profiles[index]
@@ -1518,8 +1446,6 @@ def like_profile(request):
 
         next_index = int(request.GET.get("index", 0)) + 1
         return redirect(f"/browse/?index={next_index}")
-
-
 
 @login_required
 def save_preferences(request):
