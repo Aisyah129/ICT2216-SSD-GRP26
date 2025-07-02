@@ -626,24 +626,24 @@ def fetch_messages(match, limit=None):
         raw = doc.get("ciphertext", "")
         nonce = doc.get("nonce", "")
 
-        # try:
-        #     if (
-        #         doc.get("encryption_meta", {}).get("alg") == "AES-GCM"
-        #         and raw and nonce
-        #     ):
-        #         doc["ciphertext"] = decrypt_aes_gcm(raw, nonce)
-        #     else:
-        #         # fallback: show raw text even if not encrypted
-        #         doc["ciphertext"] = raw or "[empty]"
-        # except (InvalidToken, InvalidTag, Exception):
-        #     doc["ciphertext"] = raw or "[decryption failed]"
-
         try:
-            raw = doc.get("ciphertext", "")
-            nonce = doc.get("nonce", "")
-            doc["ciphertext"] = decrypt_aes_gcm(raw, nonce) if raw and nonce else "[missing ciphertext]"
-        except Exception:
-            doc["ciphertext"] = "[error]"
+            if (
+                doc.get("encryption_meta", {}).get("alg") == "AES-GCM"
+                and raw and nonce
+            ):
+                doc["ciphertext"] = decrypt_aes_gcm(raw, nonce)
+            else:
+                # fallback: show raw text even if not encrypted
+                doc["ciphertext"] = raw or "[empty]"
+        except (InvalidToken, InvalidTag, Exception):
+            doc["ciphertext"] = raw or "[decryption failed]"
+
+        # try:
+        #     raw = doc.get("ciphertext", "")
+        #     nonce = doc.get("nonce", "")
+        #     doc["ciphertext"] = decrypt_aes_gcm(raw, nonce) if raw and nonce else "[missing ciphertext]"
+        # except Exception:
+        #     doc["ciphertext"] = "[error]"
 
         messages.append(doc)
 
