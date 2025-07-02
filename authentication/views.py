@@ -605,25 +605,9 @@ def mongo():
 
 COL = mongo().messages   # <-- Each message is its own document
 
-# KEY = mongo().encryption_keys  # <-- Collection for encryption keys
-
-# def get_aes_key_from_mongo():
-#     key_doc = KEY.find_one({ "key_id": "default" })
-#     if not key_doc:
-#         raise ValueError("Encryption key not found.")
-    
-#     # Check expiry if exists
-#     if "expires_at" in key_doc:
-#         expiry = datetime.fromisoformat(key_doc["expires_at"].replace("Z", "+00:00"))
-#         if datetime.now(timezone.utc) > expiry:
-#             raise ValueError("Encryption key has expired.")
-
-#     return b64decode(key_doc["key"])
-
 def decrypt_aes_gcm(cipher_b64, nonce_b64):
     try:
         aesgcm = AESGCM(settings.AES_KEY)
-        # aesgcm = AESGCM(get_aes_key_from_mongo())
         nonce = b64decode(nonce_b64)
         ciphertext = b64decode(cipher_b64)
         return aesgcm.decrypt(nonce, ciphertext, None).decode()
@@ -642,45 +626,44 @@ def fetch_messages(match, limit=None):
         raw = doc.get("ciphertext", "")
         nonce = doc.get("nonce", "")
 
-        try:
-            if (
-                doc.get("encryption_meta", {}).get("alg") == "AES-GCM"
-                and raw and nonce
-            ):
-                doc["ciphertext"] = decrypt_aes_gcm(raw, nonce)
-            else:
-                # fallback: show raw text even if not encrypted
-                doc["ciphertext"] = raw or "[empty]"
-        except (InvalidToken, InvalidTag, Exception):
-            doc["ciphertext"] = raw or "[decryption failed]"
-
         # try:
-        #     raw = doc.get("ciphertext", "")
-        #     nonce = doc.get("nonce", "")
-        #     doc["ciphertext"] = decrypt_aes_gcm(raw, nonce) if raw and nonce else "[missing ciphertext]"
-        # except Exception:
-        #     doc["ciphertext"] = "[error]"
+        #     if (
+        #         doc.get("encryption_meta", {}).get("alg") == "AES-GCM"
+        #         and raw and nonce
+        #     ):
+        #         doc["ciphertext"] = decrypt_aes_gcm(raw, nonce)
+        #     else:
+        #         # fallback: show raw text even if not encrypted
+        #         doc["ciphertext"] = raw or "[empty]"
+        # except (InvalidToken, InvalidTag, Exception):
+        #     doc["ciphertext"] = raw or "[decryption failed]"
+
+        try:
+            raw = doc.get("ciphertext", "")
+            nonce = doc.get("nonce", "")
+            doc["ciphertext"] = decrypt_aes_gcm(raw, nonce) if raw and nonce else "[missing ciphertext]"
+        except Exception:
+            doc["ciphertext"] = "[error]"
 
         messages.append(doc)
 
     return messages
 
 def append_message(match, sender_id, text):
-    # text should be encrypted JSON from frontend: { ciphertext, nonce }
-    try:
-        data = json.loads(text)
-        cipher = data.get("ciphertext", "")
-        nonce = data.get("nonce", "")
-    except Exception:
-        cipher = text
-        nonce = ""
+    # Encrypt the plaintext on the backend
+    aesgcm = AESGCM(settings.AES_KEY)
+    nonce = os.urandom(12)  # AES-GCM standard nonce size
+    ciphertext = aesgcm.encrypt(nonce, text.encode(), None)
+
+    cipher_b64 = b64encode(ciphertext).decode()
+    nonce_b64 = b64encode(nonce).decode()
 
     msg = {
         "match_id": str(match.match_id),
         "message_id": str(uuid.uuid4()),
         "sender_user_id": sender_id,
-        "ciphertext": cipher,
-        "nonce": nonce,
+        "ciphertext": cipher_b64,
+        "nonce": nonce_b64,
         "sent_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "is_read": False,
         "encryption_meta": {"alg": "AES-GCM", "version": 1},
@@ -830,8 +813,6 @@ def messages_with(request, user_id):
         "messages":        messages,
         "user":            request.user,
     }
-    # context["AES_JS_KEY"] = b64encode(get_aes_key_from_mongo()).decode()
-    context["AES_JS_KEY"] = b64encode(settings.AES_KEY).decode()
     return render(request, "pages/messages.html", context)
 
 @login_required
@@ -871,7 +852,9 @@ def messages_json(request, user_id):
     # send back **only** the fields the browser needs
     lite = [{
         "id":    m["message_id"],
-        "text":  m["ciphertext"],
+        # "text":  m["ciphertext"],
+        "text":  m.get("ciphertext", "[missing]"),
+        "nonce": m.get("nonce", ""),
         "ts":    m["sent_at"],
         "from":  m["sender_user_id"],
     } for m in msgs]
