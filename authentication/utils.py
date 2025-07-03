@@ -26,3 +26,30 @@ def log_action(user, action_type, severity='INFO', request=None, target_id=None,
         metadata = metadata,
         log_hash=log_hash
     )
+# utils.py
+
+def has_permission(user, action, obj=None):
+    """
+    Centralized access control check.
+    """
+    if not user.is_authenticated:
+        return False
+
+    if user.role == 'admin':
+        # Admins can do everything
+        return True
+
+    if action == "edit_own_profile":
+        return obj and obj.user_id_fk == user
+
+    if action == "view_premium_content":
+        return user.is_premium
+
+    if action == "admin_dashboard_access":
+        return user.role == "admin"
+
+    if action == "submit_report":
+        return user.role == "user"
+
+    # Default deny
+    return False

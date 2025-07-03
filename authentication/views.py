@@ -65,6 +65,7 @@ from .forms import (
 
 from .models import User, Report
 from authentication.decorators import user_only
+from .utils import has_permission
 
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
@@ -351,6 +352,8 @@ def user_dashboard(request):
 @login_required
 def profile_view(request):
     profile = get_object_or_404(Profile, user_id_fk=request.user)
+    if not has_permission(request.user, "edit_own_profile", profile):
+        return redirect('login')
 
     # --------- POST: save edits ---------
     if request.method == "POST":
@@ -545,6 +548,8 @@ def delete_profile_image(request, pk):
 @login_required
 @user_passes_test(is_admin)
 def admin_dashboard(request):
+    if not has_permission(request.user, "admin_dashboard_access"):
+        return redirect('browse')
     users = User.objects.all().order_by('-created_at')
     logs = ActionLog.objects.order_by('-timestamp')
 
@@ -1665,6 +1670,8 @@ def dislike_profile(request):
     
 @login_required
 def submit_report(request):
+    if not has_permission(request.user, "submit_report"):
+        return redirect('browse')
     if request.method == 'POST':
         reason = request.POST.get('reason')
         details = request.POST.get('details')
