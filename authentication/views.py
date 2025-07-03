@@ -630,7 +630,11 @@ def likes_page(request):
     match_popup = request.session.pop('match_popup_likes', None)
 
     if tab == 'incoming':
-        incoming_likes_raw = Like.objects.filter(liked_user_id=user).order_by('-liked_at')
+        incoming_likes_raw = Like.objects.filter(
+            liked_user_id=user,
+            like_status='liked' 
+        ).order_by('-liked_at')
+
 
         for like in incoming_likes_raw:
             # Skip if mutual match already exists
@@ -1577,15 +1581,18 @@ def like_profile(request):
                     'image': image.image_url if image and image.image_url else '/static/images/default-avatar.jpg'
                 }
 
-                # 💡 Store modal popup in correct session key
-                if request.POST.get("from_likes") == "1":
+                tab_raw = request.POST.get("from_likes", "").strip()
+
+                if tab_raw in ["incoming", "outgoing"]:
                     request.session['match_popup_likes'] = popup_data
                 else:
                     request.session['match_popup'] = popup_data
 
+
         # ✅ Redirect to the correct page
-        if request.POST.get("from_likes") == "1":
-            return redirect('/likes/?tab=incoming')
+        if tab_raw in ["incoming", "outgoing"]:
+            return redirect(f'/likes/?tab={tab_raw}')
+
 
         next_index = int(request.GET.get("index", 0)) + 1
         return redirect(f"/browse/?index={next_index}")
@@ -1675,8 +1682,11 @@ def dislike_profile(request):
         # Optional: maintain index if using browsing
         index = int(request.POST.get("index") or request.GET.get("index", 0))
 
-        if 'from_likes' in request.POST:
-            return redirect('/likes/?tab=outgoing')
+        tab_raw = request.POST.get("from_likes", "").strip()
+
+        if tab_raw in ["incoming", "outgoing"]:
+            return redirect(f"/likes/?tab={tab_raw}")
+
 
         return redirect(f"/browse/?index={index}")
     
