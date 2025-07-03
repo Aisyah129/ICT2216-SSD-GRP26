@@ -322,7 +322,7 @@ def verify_email(request):
     if request.method == "POST":
         entered_code = request.POST.get("code")
         session_code = request.session.get("verification_code")
-        code_time_str = request.session.get("verification_code_time")
+        code_time_str = request.session['verification_code_time'] = timezone.now().isoformat()
         data = request.session.get("registration_data")
 
         if session_code and code_time_str and data:
