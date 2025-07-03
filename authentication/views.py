@@ -5,7 +5,7 @@ import json
 import os
 import random
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone as dt_timezone, timedelta
 from typing import Optional  # ← used in a few type-hints
 
 # ✦ Third-party libraries
@@ -182,7 +182,8 @@ def verify_reset_code(request):
         email = request.session.get('reset_email')
 
         if stored_code and code_time_str and email:
-            code_time = timezone.datetime.fromisoformat(code_time_str).replace(tzinfo=timezone.utc)
+            code_time = datetime.fromisoformat(code_time_str).replace(tzinfo=dt_timezone.utc)
+
 
             if timezone.now() - code_time > timedelta(minutes=1):
                 # Code expired — generate and send new one
@@ -323,11 +324,12 @@ def verify_email(request):
     if request.method == "POST":
         entered_code = request.POST.get("code")
         session_code = request.session.get("verification_code")
-        code_time_str = request.session['verification_code_time'] = timezone.now().isoformat()
+        #code_time_str = request.session['verification_code_time'] = timezone.now().isoformat()
+        code_time_str = request.session.get("verification_code_time")
         data = request.session.get("registration_data")
 
         if session_code and code_time_str and data:
-            code_time = timezone.datetime.fromisoformat(code_time_str).replace(tzinfo=timezone.utc)
+            code_time = datetime.fromisoformat(code_time_str).replace(tzinfo=dt_timezone.utc)
 
             if timezone.now() - code_time > timedelta(minutes=1):
                 # Code expired — generate and resend
