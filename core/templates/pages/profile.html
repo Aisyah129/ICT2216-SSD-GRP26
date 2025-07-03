@@ -437,7 +437,7 @@
 
 <!-- Specific JS goes HERE -->
 {% block javascripts %}
-<script>
+<script nonce="{{ request.csp_nonce }}">
   /* ─────────────────────────────────────────────────────────────
      1.  PROFILE “EDIT / SAVE / CANCEL” TOGGLE
      ────────────────────────────────────────────────────────────*/
@@ -637,7 +637,7 @@
   });
 </script>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
   document.addEventListener('DOMContentLoaded', () => {
     const textarea = document.getElementById('bioTextarea');
     const counter  = document.getElementById('bioCharCount');
@@ -656,7 +656,7 @@
   });
 </script>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
   document.addEventListener('DOMContentLoaded', () => {
     const textarea = document.getElementById('hobbiesTextarea');
     const counter  = document.getElementById('hobbiesCharCount');
@@ -675,7 +675,7 @@
   });
 </script>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 document.addEventListener('DOMContentLoaded', () => {
   const occ    = document.getElementById('occupationInput');
   const count  = document.getElementById('occupationCharCount');
@@ -694,7 +694,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 document.addEventListener('DOMContentLoaded', () => {
   const loc   = document.getElementById('locationInput');
   const count = document.getElementById('locationCharCount');

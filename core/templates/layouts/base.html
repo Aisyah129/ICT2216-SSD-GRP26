@@ -57,7 +57,11 @@
   </div>
 
   {% include "includes/scripts.html" %}
-  {% block javascripts %}{% endblock javascripts %}
+  {% block javascripts %}
+  <script nonce="{{ request.csp_nonce }}">
+    // Inline JS will work here
+  </script>
+{% endblock javascripts %}
 </body>
 
 </html>
