@@ -301,7 +301,8 @@ def register_user(request):
         # Generate and store verification code
         verification_code = str(random.randint(100000, 999999))
         request.session['verification_code'] = verification_code
-
+        request.session['verification_code_time'] = timezone.now().isoformat()
+        
         log_action(None, f"Registration initiated for {form.cleaned_data['email']}", "INFO", request) # Log for Initiated Registration
         send_verification_email(form.cleaned_data['email'], verification_code)
 
