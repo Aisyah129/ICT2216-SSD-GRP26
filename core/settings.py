@@ -46,7 +46,29 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'csp.middleware.CSPMiddleware',
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+# Prevent clickjacking
+X_FRAME_OPTIONS = "DENY"
+CSP_FRAME_ANCESTORS = ["'none'"]
+
+# Secure cookies
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+
+# Referrer Policy
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
+# Browser XSS Protection
+SECURE_BROWSER_XSS_FILTER = True
+
+# Permissions Policy (optional)
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
+SECURE_CROSS_ORIGIN_EMBEDDER_POLICY = "require-corp"
+
 
 ROOT_URLCONF = 'core.urls'
 LOGIN_REDIRECT_URL = "home"   # Route defined in app/urls.py
@@ -163,3 +185,39 @@ DEFAULT_FROM_EMAIL = config("FROM_EMAIL")
 
 # if someone tries to access a login-protected page, redirect them to /login/
 LOGIN_URL = '/login/'
+
+# -------------------------------
+# CSP (Content Security Policy)
+# -------------------------------
+CSP_DEFAULT_SRC = ("'self'",)
+
+CSP_SCRIPT_SRC = (
+    "'self'",          # Allow scripts from your own domain
+    "'nonce'",         # Enable nonce-based inline scripts
+    "https://cdn.jsdelivr.net",   # Bootstrap 5
+    "https://fonts.googleapis.com",  # Google Fonts
+    "https://fonts.gstatic.com",     # Google Fonts static
+    "https://js.stripe.com",         # Stripe.js
+)
+
+CSP_STYLE_SRC = (
+    "'self'",
+    "'nonce'",  # Enable nonce-based inline styles
+    "https://fonts.googleapis.com",
+)
+
+CSP_IMG_SRC = (
+    "'self'",
+    "data:",  # Allow inline images (avatars, icons)
+)
+
+CSP_FONT_SRC = (
+    "'self'",
+    "https://fonts.gstatic.com",
+)
+
+CSP_CONNECT_SRC = (
+    "'self'",
+    "https://api.stripe.com",
+    "https://js.stripe.com",
+)
