@@ -316,11 +316,14 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content text-center p-4 shadow rounded">
       <h2 class="mb-3">💘 It's a Match!</h2>
-      <img src="{{ match_popup.image|default:'/static/images/default-avatar.jpg' }}" alt="{{ match_popup.name }}"
-        class="img-fluid rounded-circle mb-2" style="max-width: 150px;">
+      <div class="d-flex flex-column align-items-center">
+        <img src="{{ match_popup.image|default:'/static/images/default-avatar.jpg' }}" alt="{{ match_popup.name }}"
+          class="img-fluid rounded-circle mb-3" style="max-width: 150px; object-fit: cover;">
 
-      <h4>{{ match_popup.name }}</h4>
-      <p>You both liked each other!</p>
+        <h4 class="mb-1">{{ match_popup.name }}</h4>
+        <p class="text-muted">You both liked each other!</p>
+      </div>
+
     </div>
   </div>
 </div>
