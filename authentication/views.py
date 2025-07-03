@@ -1578,7 +1578,7 @@ def like_profile(request):
                 image = profile.profileimage_set.filter(is_primary=True).first()
                 popup_data = {
                     'name': profile.name,
-                    'image': f"https://ik.imagekit.io/pebhu913t/{image.image_url}" if image and image.image_url else '/static/images/default-avatar.jpg'
+                    'image': f"{settings.IMAGEKIT_URL_ENDPOINT}{image.image_url}" if image and image.image_url else '/static/images/default-avatar.jpg'
                 }
 
 
