@@ -58,7 +58,8 @@
             onerror="this.onerror=null;this.src='/static/images/default-avatar.jpg';"
             class="rounded-circle mr-3 clickable-card" style="width:48px;height:48px;object-fit:cover; cursor:pointer;"
             data-user-id="{{ selected_user.user_id }}" data-user-name="{{ selected_name }}"
-            data-user-age="{{ selected_user.age }}" data-user-image="{{ selected_avatar }}" data-user-date="">
+            data-user-age="{{ selected_user_age }}" data-user-image="{{ selected_avatar }}"
+            data-user-date="{{ selected_user_liked_date|date:'d-m-y' }}">
 
           <h4 class="mb-0">{{ selected_name }}</h4>
         </div>

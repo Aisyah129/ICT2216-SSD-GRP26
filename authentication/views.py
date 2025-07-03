@@ -917,6 +917,7 @@ def messages_with(request, user_id):
     try:
         other_profile = Profile.objects.only("name").get(user_id_fk=other_user)
         display_name  = other_profile.name or other_user.email
+        selected_profile = Profile.objects.get(user_id_fk=other_user)
     except Profile.DoesNotExist:
         display_name  = other_user.email
 
@@ -930,6 +931,14 @@ def messages_with(request, user_id):
         f"{settings.IMAGEKIT_URL_ENDPOINT}{img.image_url}"
         if img else settings.STATIC_URL + "img/avatar-placeholder.png"
     )
+
+    like = Like.objects.filter(
+        liker_user_id=request.user.user_id,
+        liked_user_id=other_user.user_id
+    ).order_by("-liked_at").first()
+
+    liked_date = like.liked_at if like else None
+
 
     #avatar_url = img.image_url if img else settings.STATIC_URL + "img/avatar-placeholder.png"#
 
@@ -976,6 +985,9 @@ def messages_with(request, user_id):
         "selected_avatar": avatar_url,
         "messages":        messages,
         "user":            request.user,
+
+        "selected_user_age": selected_profile.age,
+        "selected_user_liked_date": liked_date,
     }
     return render(request, "pages/messages.html", context)
 
