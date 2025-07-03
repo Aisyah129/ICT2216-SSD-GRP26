@@ -1274,48 +1274,45 @@ def browse_one_profile(request):
         return getattr(obj, field, None) if obj else None
         
 
-    if len(unseen_ids) == 0:
-        if len(remaining_disliked_ids) < 3:
-            return render(request, 'pages/browse_done.html', {
-                'preferences': preferences,
-                'languages': Language.objects.all(),
-                'gender': fetch_pref(PreferencesGender, 'gender_type'),
-                'body_type': fetch_pref(PreferencesBodyType, 'body_type_value'),
-                'education': fetch_pref(PreferencesEducation, 'education_level'),
-                'religion': fetch_pref(PreferencesReligion, 'religion_type'),
-                'ethnicity': fetch_pref(PreferencesEthnicity, 'ethnicity_type'),
-                'politics': fetch_pref(PreferencesPolitics, 'politics_type'),
-                'smoking': fetch_pref(PreferencesSmoking, 'smoking_type'),
-                'drinking': fetch_pref(PreferencesDrinking, 'drinking_type'),
-                'drug': fetch_pref(PreferencesDrug, 'drug_type'),
-                'has_kids': fetch_pref(PreferencesHasKids, 'has_kids_type'),
-                'wants_kids': fetch_pref(PreferencesWantsKids, 'wants_kids_type'),
-                'zodiac': fetch_pref(PreferencesZodiac, 'zodiac_type'),
-                'relationship': fetch_pref(PreferencesRelationship, 'relationship_type'),
-                'language_id': fetch_pref(PreferencesLanguage, 'language_id_fk_id'),
-                'body_choices': PreferencesBodyType._meta.get_field("body_type_value").choices,
-                'education_choices': PreferencesEducation._meta.get_field("education_level").choices,
-                'religion_choices': PreferencesReligion._meta.get_field("religion_type").choices,
-                'ethnicity_choices': PreferencesEthnicity._meta.get_field("ethnicity_type").choices,
-                'politics_choices': PreferencesPolitics._meta.get_field("politics_type").choices,
-                'smoking_choices': PreferencesSmoking._meta.get_field("smoking_type").choices,
-                'drinking_choices': PreferencesDrinking._meta.get_field("drinking_type").choices,
-                'drug_choices': PreferencesDrug._meta.get_field("drug_type").choices,
-                'wants_kids_choices': PreferencesWantsKids._meta.get_field("wants_kids_type").choices,
-                'zodiac_choices': PreferencesZodiac._meta.get_field("zodiac_type").choices,
-                'relationship_choices': PreferencesRelationship._meta.get_field("relationship_type").choices,
-            })
-        else:
-            profiles = profiles.filter(user_id_fk__in=remaining_disliked_ids)
-    else:
-        profiles = profiles.filter(user_id_fk__in=unseen_ids)
+    # Only show profiles the user has never seen before (i.e., not liked or passed)
+    profiles = profiles.filter(user_id_fk__in=unseen_ids)
+
+    # If none left, show browse_done
+    if not profiles.exists():
+        return render(request, 'pages/browse_done.html', {
+            'preferences': preferences,
+            'languages': Language.objects.all(),
+            'gender': fetch_pref(PreferencesGender, 'gender_type'),
+            'body_type': fetch_pref(PreferencesBodyType, 'body_type_value'),
+            'education': fetch_pref(PreferencesEducation, 'education_level'),
+            'religion': fetch_pref(PreferencesReligion, 'religion_type'),
+            'ethnicity': fetch_pref(PreferencesEthnicity, 'ethnicity_type'),
+            'politics': fetch_pref(PreferencesPolitics, 'politics_type'),
+            'smoking': fetch_pref(PreferencesSmoking, 'smoking_type'),
+            'drinking': fetch_pref(PreferencesDrinking, 'drinking_type'),
+            'drug': fetch_pref(PreferencesDrug, 'drug_type'),
+            'has_kids': fetch_pref(PreferencesHasKids, 'has_kids_type'),
+            'wants_kids': fetch_pref(PreferencesWantsKids, 'wants_kids_type'),
+            'zodiac': fetch_pref(PreferencesZodiac, 'zodiac_type'),
+            'relationship': fetch_pref(PreferencesRelationship, 'relationship_type'),
+            'language_id': fetch_pref(PreferencesLanguage, 'language_id_fk_id'),
+            'body_choices': PreferencesBodyType._meta.get_field("body_type_value").choices,
+            'education_choices': PreferencesEducation._meta.get_field("education_level").choices,
+            'religion_choices': PreferencesReligion._meta.get_field("religion_type").choices,
+            'ethnicity_choices': PreferencesEthnicity._meta.get_field("ethnicity_type").choices,
+            'politics_choices': PreferencesPolitics._meta.get_field("politics_type").choices,
+            'smoking_choices': PreferencesSmoking._meta.get_field("smoking_type").choices,
+            'drinking_choices': PreferencesDrinking._meta.get_field("drinking_type").choices,
+            'drug_choices': PreferencesDrug._meta.get_field("drug_type").choices,
+            'wants_kids_choices': PreferencesWantsKids._meta.get_field("wants_kids_type").choices,
+            'zodiac_choices': PreferencesZodiac._meta.get_field("zodiac_type").choices,
+            'relationship_choices': PreferencesRelationship._meta.get_field("relationship_type").choices,
+        })
+
 
     unseen_profiles = profiles.exclude(user_id_fk__in=liked_user_ids).exclude(user_id_fk__in=disliked_user_ids)
 
-    if unseen_profiles.exists():
-        profiles = unseen_profiles
-    else:
-        profiles = profiles.filter(user_id_fk__in=remaining_disliked_ids)
+    profiles = unseen_profiles
 
     liked_profiles = Profile.objects.filter(
         user_id_fk__in=Like.objects.filter(liker_user_id=user_id, like_status="liked").values_list('liked_user_id', flat=True)
