@@ -57,13 +57,24 @@
 
             <!-- Password -->
             <div class="form-group">
-
               <div class="input-group input-group-alternative">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
                 </div>
-                {{ form.password }}
+                <input
+                  type="password"
+                  name="password"
+                  id="id_password"
+                  class="form-control"
+                  placeholder="Password"
+                  minlength="8"
+                  maxlength="64"
+                  pattern=".{8,64}"
+                  title="8–64 characters"
+                  required
+                >
               </div>
+              <small class="text-muted">Use 8–64 characters; a memorable passphrase is best.</small>
               {% for error in form.password.errors %}
                 <span class="text-error">{{ error }}</span>
               {% endfor %}
@@ -71,33 +82,53 @@
 
             <!-- Confirm Password -->
             <div class="form-group">
-
               <div class="input-group input-group-alternative">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
                 </div>
-                {{ form.confirm_password }}
+                <input
+                  type="password"
+                  name="confirm_password"
+                  id="id_confirm_password"
+                  class="form-control"
+                  placeholder="Confirm Password"
+                  minlength="8"
+                  maxlength="64"
+                  title="Repeat your password"
+                  required
+                >
               </div>
               {% for error in form.confirm_password.errors %}
                 <span class="text-error">{{ error }}</span>
               {% endfor %}
             </div>
 
+
             <hr class="my-4" />
 
             <!-- Name -->
             <div class="form-group">
-
+              <label for="id_name">Name</label>
               <div class="input-group input-group-alternative mb-3">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="ni ni-single-02"></i></span>
                 </div>
-                {{ form.name }}
+                <input
+                  type="text"
+                  name="name"
+                  id="id_name"
+                  class="form-control"
+                  placeholder="Name"
+                  pattern="[A-Za-z\s\-]+"
+                  title="Only letters, spaces, and hyphens"
+                  required
+                >
               </div>
               {% for error in form.name.errors %}
                 <span class="text-error">{{ error }}</span>
               {% endfor %}
             </div>
+
 
             <!-- Age -->
             <div class="form-group">
@@ -122,17 +153,27 @@
 
             <!-- Location -->
             <div class="form-group">
-
+              <label for="id_location">Location</label>
               <div class="input-group input-group-alternative mb-3">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="ni ni-pin-3"></i></span>
                 </div>
-                {{ form.location }}
+                <input
+                  type="text"
+                  name="location"
+                  id="id_location"
+                  class="form-control"
+                  placeholder="e.g. Singapore, Kuala Lumpur"
+                  pattern="[A-Za-z,\s]{2,50}"
+                  title="Only letters, commas, and spaces (2–50 chars)"
+                  maxlength="50"
+                >
               </div>
               {% for error in form.location.errors %}
                 <span class="text-error">{{ error }}</span>
               {% endfor %}
             </div>
+
 
 
             <!-- Privacy Checkbox -->
@@ -175,6 +216,24 @@
       output.value = ageSlider.value;  // Set initial display
     }
   });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const pwd   = document.getElementById('id_password');
+  const cpwd  = document.getElementById('id_confirm_password');
+
+  const validateMatch = () => {
+    if (cpwd.value && cpwd.value !== pwd.value) {
+      cpwd.setCustomValidity("Passwords don't match");
+    } else {
+      cpwd.setCustomValidity('');
+    }
+  };
+
+  pwd.addEventListener('input', validateMatch);
+  cpwd.addEventListener('input', validateMatch);
+});
 </script>
 {% endblock javascripts %}
 

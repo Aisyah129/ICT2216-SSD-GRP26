@@ -211,7 +211,6 @@
                     value="{{ profile.location|default:'' }}"
                     placeholder="e.g. Singapore, Kuala Lumpur"
                     maxlength="50"
-                    required
                   >
                   <small id="locationCharCount" class="text-muted char-counter d-none">0/50 characters</small>
                 </div>
@@ -244,7 +243,6 @@
                     maxlength="100"
                     pattern="[A-Za-z0-9\s\-\.\&]{2,100}"
                     title="2–100 chars: letters, numbers, space, hyphen (-), period (.), ampersand (&)"
-                    required
                   >
                   <small id="occupationCharCount" class="text-muted char-counter d-none">0/100 characters</small>
                 </div>
@@ -439,7 +437,7 @@
 
 <!-- Specific JS goes HERE -->
 {% block javascripts %}
-<script>
+<script nonce="{{ request.csp_nonce }}">
   /* ─────────────────────────────────────────────────────────────
      1.  PROFILE “EDIT / SAVE / CANCEL” TOGGLE
      ────────────────────────────────────────────────────────────*/
@@ -639,7 +637,7 @@
   });
 </script>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
   document.addEventListener('DOMContentLoaded', () => {
     const textarea = document.getElementById('bioTextarea');
     const counter  = document.getElementById('bioCharCount');
@@ -658,7 +656,7 @@
   });
 </script>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
   document.addEventListener('DOMContentLoaded', () => {
     const textarea = document.getElementById('hobbiesTextarea');
     const counter  = document.getElementById('hobbiesCharCount');
@@ -677,7 +675,7 @@
   });
 </script>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 document.addEventListener('DOMContentLoaded', () => {
   const occ    = document.getElementById('occupationInput');
   const count  = document.getElementById('occupationCharCount');
@@ -696,7 +694,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 document.addEventListener('DOMContentLoaded', () => {
   const loc   = document.getElementById('locationInput');
   const count = document.getElementById('locationCharCount');

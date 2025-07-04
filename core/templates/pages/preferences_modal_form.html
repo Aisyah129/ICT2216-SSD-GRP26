@@ -75,7 +75,7 @@ input[type=range]::-moz-range-thumb {
                 <h6 class="fw-bold text-secondary">Height Preferences</h6>
                 <div class="row g-3 align-items-center">
                   <div class="col-md-6">
-                    <label class="form-label">Min Height (cm): <span id="heightMinDisplay">{{ preferences.preferred_height_min|default:150 }}</span></label>
+                    <label class="form-label">Min Height (cm): <span id="heightMinDisplay">{{ preferences.preferred_height_min|default:100 }}</span></label>
                     <input type="range" class="form-range" min="100" max="250" name="preferred_height_min" id="heightMin" value="{{ preferences.preferred_height_min|default:150 }}">
                   </div>
                   <div class="col-md-6">
