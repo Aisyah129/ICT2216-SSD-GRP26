@@ -1732,7 +1732,7 @@ def dislike_profile(request):
         except User.DoesNotExist:
             return redirect('/browse/')
 
-        # Update if exists, else create
+        # Update or create a dislike
         existing_dislike = Like.objects.filter(
             liker_user_id=liker_user,
             liked_user_id=disliked_user
@@ -1751,15 +1751,20 @@ def dislike_profile(request):
                 liked_at=timezone.now()
             )
 
-        # Optional: maintain index if using browsing
-        index = int(request.POST.get("index") or request.GET.get("index", 0))
+        # ❗ Deactivate the match
+        Match.objects.filter(
+            Q(user1_id=liker_user_uuid, user2_id=disliked_user_uuid) |
+            Q(user1_id=disliked_user_uuid, user2_id=liker_user_uuid)
+        ).update(is_active=0)
 
+        # Decide where to redirect based on source
         tab_raw = request.POST.get("from_likes", "").strip()
-
         if tab_raw in ["incoming", "outgoing"]:
             return redirect(f"/likes/?tab={tab_raw}")
+        elif tab_raw == "messages":
+            return redirect("/messages/")
 
-
+        index = int(request.POST.get("index") or request.GET.get("index", 0))
         return redirect(f"/browse/?index={index}")
     
 @login_required
