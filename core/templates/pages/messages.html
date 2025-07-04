@@ -292,7 +292,7 @@
             <form id="modalDislikeForm" method="POST" action="/dislike/">
               {% csrf_token %}
               <input type="hidden" name="disliked_user_id" id="modalDislikeUserId">
-              <input type="hidden" name="from_likes" value="1">
+              <input type="hidden" name="from_likes" value="messages">
               <button type="submit" class="btn btn-outline-danger px-4 py-2">Dislike</button>
             </form>
           </div>
