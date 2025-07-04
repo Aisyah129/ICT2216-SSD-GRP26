@@ -26,6 +26,8 @@ class PasswordResetEmailForm(forms.Form):
             'placeholder': 'Enter your email'
         })
     )
+    captcha = ReCaptchaField(widget=ReCaptchaV2Checkbox())
+
 
 class VerificationCodeForm(forms.Form):
     code = forms.CharField(
@@ -127,6 +129,8 @@ class SignUpForm(forms.Form):
             'placeholder': 'Location'
         })
     )
+    captcha = ReCaptchaField(widget=ReCaptchaV2Checkbox())
+
 
     def clean_password(self):
         pwd = self.cleaned_data.get('password')
