@@ -1675,11 +1675,12 @@ def save_preferences(request):
             }
         )
 
-        def update_pref(model, field, post_key):
+        def update_pref(model, field, post_key, allowed_values=None):
             val = request.POST.get(post_key)
-            if val:
+            if val and (allowed_values is None or val in allowed_values):
                 model.objects.update_or_create(preference_id_fk=preferences, defaults={field: val})
 
+        # Update each
         update_pref(PreferencesGender, 'gender_type', 'gender_type')
         update_pref(PreferencesBodyType, 'body_type_value', 'body_type_value')
         update_pref(PreferencesEducation, 'education_level', 'education_level')
@@ -1690,9 +1691,18 @@ def save_preferences(request):
         update_pref(PreferencesDrinking, 'drinking_type', 'drinking_type')
         update_pref(PreferencesDrug, 'drug_type', 'drug_type')
         update_pref(PreferencesHasKids, 'has_kids_type', 'has_kids_type')
-        update_pref(PreferencesWantsKids, 'wants_kids_type', 'wants_kids_type')
+
+        # ✅ ENUM-protected
+        update_pref(
+            PreferencesWantsKids,
+            'wants_kids_type',
+            'wants_kids_type',
+            allowed_values=["want kids", "don’t want kids", "open to kids"]
+        )
+
         update_pref(PreferencesZodiac, 'zodiac_type', 'zodiac_type')
         update_pref(PreferencesRelationship, 'relationship_type', 'relationship_type')
+
 
         lang_id = request.POST.get('language_id_fk')
         if lang_id:
