@@ -283,15 +283,22 @@ def send_welcome_email(to_email, user_name):
     except Exception as e:
         print("❌ SendGrid welcome email error:", str(e))
 
-# REGISTER: store data temporarily and send code
 def register_user(request):
     form = SignUpForm(request.POST or None)
     msg = None
 
     if request.method == "POST" and form.is_valid():
+        email = form.cleaned_data['email']
+
+        # ✅ Check if email already exists
+        if User.objects.filter(email=email).exists():
+            msg = "An account with this email already exists."
+            log_action(None, f"Duplicate registration attempt for {email}", "WARNING", request)
+            return render(request, "accounts/register.html", {"form": form, "msg": msg})
+
         # Temporarily store registration data in session
         request.session['registration_data'] = {
-            'email': form.cleaned_data['email'],
+            'email': email,
             'password': form.cleaned_data['password'],
             'name': form.cleaned_data['name'],
             'age': form.cleaned_data['age'],
@@ -303,14 +310,14 @@ def register_user(request):
         verification_code = str(random.randint(100000, 999999))
         request.session['verification_code'] = verification_code
         request.session['verification_code_time'] = timezone.now().isoformat()
-        
-        log_action(None, f"Registration initiated for {form.cleaned_data['email']}", "INFO", request) # Log for Initiated Registration
-        send_verification_email(form.cleaned_data['email'], verification_code)
+
+        log_action(None, f"Registration initiated for {email}", "INFO", request)
+        send_verification_email(email, verification_code)
 
         return redirect('verify_email')
     
-    else:
-        log_action(None, "Failed registration attempt", "WARNING", request, metadata=form.errors.get_json_data()) # Log invalid form data attempt
+    elif request.method == "POST":
+        log_action(None, "Failed registration attempt", "WARNING", request, metadata=form.errors.get_json_data())
 
     return render(request, "accounts/register.html", {"form": form, "msg": msg})
 
