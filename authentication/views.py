@@ -5,7 +5,7 @@ import json
 import os
 import random
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone as dt_timezone, timedelta
 from typing import Optional  # ← used in a few type-hints
 
 # ✦ Third-party libraries
@@ -109,8 +109,16 @@ def login_view(request):
                 msg = "Incorrect email or password."
         else:
             msg = "Please correct the errors below."
-
-    return render(request, "accounts/login.html", {"form": form, "msg": msg})
+    session_timeout = False
+    for message in messages.get_messages(request):
+        if message.message == "timeout":
+            session_timeout = True
+            break
+    return render(request, "accounts/login.html", {
+        "form": form,
+        "msg": msg,
+        "session_timeout": session_timeout
+    })
 
 @csrf_protect
 def logout_view(request):
@@ -130,6 +138,7 @@ def request_password_reset(request):
             code = str(random.randint(100000, 999999))
             request.session['reset_email'] = email
             request.session['reset_code'] = code
+            request.session['reset_code_time'] = timezone.now().isoformat()
             send_reset_code_email(email, code)
             log_action(user, "Requested password reset", "INFO", request) # ✅ Log password reset requested
             return redirect('verify_reset_code')
@@ -161,24 +170,45 @@ def send_reset_code_email(to_email, code):
         print("❌ SendGrid error:", str(e))
 
 def verify_reset_code(request):
+    if request.session.get('user_id'):
+        return redirect('browse')  # Already logged in
+
     form = VerificationCodeForm(request.POST or None)
     msg = None
 
     if request.method == "POST" and form.is_valid():
         entered_code = form.cleaned_data['code']
         stored_code = request.session.get('reset_code')
+        code_time_str = request.session.get('reset_code_time')
         email = request.session.get('reset_email')
 
-        if entered_code == stored_code:
-            try:
-                user = User.objects.get(email=email)
-                log_action(user, "Verified reset code", "INFO", request)
-            except User.DoesNotExist:
-                log_action(None, f"Reset code verified but user {email} not found", "WARNING", request)
-            return redirect('set_new_password')
+        if stored_code and code_time_str and email:
+            code_time = datetime.fromisoformat(code_time_str).replace(tzinfo=dt_timezone.utc)
+
+
+            if timezone.now() - code_time > timedelta(minutes=1):
+                # Code expired — generate and send new one
+                new_code = str(random.randint(100000, 999999))
+                request.session['reset_code'] = new_code
+                request.session['reset_code_time'] = timezone.now().isoformat()
+
+                send_reset_code_email(email, new_code)
+                log_action(None, f"Reset code expired and new one sent to {email}", "INFO", request)
+
+                msg = "Your code expired. A new one has been emailed to you."
+            elif entered_code == stored_code:
+                try:
+                    user = User.objects.get(email=email)
+                    log_action(user, "Verified reset code", "INFO", request)
+                except User.DoesNotExist:
+                    log_action(None, f"Reset code verified but user {email} not found", "WARNING", request)
+
+                return redirect('set_new_password')
+            else:
+                log_action(None, f"Failed reset code attempt for {email}", "WARNING", request)
+                msg = "Invalid verification code."
         else:
-            log_action(None, f"Failed reset code attempt for {email}", "WARNING", request)
-            msg = "Invalid verification code."
+            msg = "No verification code found. Please request again."
 
     return render(request, "accounts/password_reset_verify.html", {"form": form, "msg": msg})
 
@@ -254,15 +284,22 @@ def send_welcome_email(to_email, user_name):
     except Exception as e:
         print("❌ SendGrid welcome email error:", str(e))
 
-# REGISTER: store data temporarily and send code
 def register_user(request):
     form = SignUpForm(request.POST or None)
     msg = None
 
     if request.method == "POST" and form.is_valid():
+        email = form.cleaned_data['email']
+
+        # ✅ Check if email already exists
+        if User.objects.filter(email=email).exists():
+            msg = "An account with this email already exists."
+            log_action(None, f"Duplicate registration attempt for {email}", "WARNING", request)
+            return render(request, "accounts/register.html", {"form": form, "msg": msg})
+
         # Temporarily store registration data in session
         request.session['registration_data'] = {
-            'email': form.cleaned_data['email'],
+            'email': email,
             'password': form.cleaned_data['password'],
             'name': form.cleaned_data['name'],
             'age': form.cleaned_data['age'],
@@ -273,60 +310,79 @@ def register_user(request):
         # Generate and store verification code
         verification_code = str(random.randint(100000, 999999))
         request.session['verification_code'] = verification_code
+        request.session['verification_code_time'] = timezone.now().isoformat()
 
-        log_action(None, f"Registration initiated for {form.cleaned_data['email']}", "INFO", request) # Log for Initiated Registration
-        send_verification_email(form.cleaned_data['email'], verification_code)
+        log_action(None, f"Registration initiated for {email}", "INFO", request)
+        send_verification_email(email, verification_code)
 
         return redirect('verify_email')
     
-    else:
-        log_action(None, "Failed registration attempt", "WARNING", request, metadata=form.errors.get_json_data()) # Log invalid form data attempt
+    elif request.method == "POST":
+        log_action(None, "Failed registration attempt", "WARNING", request, metadata=form.errors.get_json_data())
 
     return render(request, "accounts/register.html", {"form": form, "msg": msg})
 
 # VERIFY: confirm code, then store to DB
 def verify_email(request):
+    if request.session.get('user_id'):
+        return redirect('browse')  # Already logged in
+
     msg = None
 
     if request.method == "POST":
         entered_code = request.POST.get("code")
         session_code = request.session.get("verification_code")
+        #code_time_str = request.session['verification_code_time'] = timezone.now().isoformat()
+        code_time_str = request.session.get("verification_code_time")
         data = request.session.get("registration_data")
 
-        if entered_code == session_code and data:
-            # Create user and profile
-            user = User.objects.create_user(
-                email=data['email'],
-                password=data['password'],
-                role='user',
-                is_premium=False,
-                created_at=timezone.now()
-            )
+        if session_code and code_time_str and data:
+            code_time = datetime.fromisoformat(code_time_str).replace(tzinfo=dt_timezone.utc)
 
-            Profile.objects.create(
-                profile_id=str(uuid.uuid4()),
-                user_id_fk=user,
-                name=data['name'],
-                age=data['age'],
-                gender=data['gender'],
-                location=data['location'],
-                created_at=timezone.now(),
-                last_updated=timezone.now()
-            )
+            if timezone.now() - code_time > timedelta(minutes=1):
+                # Code expired — generate and resend
+                new_code = str(random.randint(100000, 999999))
+                request.session['verification_code'] = new_code
+                request.session['verification_code_time'] = timezone.now().isoformat()
 
-            send_welcome_email(user.email, data['name'])
+                send_verification_email(data['email'], new_code)
+                msg = "Previous code expired. A new one has been sent to your email."
+            elif entered_code == session_code:
+                # ✅ Register user and log them in
+                user = User.objects.create_user(
+                    email=data['email'],
+                    password=data['password'],
+                    role='user',
+                    is_premium=False,
+                    created_at=timezone.now()
+                )
 
-            # Clear verification session
-            del request.session['registration_data']
-            del request.session['verification_code']
+                Profile.objects.create(
+                    profile_id=str(uuid.uuid4()),
+                    user_id_fk=user,
+                    name=data['name'],
+                    age=data['age'],
+                    gender=data['gender'],
+                    location=data['location'],
+                    created_at=timezone.now(),
+                    last_updated=timezone.now()
+                )
 
-            auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-            request.session['user_id'] = user.user_id  # ensure session is set
-            log_action(user, "User account created and verified", "INFO", request) # Log successful account creation
-            return redirect('browse_one')  # this triggers browse_one_profile()
+                send_welcome_email(user.email, data['name'])
 
+                # Clear session data after success
+                for key in ['registration_data', 'verification_code', 'verification_code_time']:
+                    request.session.pop(key, None)
+
+                auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                request.session['user_id'] = user.user_id
+                log_action(user, "User account created and verified", "INFO", request)
+
+                return redirect('browse_one')
+            else:
+                msg = "Invalid verification code."
         else:
-            msg = "Invalid verification code."
+            msg = "Verification code missing or expired. Please register again."
 
     return render(request, "accounts/verify.html", {"msg": msg})
 

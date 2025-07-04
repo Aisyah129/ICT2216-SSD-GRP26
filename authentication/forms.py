@@ -4,6 +4,8 @@ from django import forms
 from django.contrib.auth.password_validation import validate_password
 from authentication.models import Profile  
 import re
+from django_recaptcha.fields import ReCaptchaField
+from django_recaptcha.widgets import ReCaptchaV2Checkbox
 
 class LoginForm(forms.Form):
     email = forms.EmailField(widget=forms.EmailInput(attrs={
@@ -14,6 +16,7 @@ class LoginForm(forms.Form):
         'class': 'form-control form-control-alternative',
         'placeholder': 'Password'
     }))
+    captcha = ReCaptchaField(widget=ReCaptchaV2Checkbox())
 
 
 class PasswordResetEmailForm(forms.Form):
