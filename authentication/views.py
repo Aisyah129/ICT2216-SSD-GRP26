@@ -65,6 +65,7 @@ from .forms import (
 
 from .models import User, Report
 from authentication.decorators import user_only
+from .utils import has_permission
 
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
@@ -407,6 +408,8 @@ def user_dashboard(request):
 @login_required
 def profile_view(request):
     profile = get_object_or_404(Profile, user_id_fk=request.user)
+    if not has_permission(request.user, "edit_own_profile", profile):
+        return redirect('login')
 
     # --------- POST: save edits ---------
     if request.method == "POST":
@@ -601,6 +604,8 @@ def delete_profile_image(request, pk):
 @login_required
 @user_passes_test(is_admin)
 def admin_dashboard(request):
+    if not has_permission(request.user, "admin_dashboard_access"):
+        return redirect('browse')
     users = User.objects.all().order_by('-created_at')
     logs = ActionLog.objects.order_by('-timestamp')
 
@@ -681,7 +686,11 @@ def likes_page(request):
     match_popup = request.session.pop('match_popup_likes', None)
 
     if tab == 'incoming':
-        incoming_likes_raw = Like.objects.filter(liked_user_id=user).order_by('-liked_at')
+        incoming_likes_raw = Like.objects.filter(
+            liked_user_id=user,
+            like_status='liked' 
+        ).order_by('-liked_at')
+
 
         for like in incoming_likes_raw:
             # Skip if mutual match already exists
@@ -866,7 +875,7 @@ def append_message(match, sender_id, text):
         "sender_user_id": sender_id,
         "ciphertext": cipher_b64,
         "nonce": nonce_b64,
-        "sent_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "sent_at": timezone.now().isoformat(timespec="seconds"),
         "is_read": False,
         "encryption_meta": {"alg": "AES-GCM", "version": 1},
     }
@@ -968,6 +977,7 @@ def messages_with(request, user_id):
     try:
         other_profile = Profile.objects.only("name").get(user_id_fk=other_user)
         display_name  = other_profile.name or other_user.email
+        selected_profile = Profile.objects.get(user_id_fk=other_user)
     except Profile.DoesNotExist:
         display_name  = other_user.email
 
@@ -981,6 +991,14 @@ def messages_with(request, user_id):
         f"{settings.IMAGEKIT_URL_ENDPOINT}{img.image_url}"
         if img else settings.STATIC_URL + "img/avatar-placeholder.png"
     )
+
+    like = Like.objects.filter(
+        liker_user_id=request.user.user_id,
+        liked_user_id=other_user.user_id
+    ).order_by("-liked_at").first()
+
+    liked_date = like.liked_at if like else None
+
 
     #avatar_url = img.image_url if img else settings.STATIC_URL + "img/avatar-placeholder.png"#
 
@@ -1027,6 +1045,9 @@ def messages_with(request, user_id):
         "selected_avatar": avatar_url,
         "messages":        messages,
         "user":            request.user,
+
+        "selected_user_age": selected_profile.age,
+        "selected_user_liked_date": liked_date,
     }
     return render(request, "pages/messages.html", context)
 
@@ -1309,48 +1330,45 @@ def browse_one_profile(request):
         return getattr(obj, field, None) if obj else None
         
 
-    if len(unseen_ids) == 0:
-        if len(remaining_disliked_ids) < 3:
-            return render(request, 'pages/browse_done.html', {
-                'preferences': preferences,
-                'languages': Language.objects.all(),
-                'gender': fetch_pref(PreferencesGender, 'gender_type'),
-                'body_type': fetch_pref(PreferencesBodyType, 'body_type_value'),
-                'education': fetch_pref(PreferencesEducation, 'education_level'),
-                'religion': fetch_pref(PreferencesReligion, 'religion_type'),
-                'ethnicity': fetch_pref(PreferencesEthnicity, 'ethnicity_type'),
-                'politics': fetch_pref(PreferencesPolitics, 'politics_type'),
-                'smoking': fetch_pref(PreferencesSmoking, 'smoking_type'),
-                'drinking': fetch_pref(PreferencesDrinking, 'drinking_type'),
-                'drug': fetch_pref(PreferencesDrug, 'drug_type'),
-                'has_kids': fetch_pref(PreferencesHasKids, 'has_kids_type'),
-                'wants_kids': fetch_pref(PreferencesWantsKids, 'wants_kids_type'),
-                'zodiac': fetch_pref(PreferencesZodiac, 'zodiac_type'),
-                'relationship': fetch_pref(PreferencesRelationship, 'relationship_type'),
-                'language_id': fetch_pref(PreferencesLanguage, 'language_id_fk_id'),
-                'body_choices': PreferencesBodyType._meta.get_field("body_type_value").choices,
-                'education_choices': PreferencesEducation._meta.get_field("education_level").choices,
-                'religion_choices': PreferencesReligion._meta.get_field("religion_type").choices,
-                'ethnicity_choices': PreferencesEthnicity._meta.get_field("ethnicity_type").choices,
-                'politics_choices': PreferencesPolitics._meta.get_field("politics_type").choices,
-                'smoking_choices': PreferencesSmoking._meta.get_field("smoking_type").choices,
-                'drinking_choices': PreferencesDrinking._meta.get_field("drinking_type").choices,
-                'drug_choices': PreferencesDrug._meta.get_field("drug_type").choices,
-                'wants_kids_choices': PreferencesWantsKids._meta.get_field("wants_kids_type").choices,
-                'zodiac_choices': PreferencesZodiac._meta.get_field("zodiac_type").choices,
-                'relationship_choices': PreferencesRelationship._meta.get_field("relationship_type").choices,
-            })
-        else:
-            profiles = profiles.filter(user_id_fk__in=remaining_disliked_ids)
-    else:
-        profiles = profiles.filter(user_id_fk__in=unseen_ids)
+    # Only show profiles the user has never seen before (i.e., not liked or passed)
+    profiles = profiles.filter(user_id_fk__in=unseen_ids)
+
+    # If none left, show browse_done
+    if not profiles.exists():
+        return render(request, 'pages/browse_done.html', {
+            'preferences': preferences,
+            'languages': Language.objects.all(),
+            'gender': fetch_pref(PreferencesGender, 'gender_type'),
+            'body_type': fetch_pref(PreferencesBodyType, 'body_type_value'),
+            'education': fetch_pref(PreferencesEducation, 'education_level'),
+            'religion': fetch_pref(PreferencesReligion, 'religion_type'),
+            'ethnicity': fetch_pref(PreferencesEthnicity, 'ethnicity_type'),
+            'politics': fetch_pref(PreferencesPolitics, 'politics_type'),
+            'smoking': fetch_pref(PreferencesSmoking, 'smoking_type'),
+            'drinking': fetch_pref(PreferencesDrinking, 'drinking_type'),
+            'drug': fetch_pref(PreferencesDrug, 'drug_type'),
+            'has_kids': fetch_pref(PreferencesHasKids, 'has_kids_type'),
+            'wants_kids': fetch_pref(PreferencesWantsKids, 'wants_kids_type'),
+            'zodiac': fetch_pref(PreferencesZodiac, 'zodiac_type'),
+            'relationship': fetch_pref(PreferencesRelationship, 'relationship_type'),
+            'language_id': fetch_pref(PreferencesLanguage, 'language_id_fk_id'),
+            'body_choices': PreferencesBodyType._meta.get_field("body_type_value").choices,
+            'education_choices': PreferencesEducation._meta.get_field("education_level").choices,
+            'religion_choices': PreferencesReligion._meta.get_field("religion_type").choices,
+            'ethnicity_choices': PreferencesEthnicity._meta.get_field("ethnicity_type").choices,
+            'politics_choices': PreferencesPolitics._meta.get_field("politics_type").choices,
+            'smoking_choices': PreferencesSmoking._meta.get_field("smoking_type").choices,
+            'drinking_choices': PreferencesDrinking._meta.get_field("drinking_type").choices,
+            'drug_choices': PreferencesDrug._meta.get_field("drug_type").choices,
+            'wants_kids_choices': PreferencesWantsKids._meta.get_field("wants_kids_type").choices,
+            'zodiac_choices': PreferencesZodiac._meta.get_field("zodiac_type").choices,
+            'relationship_choices': PreferencesRelationship._meta.get_field("relationship_type").choices,
+        })
+
 
     unseen_profiles = profiles.exclude(user_id_fk__in=liked_user_ids).exclude(user_id_fk__in=disliked_user_ids)
 
-    if unseen_profiles.exists():
-        profiles = unseen_profiles
-    else:
-        profiles = profiles.filter(user_id_fk__in=remaining_disliked_ids)
+    profiles = unseen_profiles
 
     liked_profiles = Profile.objects.filter(
         user_id_fk__in=Like.objects.filter(liker_user_id=user_id, like_status="liked").values_list('liked_user_id', flat=True)
@@ -1613,18 +1631,25 @@ def like_profile(request):
                 image = profile.profileimage_set.filter(is_primary=True).first()
                 popup_data = {
                     'name': profile.name,
-                    'image': image.image_url if image and image.image_url else '/static/images/default-avatar.jpg'
+                    'image': f"{settings.IMAGEKIT_URL_ENDPOINT}{image.image_url}" if image and image.image_url else '/static/images/default-avatar.jpg'
                 }
 
-                # 💡 Store modal popup in correct session key
-                if request.POST.get("from_likes") == "1":
+
+                print("📸 Match Popup Image URL:", popup_data['image'])
+
+
+                tab_raw = request.POST.get("from_likes", "").strip()
+
+                if tab_raw in ["incoming", "outgoing"]:
                     request.session['match_popup_likes'] = popup_data
                 else:
                     request.session['match_popup'] = popup_data
 
+
         # ✅ Redirect to the correct page
-        if request.POST.get("from_likes") == "1":
-            return redirect('/likes/?tab=incoming')
+        if tab_raw in ["incoming", "outgoing"]:
+            return redirect(f'/likes/?tab={tab_raw}')
+
 
         next_index = int(request.GET.get("index", 0)) + 1
         return redirect(f"/browse/?index={next_index}")
@@ -1714,13 +1739,18 @@ def dislike_profile(request):
         # Optional: maintain index if using browsing
         index = int(request.POST.get("index") or request.GET.get("index", 0))
 
-        if 'from_likes' in request.POST:
-            return redirect('/likes/?tab=outgoing')
+        tab_raw = request.POST.get("from_likes", "").strip()
+
+        if tab_raw in ["incoming", "outgoing"]:
+            return redirect(f"/likes/?tab={tab_raw}")
+
 
         return redirect(f"/browse/?index={index}")
     
 @login_required
 def submit_report(request):
+    if not has_permission(request.user, "submit_report"):
+        return redirect('browse')
     if request.method == 'POST':
         reason = request.POST.get('reason')
         details = request.POST.get('details')

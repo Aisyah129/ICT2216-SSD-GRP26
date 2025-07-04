@@ -58,11 +58,8 @@
       <div class="col-md-4 mb-3">
         <div class="card shadow-sm text-center">
           <div class="card-body">
-            <img src="{{ user.image_url }}"
-              onerror="this.onerror=null;this.src='/static/images/default-avatar.jpg';"
-              alt="Profile Picture"
-              class="img-fluid rounded mb-2"
-              style="max-height: 200px; object-fit: cover;">
+            <img src="{{ user.image_url }}" onerror="this.onerror=null;this.src='/static/images/default-avatar.jpg';"
+              alt="Profile Picture" class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: cover;">
 
             <div class="placeholder-bar name-bar mb-2"></div>
             <div class="placeholder-bar date-bar"></div>
@@ -106,9 +103,7 @@
         <div class="card-body">
           <img src="{{ user.image_url }}"
             onerror="this.onerror=null;this.src='/static/images/blurred-default-avatar.jpg';"
-            class="img-fluid rounded mb-2"
-            style="max-height: 200px; object-fit: cover;" 
-            alt="Blurred Profile Picture">
+            class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: cover;" alt="Blurred Profile Picture">
 
           <h5 class="card-title">{{ user.name }}, {{ user.age }}</h5>
           <p class="card-text text-muted">Liked you on {{ user.liked_date|date:"d M Y" }}</p>
@@ -116,7 +111,8 @@
           <form method="POST" action="{% url 'like_profile' %}" style="display:inline;">
             {% csrf_token %}
             <input type="hidden" name="liked_user_id" value="{{ user.id }}">
-            <input type="hidden" name="from_likes" value="1"> <!-- ✅ Add this line -->
+            <input type="hidden" name="from_likes" value="{{ active_tab }}">
+
 
             <button type="submit" class="btn btn-success btn-sm">Like</button>
           </form>
@@ -124,7 +120,8 @@
           <form method="POST" action="{% url 'dislike_profile' %}" style="display:inline;">
             {% csrf_token %}
             <input type="hidden" name="disliked_user_id" value="{{ user.id }}">
-            <input type="hidden" name="from_likes" value="1"> <!-- ✅ THIS IS CRITICAL -->
+            <input type="hidden" name="from_likes" value="{{ active_tab }}">
+
 
             <button type="submit" class="btn btn-outline-danger btn-sm">Dislike</button>
           </form>
@@ -160,11 +157,8 @@
         </div>
 
         <div class="card-body">
-          <img src="{{ user.image_url }}"
-            onerror="this.onerror=null;this.src='/static/images/default-avatar.jpg';"
-            alt="Profile Picture"
-            class="img-fluid rounded mb-2"
-            style="max-height: 200px; object-fit: cover;">
+          <img src="{{ user.image_url }}" onerror="this.onerror=null;this.src='/static/images/default-avatar.jpg';"
+            alt="Profile Picture" class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: cover;">
 
           <h5 class="card-title">{{ user.name }}, {{ user.age }}</h5>
           <p class="card-text text-muted">You liked them on {{ user.liked_date|date:"d M Y" }}</p>
@@ -172,7 +166,7 @@
           <form method="POST" action="{% url 'dislike_profile' %}">
             {% csrf_token %}
             <input type="hidden" name="disliked_user_id" value="{{ user.id }}">
-            <input type="hidden" name="from_likes" value="1">
+            <input type="hidden" name="from_likes" id="modalFromLikes" value="{{ active_tab }}">
             <button type="submit" class="btn btn-outline-danger btn-sm mt-2">Dislike</button>
           </form>
 
@@ -198,10 +192,8 @@
       <div class="modal-body d-flex flex-column flex-md-row px-4 py-4" style="height: 85vh; overflow: hidden;">
         <!-- Left: Profile Image Section (50%) -->
         <div class="d-flex flex-column align-items-center justify-content-center text-center" style="flex: 1;">
-           <img id="modalImage"
-            class="img-fluid rounded shadow mb-3"
-            style="max-height: 500px; object-fit: cover; border-radius: 1rem;"
-            alt="Profile"
+          <img id="modalImage" class="img-fluid rounded shadow mb-3"
+            style="max-height: 500px; object-fit: cover; border-radius: 1rem;" alt="Profile"
             onerror="this.onerror=null;this.src='/static/images/default-avatar.jpg';">
 
           <h4 class="fw-semibold mb-0" id="modalNameAge">Name, Age</h4><br>
@@ -270,7 +262,7 @@
             <form id="modalDislikeForm" method="POST" action="/dislike/">
               {% csrf_token %}
               <input type="hidden" name="disliked_user_id" id="modalDislikeUserId">
-              <input type="hidden" name="from_likes" value="1">
+              <input type="hidden" name="from_likes" id="modalFromLikes" value="{{ active_tab }}">
               <button type="submit" class="btn btn-outline-danger px-4 py-2">Dislike</button>
             </form>
           </div>
@@ -324,16 +316,19 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content text-center p-4 shadow rounded">
       <h2 class="mb-3">💘 It's a Match!</h2>
-      <img src="{{ match_popup.image|default:'/static/images/default-avatar.jpg' }}" alt="{{ match_popup.name }}"
-        class="img-fluid rounded-circle mb-2" style="max-width: 150px;">
+      <div class="d-flex flex-column align-items-center">
+        <img src="{{ match_popup.image|default:'/static/images/default-avatar.jpg' }}" alt="{{ match_popup.name }}"
+          class="img-fluid rounded-circle mb-3" style="max-width: 150px; object-fit: cover;">
 
-      <h4>{{ match_popup.name }}</h4>
-      <p>You both liked each other!</p>
+        <h4 class="mb-1">{{ match_popup.name }}</h4>
+        <p class="text-muted">You both liked each other!</p>
+      </div>
+
     </div>
   </div>
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
   document.addEventListener("DOMContentLoaded", function () {
     const matchModalEl = document.getElementById("matchModal");
     if (matchModalEl) {
@@ -483,11 +478,23 @@
 
 {% block javascripts %}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script>
+<script nonce="{{ request.csp_nonce }}">
+
 
   document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".clickable-card").forEach(card => {
-      card.addEventListener("click", () => handleCardClick(card));
+      card.addEventListener("click", (event) => {
+        // 🛑 If the click came from a button or inside a form, do NOT open modal
+        if (
+          event.target.closest("button") ||
+          event.target.closest("form")
+        ) {
+          return;
+        }
+
+        handleCardClick(card);
+      });
+
     });
   });
 
