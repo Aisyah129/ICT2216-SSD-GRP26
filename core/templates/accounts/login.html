@@ -10,6 +10,12 @@
         <div class="card-body px-lg-5 py-lg-5">
           <div class="text-center text-muted mb-4">
             <small class="custom-heading">Welcome back! Please log in.</small>
+              {% if session_timeout %}
+                <script>
+                    alert("Inactivity has been detected. Please log in again.");
+                </script>
+              {% endif %}
+
           </div>
 
           <form method="POST">
@@ -40,6 +46,14 @@
                 <span class="text-danger text-sm">{{ error }}</span>
               {% endfor %}
             </div>
+              <!-- CAPTCHA -->
+            <div class="form-group mb-3">
+              {{ form.captcha }}
+              {% for error in form.captcha.errors %}
+                <span class="text-danger text-sm">{{ error }}</span>
+              {% endfor %}
+            </div>
+
 
             <!-- Forgot Password -->
             <div class="text-right mb-3">

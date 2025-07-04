@@ -35,7 +35,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'authentication',  # Enable the authentication app
+    'authentication',  
+    'django_recaptcha' 
 ]
 
 MIDDLEWARE = [
@@ -46,6 +47,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'authentication.middleware.SessionTimeoutMiddleware',
     'csp.middleware.CSPMiddleware',
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -90,6 +92,10 @@ TEMPLATES = [
         },
     },
 ]
+
+RECAPTCHA_PUBLIC_KEY = '6Lc6LHUrAAAAAIg1rNreICpRViTfQj9UKNeG1NVT'
+RECAPTCHA_PRIVATE_KEY = '6Lc6LHUrAAAAAOE-YkLwuFhSsV17hpWvU_t0ooWy'
+SILENCED_SYSTEM_CHECKS = ['captcha.recaptcha_test_key_error']
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
@@ -177,6 +183,8 @@ AUTH_USER_MODEL = 'authentication.User'
 
 LOGOUT_REDIRECT_URL = 'login'
 
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 # ImageKit Settings
 IMAGEKIT_URL_ENDPOINT = config('IMAGEKIT_URL_ENDPOINT')
 
@@ -221,3 +229,4 @@ CSP_CONNECT_SRC = (
     "https://api.stripe.com",
     "https://js.stripe.com",
 )
+
