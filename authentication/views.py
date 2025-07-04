@@ -1677,8 +1677,13 @@ def save_preferences(request):
 
         def update_pref(model, field, post_key, allowed_values=None):
             val = request.POST.get(post_key)
-            if val and (allowed_values is None or val in allowed_values):
-                model.objects.update_or_create(preference_id_fk=preferences, defaults={field: val})
+            if val:
+                # Normalize apostrophes
+                val = val.replace("'", "’")
+
+                if allowed_values is None or val in allowed_values:
+                    model.objects.update_or_create(preference_id_fk=preferences, defaults={field: val})
+
 
         # Update each
         update_pref(PreferencesGender, 'gender_type', 'gender_type')
