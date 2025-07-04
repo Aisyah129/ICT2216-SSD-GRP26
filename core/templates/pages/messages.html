@@ -392,3 +392,49 @@
 </script>
 
 {% endblock %}
+
+{% block stylesheets %}
+<style>
+  .custom-wide-modal {
+    max-width: 95vw;
+    max-height: 95vh;
+    margin: 0 auto;
+  }
+
+  .custom-wide-modal .modal-content {
+    height: 90vh;
+    overflow-y: auto;
+    border-radius: 0.75rem;
+  }
+  
+  .custom-close-button {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    width: 32px;
+    height: 32px;
+    background-color: #f8f9fa;
+    color: #212529;
+    border: 1.5px solid #ced4da;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+
+    display: flex;
+    align-items: center;
+    /* vertical centering */
+    justify-content: center;
+    /* horizontal centering */
+    padding: 0;
+  }
+
+
+  .custom-close-button:hover {
+    background-color: #dc3545;
+    color: #fff;
+    border-color: #dc3545;
+  }
+</style>
+{% endblock %}
