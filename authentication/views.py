@@ -1814,6 +1814,16 @@ def submit_report(request):
                 messages.success(request, "🚩 Report submitted successfully.")
                 print(f"✅ Report saved: {report.report_id}")
 
+                # 👎 Also mark as 'passed' in Like model
+                Like.objects.update_or_create(
+                    liker_user_id=request.user,
+                    liked_user_id=reported_profile_id,
+                    defaults={
+                        'like_status': 'passed',
+                        'liked_at': timezone.now()
+                    }
+                )
+
             current_index = int(request.GET.get("index", 0))
             return redirect(f'/browse/?index={current_index + 1}')
 
