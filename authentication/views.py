@@ -29,6 +29,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout
+from django.contrib.auth import get_user_model
 from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -283,6 +284,13 @@ def send_welcome_email(to_email, user_name):
         print("✅ Welcome email sent:", response.status_code)
     except Exception as e:
         print("❌ SendGrid welcome email error:", str(e))
+
+User = get_user_model()
+
+def check_email(request):
+    email = request.GET.get("email", "")
+    exists = User.objects.filter(email=email).exists()
+    return JsonResponse({"exists": exists})
 
 def register_user(request):
     form = SignUpForm(request.POST or None)
@@ -839,23 +847,11 @@ def fetch_messages(match, limit=None):
         nonce = doc.get("nonce", "")
 
         try:
-            if (
-                doc.get("encryption_meta", {}).get("alg") == "AES-GCM"
-                and raw and nonce
-            ):
-                doc["ciphertext"] = decrypt_aes_gcm(raw, nonce)
-            else:
-                # fallback: show raw text even if not encrypted
-                doc["ciphertext"] = raw or "[empty]"
-        except (InvalidToken, InvalidTag, Exception):
-            doc["ciphertext"] = raw or "[decryption failed]"
-
-        # try:
-        #     raw = doc.get("ciphertext", "")
-        #     nonce = doc.get("nonce", "")
-        #     doc["ciphertext"] = decrypt_aes_gcm(raw, nonce) if raw and nonce else "[missing ciphertext]"
-        # except Exception:
-        #     doc["ciphertext"] = "[error]"
+            raw = doc.get("ciphertext", "")
+            nonce = doc.get("nonce", "")
+            doc["ciphertext"] = decrypt_aes_gcm(raw, nonce) if raw and nonce else "[missing ciphertext]"
+        except Exception:
+            doc["ciphertext"] = "[error]"
 
         messages.append(doc)
 
