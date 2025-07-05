@@ -34,5 +34,16 @@ jobs:
           cd ~/ICT2216-SSD-GRP26
           git pull origin merge/all
           source venv/bin/activate
+          
+          export DB_NAME=${{ secrets.DB_NAME }}
+          export DB_USER=${{ secrets.DB_USER }}
+          export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          export DB_HOST=${{ secrets.DB_HOST }}
+          export DB_PORT=${{ secrets.DB_PORT }}
+          
+          export MONGO_URI=${{ secrets.MONGO_URI }}
+          export STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+          export STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+
           pip install -r requirements.txt
           sudo systemctl restart gunicorn
