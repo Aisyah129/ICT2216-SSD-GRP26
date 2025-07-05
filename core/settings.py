@@ -51,6 +51,9 @@ MIDDLEWARE = [
     'csp.middleware.CSPMiddleware',
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+CSRF_TRUSTED_ORIGINS = ['https://aisteadmai.zapto.org']
+
 # Prevent clickjacking
 X_FRAME_OPTIONS = "DENY"
 CSP_FRAME_ANCESTORS = ["'none'"]
