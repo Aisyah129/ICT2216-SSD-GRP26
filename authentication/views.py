@@ -1580,6 +1580,8 @@ def like_profile(request):
     if request.method == 'POST':
         liked_user_uuid = request.POST.get("liked_user_id")
 
+        tab_raw = request.POST.get("from_likes", "").strip()
+
         try:
             liker_user = User.objects.get(user_id=liker_user_uuid)
             liked_user = User.objects.get(user_id=liked_user_uuid)
@@ -1638,7 +1640,6 @@ def like_profile(request):
                 print("📸 Match Popup Image URL:", popup_data['image'])
 
 
-                tab_raw = request.POST.get("from_likes", "").strip()
 
                 if tab_raw in ["incoming", "outgoing"]:
                     request.session['match_popup_likes'] = popup_data
@@ -1725,6 +1726,7 @@ def dislike_profile(request):
 
     if request.method == 'POST':
         disliked_user_uuid = request.POST.get("disliked_user_id")
+        tab_raw = request.POST.get("from_likes", "").strip()
 
         try:
             liker_user = User.objects.get(user_id=liker_user_uuid)
@@ -1758,7 +1760,6 @@ def dislike_profile(request):
         ).update(is_active=0)
 
         # Decide where to redirect based on source
-        tab_raw = request.POST.get("from_likes", "").strip()
         if tab_raw in ["incoming", "outgoing"]:
             return redirect(f"/likes/?tab={tab_raw}")
         elif tab_raw == "messages":
