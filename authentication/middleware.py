@@ -16,7 +16,7 @@ class SessionTimeoutMiddleware:
 
             if last_activity:
                 last_activity = datetime.datetime.strptime(last_activity, '%Y-%m-%d %H:%M:%S')
-                if (datetime.datetime.now() - last_activity).seconds > 30:
+                if (datetime.datetime.now() - last_activity).seconds > 900:
                     # Set flag before logout
                     messages.info(request, "timeout")
                     logout(request)
