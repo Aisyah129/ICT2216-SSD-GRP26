@@ -1115,6 +1115,7 @@ def _price_to_cycle(price_id: str) -> str:
     return "3month"          # quarter
 
 # ─────────────  1)  Launch checkout  ─────────────
+@never_cache
 @login_required
 def create_checkout_session(request, plan: str):
     """
