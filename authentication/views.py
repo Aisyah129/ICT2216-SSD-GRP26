@@ -1812,6 +1812,10 @@ def submit_report(request):
                     request=request, target_id=reported_profile_id, target_type="User", metadata={"reason": reason, "details": details})
                 messages.success(request, "🚩 Report submitted successfully.")
                 print(f"✅ Report saved: {report.report_id}")
+
+                # ✅ Always redirect after handling report
+            current_index = int(request.GET.get("index", 0))
+            return redirect(f'/browse/?index={current_index + 1}')
         else:
             messages.error(request, "❌ Please fill in all required fields.")
             print("❌ Missing reason or reported_profile_id")
