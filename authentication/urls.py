@@ -7,6 +7,7 @@ urlpatterns = [
     path('login/', login_view, name="login"),
     path('register/', register_user, name="register"),
     path('verify/', verify_email, name='verify_email'),
+    path('check_email/', check_email, name='check_email'),
 
     path("reset/", request_password_reset, name="password_reset"),
     path("reset/verify/", verify_reset_code, name="verify_reset_code"),

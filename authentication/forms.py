@@ -104,6 +104,7 @@ class SignUpForm(forms.Form):
             'placeholder': 'Name'
         })
     )
+
     age = forms.IntegerField(
         min_value=18,
         max_value=90,
@@ -122,6 +123,7 @@ class SignUpForm(forms.Form):
         choices=[('male', 'Male'), ('female', 'Female')],
         widget=forms.Select(attrs={'class': 'form-control'})
     )
+
     location = forms.CharField(
         max_length=255,
         widget=forms.TextInput(attrs={
@@ -129,13 +131,24 @@ class SignUpForm(forms.Form):
             'placeholder': 'Location'
         })
     )
-    captcha = ReCaptchaField(widget=ReCaptchaV2Checkbox())
 
+    captcha = ReCaptchaField(widget=ReCaptchaV2Checkbox())
 
     def clean_password(self):
         pwd = self.cleaned_data.get('password')
+        
+        # Check for at least one number
+        if not re.search(r'\d', pwd):
+            raise forms.ValidationError("Password must include at least one number.")
+        
+        # Check for at least one special character
+        if not re.search(r'[^A-Za-z0-9]', pwd):
+            raise forms.ValidationError("Password must include at least one special character.")
+        
         validate_password(pwd)
+        
         return pwd
+
 
     def clean_confirm_password(self):
         pwd  = self.cleaned_data.get('password')
@@ -154,6 +167,7 @@ class SignUpForm(forms.Form):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model  = Profile
+        
         fields = [
             'age', 'gender', 'height_cm', 'sexual_orientation', 'pronouns',
             'body_type', 'location', 'education_level', 'occupation',
@@ -161,11 +175,13 @@ class ProfileForm(forms.ModelForm):
             'drug_use', 'has_kids', 'wants_kids', 'zodiac_sign',
             'relationship_goals', 'hobbies', 'bio'
         ]
+
         widgets = {
             # style every widget with Bootstrap classes
             field: forms.TextInput(attrs={'class': 'form-control form-control-alternative'})
             for field in fields
         }
+
         widgets.update({
             'bio':     forms.Textarea(attrs={'rows': 4, 'class': 'form-control form-control-alternative'}),
             'hobbies': forms.Textarea(attrs={'rows': 3, 'class': 'form-control form-control-alternative'})

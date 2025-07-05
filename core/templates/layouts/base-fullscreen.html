@@ -39,7 +39,44 @@
   <link href="/static/assets/css/argon-dashboard.css?v=1.1.0" rel="stylesheet" />
 
   <!-- Specific CSS goes HERE -->
-  {% block stylesheets %}{% endblock stylesheets %}
+  {% block stylesheets %}
+  <style>
+    @media (max-width: 768px) {
+      #navbar-collapse-main {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background-color: white;
+        z-index: 999;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .auth-btn {
+        width: 48% !important;
+        min-width: 140px;
+        text-align: center;
+        font-size: 1rem;
+        padding: 0.75rem;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .auth-btn {
+        width: auto !important;
+        min-width: 120px;
+        padding: 0.5rem 1.25rem;
+        font-size: 0.95rem;
+      }
+    }
+
+    .nav-link.active {
+      border-bottom: 4px solid #6c5ce7;
+      color: #6c5ce7 !important;
+      font-weight: 600;
+    }
+  </style>
+  {% endblock stylesheets %}
 
 </head>
 
@@ -73,6 +110,8 @@
   </div>
 
   {% include "includes/scripts-fullscreen.html" %}
+
+  {% block javascripts %}{% endblock javascripts %}
 
 </body>
 

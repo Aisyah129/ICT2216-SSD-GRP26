@@ -1,7 +1,7 @@
 <!-- Navbar -->
 <nav class="navbar navbar-expand-md navbar-light bg-white border-bottom py-3 shadow-sm">
-  <div class="container">
-    
+  <div class="container d-flex justify-content-between align-items-center">
+
     <!-- Brand -->
     <a class="navbar-brand font-weight-bold text-primary" href="/">
       💘 AiSteadMai 💘
@@ -15,17 +15,13 @@
 
     <!-- Nav links -->
     <div class="collapse navbar-collapse" id="navbar-collapse-main">
-      <ul class="navbar-nav ml-auto align-items-center">
+      <div class="d-flex w-100 justify-content-end align-items-center gap-2">
+        <a class="btn btn-outline-primary auth-btn text-center 
+        {% if request.resolver_match.url_name == 'login' %}active{% endif %}" href="{% url 'login' %}">Sign In</a>
 
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'login' %}">Sign In</a>
-        </li>
-
-        <li class="nav-item">
-          <a class="btn btn-primary btn-sm ml-md-3" href="{% url 'register' %}">Sign Up</a>
-        </li>
-
-      </ul>
+        <a class="btn btn-outline-primary auth-btn text-center 
+        {% if request.resolver_match.url_name == 'register' %}active{% endif %}" href="{% url 'register' %}">Sign Up</a>
+      </div>
     </div>
 
   </div>
