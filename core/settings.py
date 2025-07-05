@@ -141,11 +141,15 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-# Static files
 STATIC_URL = '/static/'
-STATIC_ROOT = PROJECT_DIR.child('core').child('staticfiles')
-STATICFILES_DIRS = (os.path.join(BASE_DIR, "core/static"),)
 
+# For production: collectstatic will dump everything here
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Where Django looks for static files in your apps during collectstatic
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, "core/static"),
+)
 # Custom user model
 AUTH_USER_MODEL = 'authentication.User'
 
