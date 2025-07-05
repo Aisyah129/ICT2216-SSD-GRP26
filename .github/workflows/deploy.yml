@@ -1,66 +1,54 @@
-name: 🚀 Deploy Django App to EC2
+name: Deploy to EC2
 
 on:
   push:
     branches:
-      - merge/all  # or your deployment branch
+      - merge/all
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    env:
-      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
-      RECAPTCHA_PUBLIC_KEY: ${{ secrets.RECAPTCHA_PUBLIC_KEY }}
-      RECAPTCHA_PRIVATE_KEY: ${{ secrets.RECAPTCHA_PRIVATE_KEY }}
-      DB_NAME: ${{ secrets.DB_NAME }}
-      DB_USER: ${{ secrets.DB_USER }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      DB_HOST: ${{ secrets.DB_HOST }}
-      DB_PORT: ${{ secrets.DB_PORT }}
-
     steps:
-    - name: ⬇️ Checkout repository
+    - name: ⬇️ Checkout repo
       uses: actions/checkout@v3
-
-    - name: 🐍 Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.9
-
-    - name: 📦 Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
 
     - name: 📂 Copy files to EC2
       uses: appleboy/scp-action@v0.1.7
       with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.EC2_SSH_KEY }}
+        host: 3.129.248.34
+        username: student26
+        key: ${{ secrets.EC2_KEY }}
         port: 22
-        source: "."
+        source: "."  # Everything
         target: "~/ICT2216-SSD-GRP26"
 
-    - name: 🖥️ SSH into EC2 and run deploy commands
+    - name: 🔤 Run deploy script on EC2
       uses: appleboy/ssh-action@v1.0.0
       with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.EC2_SSH_KEY }}
+        host: 3.129.248.34
+        username: student26
+        key: ${{ secrets.EC2_KEY }}
+        port: 22
         script: |
-          cd ICT2216-SSD-GRP26
-          export DJANGO_SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}"
-          export RECAPTCHA_PUBLIC_KEY="${{ secrets.RECAPTCHA_PUBLIC_KEY }}"
-          export RECAPTCHA_PRIVATE_KEY="${{ secrets.RECAPTCHA_PRIVATE_KEY }}"
-          export DB_NAME="${{ secrets.DB_NAME }}"
-          export DB_USER="${{ secrets.DB_USER }}"
-          export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-          export DB_HOST="${{ secrets.DB_HOST }}"
-          export DB_PORT="${{ secrets.DB_PORT }}"
-
+          cd ~/ICT2216-SSD-GRP26
+          git pull origin merge/all
           source venv/bin/activate
+
+          export DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
+          export RECAPTCHA_PUBLIC_KEY=${{ secrets.RECAPTCHA_PUBLIC_KEY }}
+          export RECAPTCHA_PRIVATE_KEY=${{ secrets.RECAPTCHA_PRIVATE_KEY }}
+
+          export DB_NAME=${{ secrets.DB_NAME }}
+          export DB_USER=${{ secrets.DB_USER }}
+          export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          export DB_HOST=${{ secrets.DB_HOST }}
+          export DB_PORT=${{ secrets.DB_PORT }}
+
+          export MONGO_URI=${{ secrets.MONGO_URI }}
+          export STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+          export STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+
           pip install -r requirements.txt
           python manage.py collectstatic --noinput
           python manage.py migrate
