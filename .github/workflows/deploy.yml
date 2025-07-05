@@ -32,7 +32,7 @@ jobs:
         port: 22
         script: |
           cd ~/ICT2216-SSD-GRP26
-          git pull origin testingworkflow
+          git pull origin merge/all
           source venv/bin/activate
           pip install -r requirements.txt
           sudo systemctl restart gunicorn
