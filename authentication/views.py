@@ -1865,7 +1865,7 @@ def toggle_report_status(request, report_id):
     if report.status == "resolved":
         action = "Unresolved"
         report.status = "pending"
-        report.resolved_at = timezone.now()
+        report.resolved_at = None
         report.resolved_by_user = None
     else:
         action = "Resolved"
