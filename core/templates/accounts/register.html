@@ -73,7 +73,8 @@
               <!-- strength meter -->
               <div class="form-group mt-2">
                 <div class="progress" style="height:6px;">
-                  <div id="passwordStrengthBar" class="progress-bar" role="progressbar" style="width:0%"></div>
+                  <div id="passwordStrengthBar" class="progress-bar bg-danger" role="progressbar" aria-valuemin="0"
+                    aria-valuemax="100" aria-valuenow="0" style="width:0%"></div>
                 </div>
                 <small id="passwordStrengthText" class="form-text text-muted"></small>
               </div>
@@ -81,100 +82,98 @@
               {% for error in form.password.errors %}
               <span class="text-error">{{ error }}</span>
               {% endfor %}
-            </div>
 
-
-            <!-- Confirm Password -->
-            <div class="form-group">
-              <div class="input-group input-group-alternative">
-                <div class="input-group-prepend">
-                  <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
+              <!-- Confirm Password -->
+              <div class="form-group">
+                <div class="input-group input-group-alternative">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
+                  </div>
+                  <input type="password" name="confirm_password" id="id_confirm_password" class="form-control"
+                    placeholder="Confirm Password" minlength="8" maxlength="64" title="Repeat your password" required>
                 </div>
-                <input type="password" name="confirm_password" id="id_confirm_password" class="form-control"
-                  placeholder="Confirm Password" minlength="8" maxlength="64" title="Repeat your password" required>
+                {% for error in form.confirm_password.errors %}
+                <span class="text-error">{{ error }}</span>
+                {% endfor %}
               </div>
-              {% for error in form.confirm_password.errors %}
-              <span class="text-error">{{ error }}</span>
-              {% endfor %}
-            </div>
 
-            <hr class="my-4" />
+              <hr class="my-4" />
 
-            <!-- Name -->
-            <div class="form-group">
-              <label for="id_name">Name</label>
-              <div class="input-group input-group-alternative mb-3">
-                <div class="input-group-prepend">
-                  <span class="input-group-text"><i class="ni ni-single-02"></i></span>
+              <!-- Name -->
+              <div class="form-group">
+                <label for="id_name">Name</label>
+                <div class="input-group input-group-alternative mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text"><i class="ni ni-single-02"></i></span>
+                  </div>
+                  <input type="text" name="name" id="id_name" class="form-control" placeholder="Name"
+                    pattern="[A-Za-z\s\-]+" title="Only letters, spaces, and hyphens" required>
                 </div>
-                <input type="text" name="name" id="id_name" class="form-control" placeholder="Name"
-                  pattern="[A-Za-z\s\-]+" title="Only letters, spaces, and hyphens" required>
+                {% for error in form.name.errors %}
+                <span class="text-error">{{ error }}</span>
+                {% endfor %}
               </div>
-              {% for error in form.name.errors %}
-              <span class="text-error">{{ error }}</span>
-              {% endfor %}
-            </div>
 
-            <!-- Age -->
-            <div class="form-group">
-              <label for="id_age">Age: <output id="ageOutputId">{{ form.age.value|default:18 }}</output></label>
-              {{ form.age }}
-              {% for error in form.age.errors %}
-              <span class="text-error">{{ error }}</span>
-              {% endfor %}
-            </div>
-
-            <!-- Gender -->
-            <div class="form-group">
-              <label>Gender</label>
-              <div class="input-group input-group-alternative">
-                {{ form.gender }}
+              <!-- Age -->
+              <div class="form-group">
+                <label for="id_age">Age: <output id="ageOutputId">{{ form.age.value|default:18 }}</output></label>
+                {{ form.age }}
+                {% for error in form.age.errors %}
+                <span class="text-error">{{ error }}</span>
+                {% endfor %}
               </div>
-              {% for error in form.gender.errors %}
-              <span class="text-error">{{ error }}</span>
-              {% endfor %}
-            </div>
 
-            <!-- Location -->
-            <div class="form-group">
-              <label for="id_location">Location</label>
-              <div class="input-group input-group-alternative mb-3">
-                <div class="input-group-prepend">
-                  <span class="input-group-text"><i class="ni ni-pin-3"></i></span>
+              <!-- Gender -->
+              <div class="form-group">
+                <label>Gender</label>
+                <div class="input-group input-group-alternative">
+                  {{ form.gender }}
                 </div>
-                <input type="text" name="location" id="id_location" class="form-control"
-                  placeholder="e.g. Singapore, Kuala Lumpur" pattern="[A-Za-z,\s]{2,50}"
-                  title="Only letters, commas, and spaces (2–50 chars)" maxlength="50">
+                {% for error in form.gender.errors %}
+                <span class="text-error">{{ error }}</span>
+                {% endfor %}
               </div>
-              {% for error in form.location.errors %}
-              <span class="text-error">{{ error }}</span>
-              {% endfor %}
-            </div>
 
-            <!-- Privacy Checkbox -->
-            <div class="row my-4">
-              <div class="col-12">
-                <div class="custom-control custom-control-alternative custom-checkbox">
-                  <input class="custom-control-input" id="customCheckConsent" name="consent" type="checkbox" required>
-                  <label class="custom-control-label" for="customCheckConsent">
-                    <span class="text-muted">
-                      I consent to the collection and use of my personal data for account creation and service use.
-                    </span>
-                  </label>
+              <!-- Location -->
+              <div class="form-group">
+                <label for="id_location">Location</label>
+                <div class="input-group input-group-alternative mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text"><i class="ni ni-pin-3"></i></span>
+                  </div>
+                  <input type="text" name="location" id="id_location" class="form-control"
+                    placeholder="e.g. Singapore, Kuala Lumpur" pattern="[A-Za-z,\s]{2,50}"
+                    title="Only letters, commas, and spaces (2–50 chars)" maxlength="50">
+                </div>
+                {% for error in form.location.errors %}
+                <span class="text-error">{{ error }}</span>
+                {% endfor %}
+              </div>
+
+              <!-- Privacy Checkbox -->
+              <div class="row my-4">
+                <div class="col-12">
+                  <div class="custom-control custom-control-alternative custom-checkbox">
+                    <input class="custom-control-input" id="customCheckConsent" name="consent" type="checkbox" required>
+                    <label class="custom-control-label" for="customCheckConsent">
+                      <span class="text-muted">
+                        I consent to the collection and use of my personal data for account creation and service use.
+                      </span>
+                    </label>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="form-group mb-3">
-              {{ form.captcha }}
-              {% for error in form.captcha.errors %}
-              <span class="text-danger text-sm">{{ error }}</span>
-              {% endfor %}
-            </div>
+              <div class="form-group mb-3">
+                {{ form.captcha }}
+                {% for error in form.captcha.errors %}
+                <span class="text-danger text-sm">{{ error }}</span>
+                {% endfor %}
+              </div>
 
-            <!-- Submit -->
-            <div class="text-center">
-              <button type="submit" class="btn btn-primary mt-4">Create account</button>
-            </div>
+              <!-- Submit -->
+              <div class="text-center">
+                <button type="submit" class="btn btn-primary mt-4">Create account</button>
+              </div>
           </form>
 
         </div>
@@ -211,41 +210,39 @@
   });
 </script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js"
-  integrity="sha512-5OmPQ8pM+hok5i4EOV9msfZ7rRxv13blk5znVkmw+Ge4NT6EXHRVCgkU0E48CR6oCZs7U0ZAl1JG2PJquV4S+A=="
-  crossorigin="anonymous" referrerpolicy="no-referrer">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js" integrity="sha512-..."
+  crossorigin="anonymous" defer>
   </script>
-
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const pwd = document.getElementById('id_password');
     const bar = document.getElementById('passwordStrengthBar');
     const text = document.getElementById('passwordStrengthText');
-
     const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
     const colors = ['bg-danger', 'bg-warning', 'bg-info', 'bg-primary', 'bg-success'];
 
+    // sanity check
+    console.log('Password meter init:', pwd, bar);
+
     pwd.addEventListener('input', () => {
+      console.log('PW input:', pwd.value);
       const val = pwd.value || '';
-      const result = zxcvbn(val);
-      const score = result.score;       // 0–4
-      const pct = (score + 1) * 20;   // map to 20%,40%…100%
+      const result = window.zxcvbn ? zxcvbn(val) : { score: 0, feedback: {} };
+      const score = result.score;
+      const pct = (score + 1) * 20;
 
       // update bar
       bar.style.width = pct + '%';
       bar.className = 'progress-bar ' + colors[score];
+      bar.setAttribute('aria-valuenow', pct);
 
       // update text
-      if (!val) {
-        text.textContent = '';
-      } else {
-        text.textContent = labels[score] +
-          (result.feedback.warning ? ' – ' + result.feedback.warning : '');
-      }
+      text.textContent = val
+        ? labels[score] + (result.feedback.warning ? ' – ' + result.feedback.warning : '')
+        : '';
     });
   });
 </script>
-
 
 {% endblock javascripts %}
