@@ -66,19 +66,30 @@
                   <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
                 </div>
                 <input type="password" name="password" id="id_password" class="form-control" placeholder="Password"
-                  minlength="8" maxlength="64" pattern=".{8,64}" title="8–64 characters" required>
+                  minlength="8" maxlength="64" pattern=".{8,64}" title="8–64 characters" required oninput="(function(v){
+                    const bar = document.getElementById('passwordStrengthBar');
+                    const txt = document.getElementById('passwordStrengthText');
+                    let score = 0;
+                    if (v.length>=8) score++;
+                    if (v.length>=12) score++;
+                    if (v.length>=16) score++;
+                    if (/[a-z]/.test(v)) score++;
+                    if (/[A-Z]/.test(v)) score++;
+                    if (/[0-9]/.test(v)) score++;
+                    if (/[^A-Za-z0-9]/.test(v)) score++;
+                    score = Math.min(score,5);
+                    const pct = (score/5)*100;
+                    bar.style.width = pct + '%';
+                    bar.className   = 'progress-bar ' +
+                      ['bg-danger','bg-danger','bg-warning','bg-info','bg-primary','bg-success'][score];
+                    txt.textContent = v 
+                      ? ['Too Short','Weak','Fair','Good','Strong','Very Strong'][score] 
+                      : '';
+                  })(this.value)">
               </div>
               <small class="text-muted">Use 8–64 characters; a memorable passphrase is best.</small>
 
-              <!-- strength meter -->
-              <div class="form-group mt-2">
-                <div class="progress" style="height:6px;">
-                  <div id="passwordStrengthBar" class="progress-bar bg-danger" role="progressbar" aria-valuemin="0"
-                    aria-valuemax="100" aria-valuenow="0" style="width:0%">
-                  </div>
-                </div>
-                <small id="passwordStrengthText" class="form-text text-muted"></small>
-              </div>
+
 
 
               <!-- Confirm Password -->
@@ -183,69 +194,31 @@
 
 {% block javascripts %}
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  // ─── Age Slider ────────────────────────────────────────────────────────────
-  const ageSlider = document.getElementById("id_age");
-  const ageOutput = document.getElementById("ageOutputId");
-  if (ageSlider && ageOutput) {
-    ageOutput.value = ageSlider.value;
-    ageSlider.addEventListener('input', () => {
-      ageOutput.value = ageSlider.value;
-    });
-  }
+  document.addEventListener("DOMContentLoaded", function () {
+    const ageSlider = document.getElementById("id_age");
+    const output = document.getElementById("ageOutputId");
+    if (ageSlider && output) {
+      output.value = ageSlider.value;  // Set initial display
+    }
+  });
 
-  // ─── Password Match & Strength Meter ───────────────────────────────────────
-  const pwd  = document.getElementById('id_password');
-  const cpwd = document.getElementById('id_confirm_password');
-  const bar  = document.getElementById('passwordStrengthBar');
-  const txt  = document.getElementById('passwordStrengthText');
+  document.addEventListener('DOMContentLoaded', () => {
+    const pwd = document.getElementById('id_password');
+    const cpwd = document.getElementById('id_confirm_password');
 
-  if (pwd && cpwd && bar && txt) {
-    // 1) Confirm-match logic
     const validateMatch = () => {
-      cpwd.setCustomValidity(
-        cpwd.value && cpwd.value !== pwd.value
-          ? "Passwords don't match"
-          : ''
-      );
+      if (cpwd.value && cpwd.value !== pwd.value) {
+        cpwd.setCustomValidity("Passwords don't match");
+      } else {
+        cpwd.setCustomValidity('');
+      }
     };
+
     pwd.addEventListener('input', validateMatch);
     cpwd.addEventListener('input', validateMatch);
-
-    // 2) Strength-meter logic
-    const labels = ['Too Short','Weak','Fair','Good','Strong','Very Strong'];
-    const colors = ['bg-danger','bg-danger','bg-warning','bg-info','bg-primary','bg-success'];
-
-    pwd.addEventListener('input', () => {
-      console.log('Password input fired, value=', pwd.value);
-      const v = pwd.value;
-      let score = 0;
-
-      // length buckets
-      if (v.length >= 8)  score++;
-      if (v.length >= 12) score++;
-      if (v.length >= 16) score++;
-
-      // variety checks
-      if (/[a-z]/.test(v))        score++;
-      if (/[A-Z]/.test(v))        score++;
-      if (/[0-9]/.test(v))        score++;
-      if (/[^A-Za-z0-9]/.test(v)) score++;
-
-      score = Math.min(score, 5);
-      const pct = (score / 5) * 100;
-
-      // update bar
-      bar.style.width          = pct + '%';
-      bar.className            = 'progress-bar ' + colors[score];
-      bar.setAttribute('aria-valuenow', pct);
-
-      // update text
-      txt.textContent = v
-        ? labels[score]
-        : '';
-    });
-  }
-});
+  });
 </script>
+
+
+
 {% endblock javascripts %}
