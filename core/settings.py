@@ -1,33 +1,31 @@
 # -*- encoding: utf-8 -*-
 """
 License: MIT
-Copyright (c) 2019 - present AppSeed.us
 """
 
 import os
-from decouple import config
 from unipath import Path
 import pymysql
 from base64 import b64decode
+from dotenv import load_dotenv
 
-AES_KEY = b64decode(config('AES_KEY'))  # This will load the AES key from .env
+# Optional: Load .env only for local development
+load_dotenv()
+
+# Decode AES key from base64 string
+AES_KEY = b64decode(os.environ.get('AES_KEY', ''))
 
 pymysql.install_as_MySQLdb()
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT_DIR = Path(__file__).parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG')
-
+# Security
+SECRET_KEY = os.environ.get('SECRET_KEY')
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = ['3.129.248.34', 'localhost', '127.0.0.1']
 
-# Application definition
-
+# Installed apps
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -35,10 +33,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'authentication',  
-    'django_recaptcha' 
+    'authentication',
+    'django_recaptcha'
 ]
 
+# Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -49,33 +48,26 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'authentication.middleware.SessionTimeoutMiddleware',
     'csp.middleware.CSPMiddleware',
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-# Prevent clickjacking
+
+# Clickjacking and Security Headers
 X_FRAME_OPTIONS = "DENY"
 CSP_FRAME_ANCESTORS = ["'none'"]
-
-# Secure cookies
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
-
-# Referrer Policy
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
-
-# Browser XSS Protection
 SECURE_BROWSER_XSS_FILTER = True
-
-# Permissions Policy (optional)
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
 SECURE_CROSS_ORIGIN_EMBEDDER_POLICY = "require-corp"
 
-
 ROOT_URLCONF = 'core.urls'
-LOGIN_REDIRECT_URL = "home"   # Route defined in app/urls.py
-LOGOUT_REDIRECT_URL = "home"  # Route defined in app/urls.py
-TEMPLATE_DIR = os.path.join(BASE_DIR, "core/templates")  # ROOT dir for templates
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "login"
+
+TEMPLATE_DIR = os.path.join(BASE_DIR, "core/templates")
 
 TEMPLATES = [
     {
@@ -93,140 +85,110 @@ TEMPLATES = [
     },
 ]
 
-RECAPTCHA_PUBLIC_KEY = '6Lc6LHUrAAAAAIg1rNreICpRViTfQj9UKNeG1NVT'
-RECAPTCHA_PRIVATE_KEY = '6Lc6LHUrAAAAAOE-YkLwuFhSsV17hpWvU_t0ooWy'
+# reCAPTCHA keys
+RECAPTCHA_PUBLIC_KEY = os.environ.get('RECAPTCHA_PUBLIC_KEY', '')
+RECAPTCHA_PRIVATE_KEY = os.environ.get('RECAPTCHA_PRIVATE_KEY', '')
 SILENCED_SYSTEM_CHECKS = ['captcha.recaptcha_test_key_error']
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
 # Database
-# https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': config('DB_NAME'),         # ssd_db
-        'USER': config('DB_USER'),         # root
-        'PASSWORD': config('DB_PASSWORD'), # your password
-        'HOST': config('DB_HOST'),
-        'PORT': config('DB_PORT', default='3306'),
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '3306'),
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         }
     }
 }
 
-#Stripe
-STRIPE_PUBLISHABLE_KEY = config("STRIPE_PUBLISHABLE_KEY")
-STRIPE_SECRET_KEY      = config("STRIPE_SECRET_KEY")
-STRIPE_WEBHOOK_SECRET  = config("STRIPE_WEBHOOK_SECRET")
-STRIPE_PRICE_ID_WEEK  = config("STRIPE_PRICE_ID_WEEK")
-STRIPE_PRICE_ID_MONTH  = config("STRIPE_PRICE_ID_MONTH")
-STRIPE_PRICE_ID_QUARTER  = config("STRIPE_PRICE_ID_QUARTER")
+# Stripe
+STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY")
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET")
+STRIPE_PRICE_ID_WEEK = os.environ.get("STRIPE_PRICE_ID_WEEK")
+STRIPE_PRICE_ID_MONTH = os.environ.get("STRIPE_PRICE_ID_MONTH")
+STRIPE_PRICE_ID_QUARTER = os.environ.get("STRIPE_PRICE_ID_QUARTER")
 
-#NOSQL DB
-MONGO_URI = config("MONGO_URI")
-MONGO_DB = config("MONGO_DB_NAME")
+# MongoDB
+MONGO_URI = os.environ.get("MONGO_URI")
+MONGO_DB = os.environ.get("MONGO_DB_NAME")
 
-#S3 Bucket Amazon
-AWS_ACCESS_KEY_ID        = config("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY    = config("AWS_SECRET_ACCESS_KEY")
-AWS_STORAGE_BUCKET_NAME  = config("AWS_STORAGE_BUCKET_NAME")
-AWS_S3_REGION_NAME       = config("AWS_S3_REGION_NAME", default="ap-southeast-1")
-AWS_S3_ENDPOINT          = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
+# AWS S3
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME", "ap-southeast-1")
+AWS_S3_ENDPOINT = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
 
 # Password validation
-# https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 # Internationalization
-# https://docs.djangoproject.com/en/3.0/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.0/howto/static-files/
-
+# Static files
 STATIC_URL = '/static/'
-
-# STATIC_ROOT production load 
 STATIC_ROOT = PROJECT_DIR.child('core').child('staticfiles')
+STATICFILES_DIRS = (os.path.join(BASE_DIR, "core/static"),)
 
-# STATIC_ROOT development load 
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "core/static"),
-)
-
+# Custom user model
 AUTH_USER_MODEL = 'authentication.User'
 
-LOGOUT_REDIRECT_URL = 'login'
-
+# Session behavior
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
-# ImageKit Settings
-IMAGEKIT_URL_ENDPOINT = config('IMAGEKIT_URL_ENDPOINT')
+# ImageKit
+IMAGEKIT_URL_ENDPOINT = os.environ.get("IMAGEKIT_URL_ENDPOINT")
+IMAGEKIT_PUBLIC_KEY = os.environ.get("IMAGEKIT_PUBLIC_KEY")
+IMAGEKIT_PRIVATE_KEY = os.environ.get("IMAGEKIT_PRIVATE_KEY")
 
-SENDGRID_API_KEY = config("SENDGRID_API_KEY")
-DEFAULT_FROM_EMAIL = config("FROM_EMAIL")
+# SendGrid
+SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
+DEFAULT_FROM_EMAIL = os.environ.get("FROM_EMAIL")
 
-# if someone tries to access a login-protected page, redirect them to /login/
+# Login page for @login_required
 LOGIN_URL = '/login/'
 
-# -------------------------------
-# CSP (Content Security Policy)
-# -------------------------------
+# Content Security Policy (CSP)
 CSP_DEFAULT_SRC = ("'self'",)
-
 CSP_SCRIPT_SRC = (
-    "'self'",          # Allow scripts from your own domain
-    "'nonce'",         # Enable nonce-based inline scripts
-    "https://cdn.jsdelivr.net",   # Bootstrap 5
-    "https://fonts.googleapis.com",  # Google Fonts
-    "https://fonts.gstatic.com",     # Google Fonts static
-    "https://js.stripe.com",         # Stripe.js
+    "'self'",
+    "'nonce'",
+    "https://cdn.jsdelivr.net",
+    "https://fonts.googleapis.com",
+    "https://fonts.gstatic.com",
+    "https://js.stripe.com",
 )
-
 CSP_STYLE_SRC = (
     "'self'",
-    "'nonce'",  # Enable nonce-based inline styles
+    "'nonce'",
     "https://fonts.googleapis.com",
 )
-
 CSP_IMG_SRC = (
     "'self'",
-    "data:",  # Allow inline images (avatars, icons)
+    "data:",
 )
-
 CSP_FONT_SRC = (
     "'self'",
     "https://fonts.gstatic.com",
 )
-
 CSP_CONNECT_SRC = (
     "'self'",
     "https://api.stripe.com",
     "https://js.stripe.com",
 )
-
