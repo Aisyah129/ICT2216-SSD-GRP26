@@ -1269,6 +1269,7 @@ def _check_status(stripe_sub_id: str):
         except Subscription.DoesNotExist:
             pass
 
+@never_cache
 @login_required
 def upgrade_premium(request):
     plans = [
