@@ -74,14 +74,12 @@
               <div class="form-group mt-2">
                 <div class="progress" style="height:6px;">
                   <div id="passwordStrengthBar" class="progress-bar bg-danger" role="progressbar" aria-valuemin="0"
-                    aria-valuemax="100" aria-valuenow="0" style="width:0%"></div>
+                    aria-valuemax="100" aria-valuenow="0" style="width:0%">
+                  </div>
                 </div>
                 <small id="passwordStrengthText" class="form-text text-muted"></small>
               </div>
 
-              {% for error in form.password.errors %}
-              <span class="text-error">{{ error }}</span>
-              {% endfor %}
 
               <!-- Confirm Password -->
               <div class="form-group">
@@ -210,39 +208,47 @@
   });
 </script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js" integrity="sha512-..."
-  crossorigin="anonymous" referrerpolicy="no-referrer">
-  </script>
-
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const pwd = document.getElementById('id_password');
-    const bar = document.getElementById('passwordStrengthBar');
-    const text = document.getElementById('passwordStrengthText');
-    const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
-    const colors = ['bg-danger', 'bg-warning', 'bg-info', 'bg-primary', 'bg-success'];
+document.addEventListener('DOMContentLoaded', () => {
+  const pwd   = document.getElementById('id_password');
+  const bar   = document.getElementById('passwordStrengthBar');
+  const text  = document.getElementById('passwordStrengthText');
 
-   
-    console.log('Password meter init:', pwd, bar);
+  // labels & colors for 0–5
+  const labels = ['Too Short','Weak','Fair','Good','Strong','Very Strong'];
+  const colors = ['bg-danger','bg-danger','bg-warning','bg-info','bg-primary','bg-success'];
 
-    pwd.addEventListener('input', () => {
-      console.log('PW input:', pwd.value);
-      const val = pwd.value || '';
-      const result = window.zxcvbn ? zxcvbn(val) : { score: 0, feedback: {} };
-      const score = result.score;
-      const pct = (score + 1) * 20;
+  pwd.addEventListener('input', () => {
+    const v = pwd.value;
+    let score = 0;
 
-      // update bar
-      bar.style.width = pct + '%';
-      bar.className = 'progress-bar ' + colors[score];
-      bar.setAttribute('aria-valuenow', pct);
+    // 1. length buckets
+    if (v.length >= 8)  score++;
+    if (v.length >= 12) score++;
+    if (v.length >= 16) score++;
 
-      // update text
-      text.textContent = val
-        ? labels[score] + (result.feedback.warning ? ' – ' + result.feedback.warning : '')
-        : '';
-    });
+    // 2. variety checks
+    if (/[a-z]/.test(v))          score++;
+    if (/[A-Z]/.test(v))          score++;
+    if (/[0-9]/.test(v))          score++;
+    if (/[^A-Za-z0-9]/.test(v))   score++;
+
+    // cap at 5
+    score = Math.min(score, 5);
+
+    // percent of bar
+    const pct = (score / 5) * 100;
+    bar.style.width = pct + '%';
+    bar.className = 'progress-bar ' + colors[score];
+    bar.setAttribute('aria-valuenow', pct);
+
+    // label
+    text.textContent = v.length === 0
+      ? ''
+      : labels[score];
   });
+});
 </script>
+
 
 {% endblock javascripts %}
