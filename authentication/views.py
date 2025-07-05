@@ -1190,6 +1190,14 @@ def stripe_webhook(request):
             stripe_session_id = session["id"],
         )
 
+        try:
+            user = User.objects.get(user_id=user_id)
+            user.is_premium = True
+            user.save(update_fields=["is_premium"])
+            log_action(user, "Stripe payment confirmed — user upgraded to Premium", "INFO", request)
+        except User.DoesNotExist:
+            log_action(None, f"Stripe webhook tried to upgrade unknown user_id {user_id}", "ERROR", request)
+
     # 2️⃣ Recurring invoice paid (renewal)
     if typ == "invoice.paid":
         _update_next_renewal(event["data"]["object"]["subscription"])
@@ -1237,8 +1245,8 @@ def _create_sub_record(
         },
     )
 
-    user.is_premium = True
-    user.save(update_fields=["is_premium"])
+    #user.is_premium = True
+    #user.save(update_fields=["is_premium"])
 
 def _update_next_renewal(stripe_sub_id: str):
     sub_json = stripe.Subscription.retrieve(stripe_sub_id)
