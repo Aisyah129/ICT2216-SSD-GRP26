@@ -30,20 +30,20 @@
         <div class="card-body px-lg-5 py-lg-5">
 
           {% if msg %}
-            <div class="alert alert-danger text-center mb-3">
-              {{ msg }}
-            </div>
+          <div class="alert alert-danger text-center mb-3">
+            {{ msg }}
+          </div>
           {% endif %}
 
           <form method="POST">
             {% csrf_token %}
 
             {% if form.non_field_errors %}
-              <div class="alert alert-danger text-center mb-3">
-                {% for error in form.non_field_errors %}
-                  <p class="mb-0">{{ error }}</p>
-                {% endfor %}
-              </div>
+            <div class="alert alert-danger text-center mb-3">
+              {% for error in form.non_field_errors %}
+              <p class="mb-0">{{ error }}</p>
+              {% endfor %}
+            </div>
             {% endif %}
 
             <!-- Email -->
@@ -55,7 +55,7 @@
                 {{ form.email }}
               </div>
               {% for error in form.email.errors %}
-                <span class="text-error">{{ error }}</span>
+              <span class="text-error">{{ error }}</span>
               {% endfor %}
             </div>
 
@@ -65,24 +65,24 @@
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
                 </div>
-                <input
-                  type="password"
-                  name="password"
-                  id="id_password"
-                  class="form-control"
-                  placeholder="Password"
-                  minlength="8"
-                  maxlength="64"
-                  pattern=".{8,64}"
-                  title="8–64 characters"
-                  required
-                >
+                <input type="password" name="password" id="id_password" class="form-control" placeholder="Password"
+                  minlength="8" maxlength="64" pattern=".{8,64}" title="8–64 characters" required>
               </div>
               <small class="text-muted">Use 8–64 characters; a memorable passphrase is best.</small>
+
+              <!-- strength meter -->
+              <div class="form-group mt-2">
+                <div class="progress" style="height:6px;">
+                  <div id="passwordStrengthBar" class="progress-bar" role="progressbar" style="width:0%"></div>
+                </div>
+                <small id="passwordStrengthText" class="form-text text-muted"></small>
+              </div>
+
               {% for error in form.password.errors %}
-                <span class="text-error">{{ error }}</span>
+              <span class="text-error">{{ error }}</span>
               {% endfor %}
             </div>
+
 
             <!-- Confirm Password -->
             <div class="form-group">
@@ -90,20 +90,11 @@
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
                 </div>
-                <input
-                  type="password"
-                  name="confirm_password"
-                  id="id_confirm_password"
-                  class="form-control"
-                  placeholder="Confirm Password"
-                  minlength="8"
-                  maxlength="64"
-                  title="Repeat your password"
-                  required
-                >
+                <input type="password" name="confirm_password" id="id_confirm_password" class="form-control"
+                  placeholder="Confirm Password" minlength="8" maxlength="64" title="Repeat your password" required>
               </div>
               {% for error in form.confirm_password.errors %}
-                <span class="text-error">{{ error }}</span>
+              <span class="text-error">{{ error }}</span>
               {% endfor %}
             </div>
 
@@ -116,19 +107,11 @@
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="ni ni-single-02"></i></span>
                 </div>
-                <input
-                  type="text"
-                  name="name"
-                  id="id_name"
-                  class="form-control"
-                  placeholder="Name"
-                  pattern="[A-Za-z\s\-]+"
-                  title="Only letters, spaces, and hyphens"
-                  required
-                >
+                <input type="text" name="name" id="id_name" class="form-control" placeholder="Name"
+                  pattern="[A-Za-z\s\-]+" title="Only letters, spaces, and hyphens" required>
               </div>
               {% for error in form.name.errors %}
-                <span class="text-error">{{ error }}</span>
+              <span class="text-error">{{ error }}</span>
               {% endfor %}
             </div>
 
@@ -137,7 +120,7 @@
               <label for="id_age">Age: <output id="ageOutputId">{{ form.age.value|default:18 }}</output></label>
               {{ form.age }}
               {% for error in form.age.errors %}
-                <span class="text-error">{{ error }}</span>
+              <span class="text-error">{{ error }}</span>
               {% endfor %}
             </div>
 
@@ -148,7 +131,7 @@
                 {{ form.gender }}
               </div>
               {% for error in form.gender.errors %}
-                <span class="text-error">{{ error }}</span>
+              <span class="text-error">{{ error }}</span>
               {% endfor %}
             </div>
 
@@ -159,19 +142,12 @@
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="ni ni-pin-3"></i></span>
                 </div>
-                <input
-                  type="text"
-                  name="location"
-                  id="id_location"
-                  class="form-control"
-                  placeholder="e.g. Singapore, Kuala Lumpur"
-                  pattern="[A-Za-z,\s]{2,50}"
-                  title="Only letters, commas, and spaces (2–50 chars)"
-                  maxlength="50"
-                >
+                <input type="text" name="location" id="id_location" class="form-control"
+                  placeholder="e.g. Singapore, Kuala Lumpur" pattern="[A-Za-z,\s]{2,50}"
+                  title="Only letters, commas, and spaces (2–50 chars)" maxlength="50">
               </div>
               {% for error in form.location.errors %}
-                <span class="text-error">{{ error }}</span>
+              <span class="text-error">{{ error }}</span>
               {% endfor %}
             </div>
 
@@ -189,11 +165,11 @@
               </div>
             </div>
             <div class="form-group mb-3">
-                  {{ form.captcha }}
-                  {% for error in form.captcha.errors %}
-                    <span class="text-danger text-sm">{{ error }}</span>
-                  {% endfor %}
-              </div>
+              {{ form.captcha }}
+              {% for error in form.captcha.errors %}
+              <span class="text-danger text-sm">{{ error }}</span>
+              {% endfor %}
+            </div>
 
             <!-- Submit -->
             <div class="text-center">
@@ -219,8 +195,8 @@
   });
 
   document.addEventListener('DOMContentLoaded', () => {
-    const pwd   = document.getElementById('id_password');
-    const cpwd  = document.getElementById('id_confirm_password');
+    const pwd = document.getElementById('id_password');
+    const cpwd = document.getElementById('id_confirm_password');
 
     const validateMatch = () => {
       if (cpwd.value && cpwd.value !== pwd.value) {
@@ -234,4 +210,42 @@
     cpwd.addEventListener('input', validateMatch);
   });
 </script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js"
+  integrity="sha512-5OmPQ8pM+hok5i4EOV9msfZ7rRxv13blk5znVkmw+Ge4NT6EXHRVCgkU0E48CR6oCZs7U0ZAl1JG2PJquV4S+A=="
+  crossorigin="anonymous" referrerpolicy="no-referrer">
+  </script>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const pwd = document.getElementById('id_password');
+    const bar = document.getElementById('passwordStrengthBar');
+    const text = document.getElementById('passwordStrengthText');
+
+    const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+    const colors = ['bg-danger', 'bg-warning', 'bg-info', 'bg-primary', 'bg-success'];
+
+    pwd.addEventListener('input', () => {
+      const val = pwd.value || '';
+      const result = zxcvbn(val);
+      const score = result.score;       // 0–4
+      const pct = (score + 1) * 20;   // map to 20%,40%…100%
+
+      // update bar
+      bar.style.width = pct + '%';
+      bar.className = 'progress-bar ' + colors[score];
+
+      // update text
+      if (!val) {
+        text.textContent = '';
+      } else {
+        text.textContent = labels[score] +
+          (result.feedback.warning ? ' – ' + result.feedback.warning : '');
+      }
+    });
+  });
+</script>
+
+
 {% endblock javascripts %}
