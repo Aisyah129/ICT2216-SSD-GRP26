@@ -1688,12 +1688,13 @@ def save_preferences(request):
 
         def update_pref(model, field, post_key, allowed_values=None):
             val = request.POST.get(post_key)
-            if val:
-                # Normalize apostrophes
+            if not val or val == "---":
+                model.objects.filter(preference_id_fk=preferences).delete()
+            else:
                 val = val.replace("'", "’")
-
                 if allowed_values is None or val in allowed_values:
                     model.objects.update_or_create(preference_id_fk=preferences, defaults={field: val})
+
 
 
         # Update each
