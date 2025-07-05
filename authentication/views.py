@@ -1186,6 +1186,14 @@ def stripe_webhook(request):
             stripe_session_id = session["id"],
         )
 
+        try:
+            user = User.objects.get(user_id=user_id)
+            user.is_premium = True
+            user.save(update_fields=["is_premium"])
+            log_action(user, "Stripe payment confirmed — user upgraded to Premium", "INFO", request)
+        except User.DoesNotExist:
+            log_action(None, f"Stripe webhook tried to upgrade unknown user_id {user_id}", "ERROR", request)
+
     # 2️⃣ Recurring invoice paid (renewal)
     if typ == "invoice.paid":
         _update_next_renewal(event["data"]["object"]["subscription"])
@@ -1233,8 +1241,8 @@ def _create_sub_record(
         },
     )
 
-    user.is_premium = True
-    user.save(update_fields=["is_premium"])
+    #user.is_premium = True
+    #user.save(update_fields=["is_premium"])
 
 def _update_next_renewal(stripe_sub_id: str):
     sub_json = stripe.Subscription.retrieve(stripe_sub_id)
@@ -1676,12 +1684,13 @@ def save_preferences(request):
 
         def update_pref(model, field, post_key, allowed_values=None):
             val = request.POST.get(post_key)
-            if val:
-                # Normalize apostrophes
+            if not val or val == "---":
+                model.objects.filter(preference_id_fk=preferences).delete()
+            else:
                 val = val.replace("'", "’")
-
                 if allowed_values is None or val in allowed_values:
                     model.objects.update_or_create(preference_id_fk=preferences, defaults={field: val})
+
 
 
         # Update each
@@ -1800,6 +1809,19 @@ def submit_report(request):
                     request=request, target_id=reported_profile_id, target_type="User", metadata={"reason": reason, "details": details})
                 messages.success(request, "🚩 Report submitted successfully.")
                 print(f"✅ Report saved: {report.report_id}")
+
+                Like.objects.update_or_create(
+                    liker_user_id=request.user,
+                    liked_user_id=User.objects.get(user_id=reported_profile_id),  # ← FIXED
+                    defaults={
+                        'like_status': 'passed',
+                        'liked_at': timezone.now()
+                    }
+                )
+
+            current_index = int(request.GET.get("index", 0))
+            return redirect(f'/browse/?index={current_index + 1}')
+
         else:
             messages.error(request, "❌ Please fill in all required fields.")
             print("❌ Missing reason or reported_profile_id")

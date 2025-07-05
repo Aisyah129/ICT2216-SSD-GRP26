@@ -122,7 +122,7 @@
               {% endfor %}
             </div>
 
-            <hr class="my-4" />
+              <hr class="my-4" />
 
             <!-- Name -->
             <div class="form-group">
@@ -139,25 +139,25 @@
               {% endfor %}
             </div>
 
-            <!-- Age -->
-            <div class="form-group">
-              <label for="id_age">Age: <output id="ageOutputId">{{ form.age.value|default:18 }}</output></label>
-              {{ form.age }}
-              {% for error in form.age.errors %}
+              <!-- Age -->
+              <div class="form-group">
+                <label for="id_age">Age: <output id="ageOutputId">{{ form.age.value|default:18 }}</output></label>
+                {{ form.age }}
+                {% for error in form.age.errors %}
               <span class="text-error">{{ error }}</span>
-              {% endfor %}
-            </div>
-
-            <!-- Gender -->
-            <div class="form-group">
-              <label>Gender</label>
-              <div class="input-group input-group-alternative">
-                {{ form.gender }}
+                {% endfor %}
               </div>
-              {% for error in form.gender.errors %}
+
+              <!-- Gender -->
+              <div class="form-group">
+                <label>Gender</label>
+                <div class="input-group input-group-alternative">
+                  {{ form.gender }}
+                </div>
+                {% for error in form.gender.errors %}
               <span class="text-error">{{ error }}</span>
-              {% endfor %}
-            </div>
+                {% endfor %}
+              </div>
 
             <!-- Location -->
             <div class="form-group">
@@ -195,10 +195,10 @@
               {% endfor %}
             </div>
 
-            <!-- Submit -->
-            <div class="text-center">
-              <button type="submit" class="btn btn-primary mt-4">Create account</button>
-            </div>
+              <!-- Submit -->
+              <div class="text-center">
+                <button type="submit" class="btn btn-primary mt-4">Create account</button>
+              </div>
           </form>
 
         </div>
@@ -399,4 +399,7 @@
     }
   });
 </script>
+
+
+
 {% endblock javascripts %}
