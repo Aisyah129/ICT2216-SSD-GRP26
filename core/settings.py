@@ -117,7 +117,7 @@ STRIPE_PRICE_ID_QUARTER = os.environ.get("STRIPE_PRICE_ID_QUARTER")
 
 # MongoDB
 MONGO_URI = os.environ.get("MONGO_URI")
-MONGO_DB = os.environ.get("MONGO_DB_NAME")
+MONGO_DB = os.environ.get("MONGO_DB_NAME", "chat_db")
 
 # AWS S3
 AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
