@@ -183,72 +183,69 @@
 
 {% block javascripts %}
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const ageSlider = document.getElementById("id_age");
-    const output = document.getElementById("ageOutputId");
-    if (ageSlider && output) {
-      output.value = ageSlider.value;  // Set initial display
-    }
-  });
+document.addEventListener('DOMContentLoaded', () => {
+  // ─── Age Slider ────────────────────────────────────────────────────────────
+  const ageSlider = document.getElementById("id_age");
+  const ageOutput = document.getElementById("ageOutputId");
+  if (ageSlider && ageOutput) {
+    ageOutput.value = ageSlider.value;
+    ageSlider.addEventListener('input', () => {
+      ageOutput.value = ageSlider.value;
+    });
+  }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const pwd = document.getElementById('id_password');
-    const cpwd = document.getElementById('id_confirm_password');
+  // ─── Password Match & Strength Meter ───────────────────────────────────────
+  const pwd  = document.getElementById('id_password');
+  const cpwd = document.getElementById('id_confirm_password');
+  const bar  = document.getElementById('passwordStrengthBar');
+  const txt  = document.getElementById('passwordStrengthText');
 
+  if (pwd && cpwd && bar && txt) {
+    // 1) Confirm-match logic
     const validateMatch = () => {
-      if (cpwd.value && cpwd.value !== pwd.value) {
-        cpwd.setCustomValidity("Passwords don't match");
-      } else {
-        cpwd.setCustomValidity('');
-      }
+      cpwd.setCustomValidity(
+        cpwd.value && cpwd.value !== pwd.value
+          ? "Passwords don't match"
+          : ''
+      );
     };
-
     pwd.addEventListener('input', validateMatch);
     cpwd.addEventListener('input', validateMatch);
-  });
-</script>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const pwd   = document.getElementById('id_password');
-  const bar   = document.getElementById('passwordStrengthBar');
-  const text  = document.getElementById('passwordStrengthText');
+    // 2) Strength-meter logic
+    const labels = ['Too Short','Weak','Fair','Good','Strong','Very Strong'];
+    const colors = ['bg-danger','bg-danger','bg-warning','bg-info','bg-primary','bg-success'];
 
-  // labels & colors for 0–5
-  const labels = ['Too Short','Weak','Fair','Good','Strong','Very Strong'];
-  const colors = ['bg-danger','bg-danger','bg-warning','bg-info','bg-primary','bg-success'];
+    pwd.addEventListener('input', () => {
+      console.log('Password input fired, value=', pwd.value);
+      const v = pwd.value;
+      let score = 0;
 
-  pwd.addEventListener('input', () => {
-    const v = pwd.value;
-    let score = 0;
+      // length buckets
+      if (v.length >= 8)  score++;
+      if (v.length >= 12) score++;
+      if (v.length >= 16) score++;
 
-    // 1. length buckets
-    if (v.length >= 8)  score++;
-    if (v.length >= 12) score++;
-    if (v.length >= 16) score++;
+      // variety checks
+      if (/[a-z]/.test(v))        score++;
+      if (/[A-Z]/.test(v))        score++;
+      if (/[0-9]/.test(v))        score++;
+      if (/[^A-Za-z0-9]/.test(v)) score++;
 
-    // 2. variety checks
-    if (/[a-z]/.test(v))          score++;
-    if (/[A-Z]/.test(v))          score++;
-    if (/[0-9]/.test(v))          score++;
-    if (/[^A-Za-z0-9]/.test(v))   score++;
+      score = Math.min(score, 5);
+      const pct = (score / 5) * 100;
 
-    // cap at 5
-    score = Math.min(score, 5);
+      // update bar
+      bar.style.width          = pct + '%';
+      bar.className            = 'progress-bar ' + colors[score];
+      bar.setAttribute('aria-valuenow', pct);
 
-    // percent of bar
-    const pct = (score / 5) * 100;
-    bar.style.width = pct + '%';
-    bar.className = 'progress-bar ' + colors[score];
-    bar.setAttribute('aria-valuenow', pct);
-
-    // label
-    text.textContent = v.length === 0
-      ? ''
-      : labels[score];
-  });
+      // update text
+      txt.textContent = v
+        ? labels[score]
+        : '';
+    });
+  }
 });
 </script>
-
-
 {% endblock javascripts %}
