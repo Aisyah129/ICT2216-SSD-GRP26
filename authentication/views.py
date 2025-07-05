@@ -1814,10 +1814,9 @@ def submit_report(request):
                 messages.success(request, "🚩 Report submitted successfully.")
                 print(f"✅ Report saved: {report.report_id}")
 
-                # 👎 Also mark as 'passed' in Like model
                 Like.objects.update_or_create(
                     liker_user_id=request.user,
-                    liked_user_id=reported_profile_id,
+                    liked_user_id=User.objects.get(user_id=reported_profile_id),  # ← FIXED
                     defaults={
                         'like_status': 'passed',
                         'liked_at': timezone.now()
