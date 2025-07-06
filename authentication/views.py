@@ -13,6 +13,7 @@ import boto3
 import certifi
 import iso8601
 import stripe
+import magic
 from pymongo import MongoClient
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Content, Email, Mail, Personalization
@@ -485,6 +486,19 @@ def upload_profile_image(request):
     if not file:
         log_action(request.user, "Failed image upload - no image provided", "WARNING", request)
         return JsonResponse({"success": False, "error": "No image uploaded"}, status=400)
+    
+    ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif']
+    extension = file.name.split('.')[-1].lower()
+    if extension not in ALLOWED_EXTENSIONS:
+        return JsonResponse({"success": False, "error": "Invalid file extension."}, status=400)
+    
+    # Read a sample of the file to guess its real type
+    file_sample = file.read(2048)
+    file.seek(0)  # rewind so S3 still works
+
+    mime_type = magic.from_buffer(file_sample, mime=True)
+    if mime_type not in ['image/jpeg', 'image/png', 'image/gif']:
+        return JsonResponse({"success": False, "error": "Invalid MIME type."}, status=400)
 
     profile = request.user.profile
 
