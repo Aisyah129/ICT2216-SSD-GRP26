@@ -2,9 +2,9 @@ name: Security Scanning
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ merge/all, main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ merge/all, main ]
 
 permissions:
   contents: read
