@@ -438,6 +438,18 @@ def profile_view(request):
         profile.last_updated = timezone.now()
         profile.save(update_fields=editable_fields + ['last_updated'])
 
+        # 🆕 Update languages (clear and add new)
+        language_ids = request.POST.getlist('languages')
+        profile.languages.all().delete()  # clear old
+
+        for lang_id in language_ids:
+            if lang_id:
+                ProfileLanguage.objects.create(
+                    profile_id_fk=profile,
+                    language_id_fk_id=lang_id
+                )
+
+
         log_action(request.user, "Updated profile information", "INFO", request) # Log Profile Changes
         return redirect('profile')
 
@@ -459,12 +471,20 @@ def profile_view(request):
 
     languages = [pl.language_id_fk.language_name for pl in profile.languages.all()]
 
+    # Languages (for multi-select)
+    all_languages = Language.objects.all()
+    selected_language_ids = profile.languages.values_list('language_id_fk_id', flat=True)
+
+
     return render(request, "pages/profile.html", {
-        "profile":       profile,
-        "primary_image": primary_image_url,
-        "images":        all_images,      
-        "languages":     languages,
-    })
+    "profile": profile,
+    "primary_image": primary_image_url,
+    "images": all_images,
+    "languages": [pl.language_id_fk.language_name for pl in profile.languages.all()],
+    "all_languages": all_languages,
+    "selected_language_ids": list(selected_language_ids),  # 🆕
+})
+
 
 MAX_IMAGES = 6 # ← adjust if needed
 
