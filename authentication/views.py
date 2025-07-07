@@ -1170,12 +1170,12 @@ def create_checkout_session(request, plan: str):
     )
 
     # ➋ store a *pending* subscription row – useful even before the webhook
-    #_create_sub_record(
-     #   user_uuid          = request.user.user_id,
-      #  stripe_sub_id      = None,                 # will be filled later
-       # price_id           = price_id,
-       # stripe_session_id  = session.id,
-   # )
+    _create_sub_record(
+        user_uuid          = request.user.user_id,
+        stripe_sub_id      = None,                 # will be filled later
+        price_id           = price_id,
+        stripe_session_id  = session.id,
+    )
 
     return redirect(session.url)
 
@@ -1220,8 +1220,8 @@ def stripe_webhook(request):
 
         try:
             user = User.objects.get(user_id=user_id)
-            #user.is_premium = True
-            #user.save(update_fields=["is_premium"])
+            user.is_premium = True
+            user.save(update_fields=["is_premium"])
             log_action(user, "Stripe payment confirmed — user upgraded to Premium", "INFO", request)
         except User.DoesNotExist:
             log_action(None, f"Stripe webhook tried to upgrade unknown user_id {user_id}", "ERROR", request)
@@ -1273,8 +1273,8 @@ def _create_sub_record(
         },
     )
 
-    user.is_premium = True
-    user.save(update_fields=["is_premium"])
+    #user.is_premium = True
+    #user.save(update_fields=["is_premium"])
 
 def _update_next_renewal(stripe_sub_id: str):
     sub_json = stripe.Subscription.retrieve(stripe_sub_id)
