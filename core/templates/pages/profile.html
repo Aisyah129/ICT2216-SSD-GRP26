@@ -140,13 +140,16 @@
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
-                  <label>Gender</label>
-                  <select name="gender" class="form-select">
+                  <label for="gender">Gender</label>
+                  <select name="gender" class="form-control">
+                    <option value="">Select your gender</option>
                     <option value="male" {% if profile.gender=="male" %}selected{% endif %}>Male</option>
                     <option value="female" {% if profile.gender=="female" %}selected{% endif %}>Female</option>
+                    <option value="other" {% if profile.gender=="other" %}selected{% endif %}>Other</option>
                   </select>
                 </div>
               </div>
+
               <div class="col-lg-4">
                 <div class="form-group">
                   <label>Height (cm)</label>
