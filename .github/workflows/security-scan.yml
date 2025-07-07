@@ -29,11 +29,11 @@ jobs:
     - name: Run Bandit security scan
       run: |
         # Scan for common security issues in Python code
-        bandit -r app/ -f json -o bandit-report.json || true
+        bandit -r core/ -f json -o bandit-report.json || true
         
         # Display results in console
         echo "=== Bandit Security Scan Results ==="
-        bandit -r app/ || true
+        bandit -r core/ || true
 
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
@@ -58,11 +58,11 @@ jobs:
                 --config=p/owasp-top-ten \
                 --json \
                 --output=semgrep-results.json \
-                app/ || true
+                core/ || true
         
         # Display summary
         echo "=== Semgrep Security Scan Results ==="
-        semgrep --config=auto app/ || true
+        semgrep --config=auto core/ || true
 
     - name: Upload security reports
       if: always()
