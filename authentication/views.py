@@ -1305,30 +1305,30 @@ def _check_status(stripe_sub_id: str):
         except Subscription.DoesNotExist:
             pass
 
-#@never_cache
-#@login_required
-#def upgrade_premium(request):
-    #plans = [
-       # {
-        #    "slug": "week",   # make sure this is here
-         #   "name": "1 Week",
-         #   "price": "4.99",
-         #   "description": "Short-term access to premium features",
-        #},
-        #{
-          #  "slug": "month",
-          #  "name": "1 Month",
-          #  "price": "9.99",
-          #  "description": "Unlock premium features for a month",
-        #},
-        #{
-         #   "slug": "quarter",
-           # "name": "3 Months",
-         #   "price": "24.99",
-           # "description": "Save more with a 3-month plan",
-       # },
-   # ]
-    #return render(request, "accounts/upgrade_premium.html", {"plans": plans})
+@never_cache
+@login_required
+def upgrade_premium(request):
+    plans = [
+        {
+            "slug": "week",   # make sure this is here
+            "name": "1 Week",
+            "price": "4.99",
+            "description": "Short-term access to premium features",
+        },
+        {
+            "slug": "month",
+            "name": "1 Month",
+            "price": "9.99",
+            "description": "Unlock premium features for a month",
+        },
+        {
+            "slug": "quarter",
+            "name": "3 Months",
+            "price": "24.99",
+            "description": "Save more with a 3-month plan",
+        },
+    ]
+    return render(request, "accounts/upgrade_premium.html", {"plans": plans})
 
 @never_cache
 @login_required
