@@ -5,6 +5,9 @@
 {% block title %} Profile {% endblock title %}
 
 {% block content %}
+<!-- Choices.js CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+
 
 <!-- Header -->
 <div class="header pb-8 pt-5 pt-lg-8 d-flex align-items-center justify-content-center text-center"
@@ -393,6 +396,20 @@
             </div>
 
             <div class="form-group">
+              <label for="languageSelect">Languages</label>
+              <select name="languages" id="languageSelect" class="form-select" multiple {% if not is_editing %}disabled{% endif %}>
+                {% for language in all_languages %}
+                  <option value="{{ language.language_id }}"
+                    {% if language.language_id in selected_language_ids %}selected{% endif %}>
+                    {{ language.language_name }}
+                  </option>
+                {% endfor %}
+              </select>
+              <small class="text-muted">Hold Ctrl (Windows) or ⌘ Cmd (Mac) to select multiple.</small>
+            </div>
+
+
+            <div class="form-group">
               <label>Hobbies</label>
               <textarea
                 id="hobbiesTextarea"
@@ -432,6 +449,24 @@
   </div>
 </div>
 </div>
+
+<!-- Choices.js JS -->
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const languageSelect = document.getElementById('languageSelect');
+    
+    if (languageSelect && !languageSelect.disabled) {
+      new Choices(languageSelect, {
+        removeItemButton: true,
+        shouldSort: false,
+        searchEnabled: true,
+        placeholderValue: 'Select languages...'
+      });
+    }
+  });
+</script>
 
 {% endblock content %}
 
