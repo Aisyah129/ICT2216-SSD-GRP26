@@ -72,8 +72,10 @@ from .utils import has_permission
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
 # AuthController
+
 def is_admin(user):
-    return user.is_authenticated and user.role == 'admin'
+    return user.is_authenticated and has_permission(user, "admin_dashboard_access")
+
 
 # AuthController
 def login_view(request):
@@ -81,7 +83,9 @@ def login_view(request):
         # Already logged in — redirect based on role
         try:
             user = User.objects.get(user_id=request.session['user_id'])
-            return redirect('browse' if user.role == 'user' else 'admin_dashboard')
+            if has_permission(user, "admin_dashboard_access"):
+                return redirect('admin_dashboard')
+            return redirect('browse')
         except User.DoesNotExist:
             pass  # fall through to login screen if session is stale
 
@@ -102,7 +106,10 @@ def login_view(request):
                     # ✅ LOG success
                     log_action(user, "User logged in", "INFO", request)
 
-                    return redirect('admin_dashboard' if user.role == 'admin' else 'browse')
+                    if has_permission(user, "admin_dashboard_access"):
+                        return redirect('admin_dashboard')
+                    return redirect('browse')
+
                 else:
                     # ✅ LOG wrong password
                     log_action(user, "Failed login attempt (wrong password)", "WARNING", request)
