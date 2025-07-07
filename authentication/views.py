@@ -1212,8 +1212,8 @@ def stripe_webhook(request):
         _update_next_renewal(event["data"]["object"]["subscription"])
 
     # 3️⃣ Payment failed / subscription cancelled / downgraded
-    if typ in ("invoice.payment_failed", "customer.subscription.updated"):
-        _check_status(event["data"]["object"]["id"])
+    # if typ in ("invoice.payment_failed", "customer.subscription.updated"):
+    #     _check_status(event["data"]["object"]["id"])
 
     return HttpResponse(status=200)
 
@@ -1279,12 +1279,10 @@ def _check_status(stripe_sub_id: str):
             db_sub = Subscription.objects.get(
                 stripe_subscription_id=stripe_sub_id
             )
-            # Only downgrade if it's currently active
-            if db_sub.status in ["active", "trialing"]:
-                db_sub.status = sub_json["status"]
-                db_sub.save(update_fields=["status"])
-                db_sub.user_id_fk.is_premium = False
-                db_sub.user_id_fk.save(update_fields=["is_premium"])
+            db_sub.status = sub_json["status"]
+            db_sub.save(update_fields=["status"])
+            db_sub.user_id_fk.is_premium = False
+            db_sub.user_id_fk.save(update_fields=["is_premium"])
         except Subscription.DoesNotExist:
             pass
 
