@@ -6,7 +6,10 @@ from authentication.utils import has_permission
 def user_only(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
-        if has_permission(request.user, "edit_own_profile"):
+        if not request.user.is_authenticated:
+            return redirect('login')  # redirect unauthenticated users
+        if request.user.role == 'user':  # Explicit role check
             return view_func(request, *args, **kwargs)
-        return redirect('admin_dashboard')
+        # Admins or others redirected safely
+        return redirect('browse')  # safer than admin_dashboard
     return wrapper
