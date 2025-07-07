@@ -71,9 +71,11 @@ from .utils import has_permission
 
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
+# AuthController
 def is_admin(user):
     return user.is_authenticated and user.role == 'admin'
 
+# AuthController
 def login_view(request):
     if request.session.get('user_id'):
         # Already logged in — redirect based on role
@@ -122,6 +124,7 @@ def login_view(request):
         "session_timeout": session_timeout
     })
 
+# AuthController
 @csrf_protect
 def logout_view(request):
     if request.user.is_authenticated:
@@ -129,6 +132,7 @@ def logout_view(request):
     logout(request)
     return redirect('login')
 
+# AuthController
 def request_password_reset(request):
     form = PasswordResetEmailForm(request.POST or None)
     msg = None
@@ -149,6 +153,7 @@ def request_password_reset(request):
 
     return render(request, "accounts/password_reset_request.html", {"form": form, "msg": msg})
 
+# AuthController
 def send_reset_code_email(to_email, code):
     sg = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
 
@@ -171,6 +176,7 @@ def send_reset_code_email(to_email, code):
     except Exception as e:
         print("❌ SendGrid error:", str(e))
 
+# AuthController
 def verify_reset_code(request):
     if request.session.get('user_id'):
         return redirect('browse')  # Already logged in
@@ -214,6 +220,7 @@ def verify_reset_code(request):
 
     return render(request, "accounts/password_reset_verify.html", {"form": form, "msg": msg})
 
+# AuthController
 def set_new_password(request):
     form = SetNewPasswordForm(request.POST or 
     None)
@@ -236,6 +243,7 @@ def set_new_password(request):
 
     return render(request, "accounts/set_new_password.html", {"form": form, "msg": msg})
 
+# AuthController
 def send_verification_email(to_email, code):
     sg = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
 
@@ -258,6 +266,7 @@ def send_verification_email(to_email, code):
     except Exception as e:
         print("❌ SendGrid error:", str(e))
 
+# AuthController
 def send_welcome_email(to_email, user_name):
     sg = SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
 
@@ -288,11 +297,13 @@ def send_welcome_email(to_email, user_name):
 
 User = get_user_model()
 
+# AuthController
 def check_email(request):
     email = request.GET.get("email", "")
     exists = User.objects.filter(email=email).exists()
     return JsonResponse({"exists": exists})
 
+# AuthController
 def register_user(request):
     form = SignUpForm(request.POST or None)
     msg = None
@@ -331,6 +342,7 @@ def register_user(request):
 
     return render(request, "accounts/register.html", {"form": form, "msg": msg})
 
+# AuthController
 # VERIFY: confirm code, then store to DB
 def verify_email(request):
     if request.session.get('user_id'):
@@ -398,6 +410,7 @@ def verify_email(request):
 # USER DASHBOARD — use @login_required
 @never_cache
 @login_required
+# MatchController
 def user_dashboard(request):
     user = request.user  # automatically available
     print("✅ USER EMAIL:", user.email)
@@ -412,7 +425,7 @@ def user_dashboard(request):
         'matches': matches
     })
 
-
+# ProfileController
 @never_cache
 @login_required
 def profile_view(request):
@@ -472,6 +485,7 @@ MAX_IMAGES = 6 # ← adjust if needed
 # ------------------------------------------------------------------
 #  Upload profile image                                   (updated)
 # ------------------------------------------------------------------
+# ProfileController
 @login_required
 @require_POST
 def upload_profile_image(request):
@@ -559,6 +573,7 @@ def upload_profile_image(request):
 
     return JsonResponse({"success": True, "image_url": public_url})
 
+# ProfileController
 # 🟩 Get all profile images for this user (JSON)
 @login_required
 def profile_images_json(request):
@@ -574,6 +589,7 @@ def profile_images_json(request):
         for img in images
     ], safe=False)
 
+# ProfileController
 # 🟩 Set selected image as primary
 @login_required
 @require_POST
@@ -591,6 +607,7 @@ def set_primary_image(request, pk):
 
     return JsonResponse({"success": bool(updated)})
 
+# ProfileController
 # 🟥 Delete selected image from DB and S3
 @login_required
 @require_http_methods(["DELETE"])
@@ -624,6 +641,7 @@ def delete_profile_image(request, pk):
 @never_cache
 @login_required
 @user_passes_test(is_admin)
+# AdminController
 def admin_dashboard(request):
     if not has_permission(request.user, "admin_dashboard_access"):
         return redirect('browse')
@@ -665,9 +683,11 @@ def admin_dashboard(request):
         'user_email': user_email,
     })
 
+# ProfileController
 def get_primary_image(profile_id):
     return ProfileImage.objects.filter(profile_id_fk=profile_id, is_primary=1).first()
 
+# ProfileController
 def get_blurred_image_url(original_url):
     if not original_url:
         return None
@@ -677,6 +697,7 @@ def get_blurred_image_url(original_url):
     # Compose ImageKit URL
     return f"{settings.IMAGEKIT_URL_ENDPOINT}tr:bl-20/{quote(filename)}"
 
+# ProfileController
 def get_safe_profile_image_url(image, is_premium):
     default_url = '/static/images/default-avatar.jpg'
     blurred_default_url = '/static/images/blurred-default-avatar.jpg'
@@ -695,6 +716,7 @@ def get_safe_profile_image_url(image, is_premium):
 @never_cache
 @login_required
 @user_only
+# MatchController
 def likes_page(request):
     user = request.user
     current_user_id = user.user_id
@@ -818,6 +840,7 @@ def likes_page(request):
 
 @never_cache    
 @login_required
+# BillingController
 def upgrade_premium(request):
     plans = [
         {'id': 'week', 'name': '1 Week', 'price': 4.99, 'description': 'Short-term access to premium features'},
@@ -827,6 +850,7 @@ def upgrade_premium(request):
     log_action(request.user, "Visited premium upgrade page", "INFO", request) # not working currently
     return render(request, 'accounts/upgrade_premium.html', {'plans': plans})
 
+# BillingController
 def checkout_premium(request, plan_id):
     return HttpResponse(f"Stripe checkout for plan: {plan_id}")
 
@@ -838,6 +862,7 @@ def mongo():
 
 COL = mongo().messages   # <-- Each message is its own document
 
+# MessageController
 def decrypt_aes_gcm(cipher_b64, nonce_b64):
     try:
         aesgcm = AESGCM(settings.AES_KEY)
@@ -847,6 +872,7 @@ def decrypt_aes_gcm(cipher_b64, nonce_b64):
     except Exception as e:
         return "[decryption failed]"
 
+# MessageController
 def fetch_messages(match, limit=None):
     q = {"match_id": str(match.match_id)}
     cursor = COL.find(q).sort("sent_at", 1)
@@ -870,6 +896,7 @@ def fetch_messages(match, limit=None):
 
     return messages
 
+# MessageController
 def append_message(match, sender_id, text):
     # Encrypt the plaintext on the backend
     aesgcm = AESGCM(settings.AES_KEY)
@@ -893,6 +920,7 @@ def append_message(match, sender_id, text):
     COL.insert_one(msg)
     return msg
 
+# MessageController
 def mark_read(match, reader_id):
     COL.update_many(
         {
@@ -903,6 +931,7 @@ def mark_read(match, reader_id):
         {"$set": {"is_read": True}}
     )
 
+# MessageController
 def get_conversations_for(user):
     # 1️⃣ SQL matches that involve me
     sql_matches = (
@@ -977,6 +1006,7 @@ def messages_home(request):
 # --- Main View ---
 @never_cache
 @login_required
+# MessageController
 def messages_with(request, user_id):
     """Chat view between the logged-in user and `other_user`."""
     # ------------------------------------------------------------------
@@ -1063,6 +1093,7 @@ def messages_with(request, user_id):
 
 @never_cache
 @login_required
+# MessageController
 def messages_json(request, user_id):
     """
     Return all messages, or only messages sent **after** ?after=<iso8601-stamp>.
@@ -1116,6 +1147,7 @@ PRICE_MAP = {
     "quarter": settings.STRIPE_PRICE_ID_QUARTER,
 }
 
+# BillingController
 def _price_to_cycle(price_id: str) -> str:
     """Convert price-ID → ‘1week’ | ‘1month’ | ‘3month’ for DB column."""
     if price_id == settings.STRIPE_PRICE_ID_WEEK:
@@ -1126,6 +1158,7 @@ def _price_to_cycle(price_id: str) -> str:
 
 # ─────────────  1)  Launch checkout  ─────────────
 @login_required
+# BillingController
 def create_checkout_session(request, plan: str):
     """
     Called by the “Select” button.
@@ -1162,17 +1195,20 @@ def create_checkout_session(request, plan: str):
 
 # ─────────────  2)  Success / cancel splash pages  ─────────────
 @login_required
+# BillingController
 def checkout_success(request):
     log_action(request.user, "Visited Stripe success page", "INFO", request)
     return render(request, "billing/success.html")
 
 @login_required
+# BillingController
 def checkout_cancel(request):
     log_action(request.user, "Visited Stripe cancel page", "WARNING", request)
     return render(request, "billing/cancel.html")
 
 # ─────────────  3)  Stripe web-hook  ─────────────
 @csrf_exempt
+# BillingController
 def stripe_webhook(request):
     payload = request.body
     sig     = request.headers.get("stripe-signature", "")
@@ -1218,6 +1254,7 @@ def stripe_webhook(request):
     return HttpResponse(status=200)
 
 # ─────────────  4)  Helpers  ─────────────
+# BillingController
 def _create_sub_record(
     user_uuid: str,
     stripe_sub_id: Optional[str],
@@ -1257,6 +1294,7 @@ def _create_sub_record(
     #user.is_premium = True
     #user.save(update_fields=["is_premium"])
 
+# BillingController
 def _update_next_renewal(stripe_sub_id: str):
     sub_json = stripe.Subscription.retrieve(stripe_sub_id)
     try:
@@ -1272,6 +1310,7 @@ def _update_next_renewal(stripe_sub_id: str):
     except Subscription.DoesNotExist:
         pass
 
+# BillingController
 def _check_status(stripe_sub_id: str):
     sub_json = stripe.Subscription.retrieve(stripe_sub_id)
     if sub_json["status"] in ("canceled", "unpaid"):
@@ -1288,6 +1327,7 @@ def _check_status(stripe_sub_id: str):
 
 @never_cache
 @login_required
+# BillingController
 def upgrade_premium(request):
     plans = [
         {
@@ -1313,6 +1353,7 @@ def upgrade_premium(request):
 
 @never_cache
 @login_required
+# MatchController
 def browse_one_profile(request):
     user_id = request.session.get('user_id')
     if not user_id:
@@ -1591,6 +1632,7 @@ def browse_one_profile(request):
     return render(request, 'pages/browse.html', context)
 
 @login_required
+# MatchController
 def like_profile(request):
     liker_user_uuid = request.session.get("user_id")
     if not liker_user_uuid:
@@ -1675,6 +1717,7 @@ def like_profile(request):
         return redirect(f"/browse/?index={next_index}")
 
 @login_required
+# MatchController
 def save_preferences(request):
     if request.method == 'POST':
         if 'user_id' not in request.session:
@@ -1739,6 +1782,7 @@ def save_preferences(request):
         return redirect('browse_one')
 
 @login_required
+# MatchController
 def dislike_profile(request):
     liker_user_uuid = request.session.get("user_id")
     if not liker_user_uuid:
@@ -1789,6 +1833,7 @@ def dislike_profile(request):
         return redirect(f"/browse/?index={index}")
     
 @login_required
+# ReportController
 def submit_report(request):
     if not has_permission(request.user, "submit_report"):
         return redirect('browse')
@@ -1849,6 +1894,7 @@ def submit_report(request):
 @never_cache
 @login_required
 @user_passes_test(is_admin)
+# ReportController
 def admin_report_dashboard(request):
     reports = Report.objects.select_related('reporter_user').order_by('-created_at')
 
@@ -1882,6 +1928,7 @@ def admin_report_dashboard(request):
 @never_cache
 @login_required
 @user_passes_test(is_admin)
+# ReportController
 def toggle_report_status(request, report_id):
     report = get_object_or_404(Report, report_id=report_id)
 
@@ -1904,6 +1951,7 @@ def toggle_report_status(request, report_id):
 @login_required
 @user_passes_test(is_admin)
 @require_POST
+# ReportController
 def delete_report(request, report_id):
     report = get_object_or_404(Report, report_id=report_id)
     log_action(user=request.user, action_type=f"Deleted report {report.report_id}", severity="WARNING", request=request,
@@ -1915,6 +1963,7 @@ def delete_report(request, report_id):
 @never_cache
 @login_required
 @user_passes_test(is_admin)
+# AdminController
 def admin_toggle_premium(request, user_id):
     user = get_object_or_404(User, user_id=user_id)
     user.is_premium = not user.is_premium
@@ -1930,6 +1979,7 @@ def admin_toggle_premium(request, user_id):
 @login_required
 @user_passes_test(is_admin)
 @require_POST
+# AdminController
 def admin_delete_user(request, user_id):
     user = get_object_or_404(User, user_id=user_id)
 
