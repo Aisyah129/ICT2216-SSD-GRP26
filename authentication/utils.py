@@ -5,8 +5,30 @@ import uuid
 import json
 from .models import ActionLog
 
+# Helper to mask IPv4 addresses (replace last octet with 0)
+def mask_ip(ip_address):
+    try:
+        parts = ip_address.split('.')
+        if len(parts) == 4:  # Only mask IPv4
+            parts[-1] = '0'
+            return '.'.join(parts)
+        return ip_address  # Return unmodified if not IPv4
+    except Exception:
+        return None
+
 def log_action(user, action_type, severity='INFO', request=None, target_id=None, target_type=None, metadata=None):
-    ip = request.META.get('REMOTE_ADDR') if request else None
+    # Get raw IP from request
+    raw_ip = None
+    if request:
+        # Respect X-Forwarded-For if behind a proxy
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            raw_ip = x_forwarded_for.split(',')[0].strip()
+        else:
+            raw_ip = request.META.get('REMOTE_ADDR')
+
+    # Pseudonymise the IP (mask last octet)
+    pseudonymised_ip = mask_ip(raw_ip) if raw_ip else None
 
     if metadata and not isinstance(metadata, str):
         metadata = json.dumps(metadata, default=str)  # Ensures safe storage
@@ -22,7 +44,7 @@ def log_action(user, action_type, severity='INFO', request=None, target_id=None,
         severity=severity,
         target_id=target_id,
         target_type=target_type,
-        ip_address=ip,
+        ip_address=pseudonymised_ip,
         metadata = metadata,
         log_hash=log_hash
     )
