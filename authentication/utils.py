@@ -52,7 +52,7 @@ def log_action(user, action_type, severity='INFO', request=None, target_id=None,
 
 # utils.py
 ROLE_PERMISSIONS = {
-    "admin": {"delete_account", "edit_any_profile", "view_admin_dashboard"},
+    "admin": {"delete_account", "edit_any_profile", "view_admin_dashboard","admin_dashboard_access",},
     "manager": {"edit_any_profile"},
     "user": {"edit_own_profile", "submit_report", "view_premium_content"}
 }
