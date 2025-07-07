@@ -1242,25 +1242,32 @@ def stripe_webhook(request):
 
     # 1️⃣ Checkout finished
     if typ == "checkout.session.completed":
-        session   = event["data"]["object"]
-        sub_id    = session["subscription"]           # the real sub ID
-        user_id   = session["metadata"]["user_id"]
-        price_id  = session["display_items"][0]["price"]["id"] \
-                    if session.get("display_items") else None
-        _create_sub_record(
-            user_uuid         = user_id,
-            stripe_sub_id     = sub_id,
-            price_id          = price_id,
-            stripe_session_id = session["id"],
-        )
+        session = event["data"]["object"]
 
-        try:
-            user = User.objects.get(user_id=user_id)
-            user.is_premium = True
-            user.save(update_fields=["is_premium"])
-            log_action(user, "Stripe payment confirmed — user upgraded to Premium", "INFO", request)
-        except User.DoesNotExist:
-            log_action(None, f"Stripe webhook tried to upgrade unknown user_id {user_id}", "ERROR", request)
+    # Expand to safely access line_items and subscription
+    session = stripe.checkout.Session.retrieve(
+        session["id"],
+        expand=["line_items", "subscription"]
+    )
+
+    sub_id   = session.subscription.id
+    user_id  = session.metadata.get("user_id")
+    price_id = session.line_items.data[0].price.id
+
+    _create_sub_record(
+        user_uuid         = user_id,
+        stripe_sub_id     = sub_id,
+        price_id          = price_id,
+        stripe_session_id = session["id"],
+    )
+
+    try:
+        user = User.objects.get(user_id=user_id)
+        user.is_premium = True
+        user.save(update_fields=["is_premium"])
+        log_action(user, "Stripe payment confirmed — user upgraded to Premium", "INFO", request)
+    except User.DoesNotExist:
+        log_action(None, f"Stripe webhook tried to upgrade unknown user_id {user_id}", "ERROR", request)
 
     # 2️⃣ Recurring invoice paid (renewal)
     if typ == "invoice.paid":
