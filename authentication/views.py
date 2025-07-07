@@ -1187,6 +1187,7 @@ def stripe_webhook(request):
 
     # 1️⃣ Checkout finished
     if typ == "checkout.session.completed":
+        print("✅ Webhook: Payment completed, upgrading user to premium")
         session   = event["data"]["object"]
         sub_id    = session["subscription"]           # the real sub ID
         user_id   = session["metadata"]["user_id"]
