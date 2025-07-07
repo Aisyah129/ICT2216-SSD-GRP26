@@ -438,20 +438,6 @@ def profile_view(request):
         profile.last_updated = timezone.now()
         profile.save(update_fields=editable_fields + ['last_updated'])
 
-        # Clear previous language links
-        profile.languages.all().delete()
-
-        # Save selected language IDs
-        selected_lang_ids = request.POST.getlist("languages")  # ← .getlist handles multiple values
-
-        for lang_id in selected_lang_ids:
-            try:
-                lang_obj = Language.objects.get(language_id=lang_id)
-                ProfileLanguage.objects.create(profile_id_fk=profile, language_id_fk=lang_obj)
-            except Language.DoesNotExist:
-                continue
-
-
         log_action(request.user, "Updated profile information", "INFO", request) # Log Profile Changes
         return redirect('profile')
 
@@ -472,19 +458,15 @@ def profile_view(request):
     ]
 
     languages = [pl.language_id_fk.language_name for pl in profile.languages.all()]
-
-    all_languages = Language.objects.all()
-    selected_language_ids = list(profile.languages.values_list('language_id_fk__language_id', flat=True))
-
+    pets      = [pp.pet_id_fk.pet_type for pp in profile.profilepet_set.all()]
 
     return render(request, "pages/profile.html", {
-    "profile": profile,
-    "primary_image": primary_image_url,
-    "images": all_images,
-    "languages": [pl.language_id_fk.language_name for pl in profile.languages.all()],
-    "all_languages": all_languages,
-    "selected_language_ids": selected_language_ids,
-})
+        "profile":       profile,
+        "primary_image": primary_image_url,
+        "images":        all_images,      
+        "languages":     languages,
+        "pets":          pets,
+    })
 
 MAX_IMAGES = 6 # ← adjust if needed
 
@@ -1170,12 +1152,12 @@ def create_checkout_session(request, plan: str):
     )
 
     # ➋ store a *pending* subscription row – useful even before the webhook
-    # _create_sub_record(
-    #     user_uuid          = request.user.user_id,
-    #     stripe_sub_id      = None,                 # will be filled later
-    #     price_id           = price_id,
-    #     stripe_session_id  = session.id,
-    # )
+    _create_sub_record(
+        user_uuid          = request.user.user_id,
+        stripe_sub_id      = None,                 # will be filled later
+        price_id           = price_id,
+        stripe_session_id  = session.id,
+    )
 
     return redirect(session.url)
 
@@ -1194,47 +1176,47 @@ def checkout_cancel(request):
 @csrf_exempt
 def stripe_webhook(request):
     payload = request.body
-    sig_header = request.META["HTTP_STRIPE_SIGNATURE"]
-    endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
-
+    sig     = request.headers.get("stripe-signature", "")
     try:
-        event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
-    except ValueError:
-        return HttpResponse("Invalid payload", status=400)
-    except stripe.error.SignatureVerificationError:
-        return HttpResponse("Invalid signature", status=400)
+        event = stripe.Webhook.construct_event(
+            payload, sig, settings.STRIPE_WEBHOOK_SECRET
+        )
+    except (ValueError, stripe.error.SignatureVerificationError):
+        return HttpResponse(status=400)
 
-    event_type = event["type"]
-    data_object = event["data"]["object"]
+    typ = event["type"]
 
-    if event_type == "checkout.session.completed":
-        user_id = data_object["metadata"]["user_id"]
-        plan = data_object["metadata"]["plan"]
-        stripe_session_id = data_object["id"]
-        stripe_subscription_id = data_object.get("subscription")
+    # 1️⃣ Checkout finished
+    if typ == "checkout.session.completed":
+        session   = event["data"]["object"]
+        sub_id    = session["subscription"]           # the real sub ID
+        user_id   = session["metadata"]["user_id"]
+        price_id  = session["display_items"][0]["price"]["id"] \
+                    if session.get("display_items") else None
+        _create_sub_record(
+            user_uuid         = user_id,
+            stripe_sub_id     = sub_id,
+            price_id          = price_id,
+            stripe_session_id = session["id"],
+        )
 
         try:
             user = User.objects.get(user_id=user_id)
             user.is_premium = True
             user.save(update_fields=["is_premium"])
-            print(f"✅ User {user.email} upgraded to premium via Stripe webhook.")
-
-            # Optional: Create your subscription record here
-            Subscription.objects.update_or_create(
-                user_id_fk=user,
-                defaults={
-                    "stripe_session_id": stripe_session_id,
-                    "stripe_sub_id": stripe_subscription_id,
-                    "stripe_price_id": PRICE_MAP[plan.lower()],
-                    "status": "active",
-                    "started_at": timezone.now(),
-                },
-            )
+            log_action(user, "Stripe payment confirmed — user upgraded to Premium", "INFO", request)
         except User.DoesNotExist:
-            print(f"❌ Webhook failed: No user found for ID {user_id}")
+            log_action(None, f"Stripe webhook tried to upgrade unknown user_id {user_id}", "ERROR", request)
+
+    # 2️⃣ Recurring invoice paid (renewal)
+    if typ == "invoice.paid":
+        _update_next_renewal(event["data"]["object"]["subscription"])
+
+    # 3️⃣ Payment failed / subscription cancelled / downgraded
+    if typ in ("invoice.payment_failed", "customer.subscription.updated"):
+        _check_status(event["data"]["object"]["id"])
 
     return HttpResponse(status=200)
-
 
 # ─────────────  4)  Helpers  ─────────────
 def _create_sub_record(
