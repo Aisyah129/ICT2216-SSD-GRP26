@@ -835,16 +835,16 @@ def likes_page(request):
             'match_popup': match_popup
         })
 
-@never_cache    
-@login_required
-def upgrade_premium(request):
-    plans = [
-        {'id': 'week', 'name': '1 Week', 'price': 4.99, 'description': 'Short-term access to premium features'},
-        {'id': 'month', 'name': '1 Month', 'price': 9.99, 'description': 'Unlock premium features for a month'},
-        {'id': 'quarter', 'name': '3 Months', 'price': 24.99, 'description': 'Save more with a 3-month plan'},
-    ]
-    log_action(request.user, "Visited premium upgrade page", "INFO", request) # not working currently
-    return render(request, 'accounts/upgrade_premium.html', {'plans': plans})
+#@never_cache    
+#@login_required
+#def upgrade_premium(request):
+  #  plans = [
+   #     {'id': 'week', 'name': '1 Week', 'price': 4.99, 'description': 'Short-term access to premium features'},
+    #    {'id': 'month', 'name': '1 Month', 'price': 9.99, 'description': 'Unlock premium features for a month'},
+    #    {'id': 'quarter', 'name': '3 Months', 'price': 24.99, 'description': 'Save more with a 3-month plan'},
+    #]
+    #log_action(request.user, "Visited premium upgrade page", "INFO", request) # not working currently
+    #return render(request, 'accounts/upgrade_premium.html', {'plans': plans})
 
 def checkout_premium(request, plan_id):
     return HttpResponse(f"Stripe checkout for plan: {plan_id}")
