@@ -1254,7 +1254,8 @@ def _create_sub_record(
         },
     )
 
-
+    #user.is_premium = True
+    #user.save(update_fields=["is_premium"])
 
 def _update_next_renewal(stripe_sub_id: str):
     sub_json = stripe.Subscription.retrieve(stripe_sub_id)
@@ -1278,10 +1279,12 @@ def _check_status(stripe_sub_id: str):
             db_sub = Subscription.objects.get(
                 stripe_subscription_id=stripe_sub_id
             )
-            db_sub.status = sub_json["status"]
-            db_sub.save(update_fields=["status"])
-            db_sub.user_id_fk.is_premium = False
-            db_sub.user_id_fk.save(update_fields=["is_premium"])
+            # Only downgrade if it's currently active
+            if db_sub.status in ["active", "trialing"]:
+                db_sub.status = sub_json["status"]
+                db_sub.save(update_fields=["status"])
+                db_sub.user_id_fk.is_premium = False
+                db_sub.user_id_fk.save(update_fields=["is_premium"])
         except Subscription.DoesNotExist:
             pass
 
