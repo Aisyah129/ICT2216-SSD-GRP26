@@ -1170,12 +1170,12 @@ def create_checkout_session(request, plan: str):
     )
 
     # ➋ store a *pending* subscription row – useful even before the webhook
-    _create_sub_record(
-        user_uuid          = request.user.user_id,
-        stripe_sub_id      = None,                 # will be filled later
-        price_id           = price_id,
-        stripe_session_id  = session.id,
-    )
+    # _create_sub_record(
+    #     user_uuid          = request.user.user_id,
+    #     stripe_sub_id      = None,                 # will be filled later
+    #     price_id           = price_id,
+    #     stripe_session_id  = session.id,
+    # )
 
     return redirect(session.url)
 
