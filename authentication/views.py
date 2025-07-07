@@ -1212,8 +1212,8 @@ def stripe_webhook(request):
         _update_next_renewal(event["data"]["object"]["subscription"])
 
     # 3️⃣ Payment failed / subscription cancelled / downgraded
-    # if typ in ("invoice.payment_failed", "customer.subscription.updated"):
-    #     _check_status(event["data"]["object"]["id"])
+    if typ in ("invoice.payment_failed", "customer.subscription.updated"):
+        _check_status(event["data"]["object"]["id"])
 
     return HttpResponse(status=200)
 
