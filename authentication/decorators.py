@@ -1,6 +1,7 @@
 # authentication/decorators.py
 from functools import wraps
 from django.shortcuts import redirect
+from authentication.utils import has_permission
 
 def user_only(view_func):
     @wraps(view_func)
