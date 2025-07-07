@@ -1218,9 +1218,6 @@ def stripe_webhook(request):
             stripe_session_id = session["id"],
         )
 
-        user.is_premium = True
-        user.save(update_fields=["is_premium"])
-
         try:
             user = User.objects.get(user_id=user_id)
             #user.is_premium = True
@@ -1276,8 +1273,8 @@ def _create_sub_record(
         },
     )
 
-    #user.is_premium = True
-    #user.save(update_fields=["is_premium"])
+    user.is_premium = True
+    user.save(update_fields=["is_premium"])
 
 def _update_next_renewal(stripe_sub_id: str):
     sub_json = stripe.Subscription.retrieve(stripe_sub_id)
