@@ -46,7 +46,6 @@
                 </div>
                 {{ form.email }}
               </div>
-              <div id="login-email-feedback" class="feedback-message"></div>
               {% for error in form.email.errors %}
               <span class="text-danger text-sm">{{ error }}</span>
               {% endfor %}
@@ -97,48 +96,4 @@
 
 {% block javascripts %}
 <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const loginEmailInput = document.getElementById("id_email");
-    const loginEmailFeedback = document.getElementById("login-email-feedback");
-
-    let loginDebounceTimeout;
-
-    loginEmailInput.addEventListener("input", () => {
-      clearTimeout(loginDebounceTimeout);
-      loginDebounceTimeout = setTimeout(checkLoginEmail, 300);
-    });
-
-    async function checkLoginEmail() {
-      const email = loginEmailInput.value.trim();
-
-      const isValidFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-      if (!email) {
-        loginEmailFeedback.innerHTML = "";
-        return;
-      }
-
-      if (!isValidFormat) {
-        loginEmailFeedback.innerHTML = `<span style="color: red;">❌ Invalid email format</span>`;
-        return;
-      }
-
-      loginEmailFeedback.innerHTML = `<span style="color: #999;">🔍 Checking email...</span>`;
-
-      try {
-        const res = await fetch(`/check_email/?email=${encodeURIComponent(email)}`);
-        const data = await res.json();
-
-        if (!data.exists) {
-          loginEmailFeedback.innerHTML = `<span style="color: red;">🚫 Email not registered</span>`;
-        } else {
-          loginEmailFeedback.innerHTML = `<span style="color: green;">✅ Email found</span>`;
-        }
-      } catch (err) {
-        loginEmailFeedback.innerHTML = `<span style="color: orange;">⚠️ Could not check email</span>`;
-      }
-    }
-  });
-</script>
 {% endblock %}
