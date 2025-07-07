@@ -1194,47 +1194,47 @@ def checkout_cancel(request):
 @csrf_exempt
 def stripe_webhook(request):
     payload = request.body
-    sig     = request.headers.get("stripe-signature", "")
+    sig_header = request.META["HTTP_STRIPE_SIGNATURE"]
+    endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
+
     try:
-        event = stripe.Webhook.construct_event(
-            payload, sig, settings.STRIPE_WEBHOOK_SECRET
-        )
-    except (ValueError, stripe.error.SignatureVerificationError):
-        return HttpResponse(status=400)
+        event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+    except ValueError:
+        return HttpResponse("Invalid payload", status=400)
+    except stripe.error.SignatureVerificationError:
+        return HttpResponse("Invalid signature", status=400)
 
-    typ = event["type"]
+    event_type = event["type"]
+    data_object = event["data"]["object"]
 
-    # 1️⃣ Checkout finished
-    if typ == "checkout.session.completed":
-        session   = event["data"]["object"]
-        sub_id    = session["subscription"]           # the real sub ID
-        user_id   = session["metadata"]["user_id"]
-        price_id  = session["display_items"][0]["price"]["id"] \
-                    if session.get("display_items") else None
-        _create_sub_record(
-            user_uuid         = user_id,
-            stripe_sub_id     = sub_id,
-            price_id          = price_id,
-            stripe_session_id = session["id"],
-        )
+    if event_type == "checkout.session.completed":
+        user_id = data_object["metadata"]["user_id"]
+        plan = data_object["metadata"]["plan"]
+        stripe_session_id = data_object["id"]
+        stripe_subscription_id = data_object.get("subscription")
 
         try:
             user = User.objects.get(user_id=user_id)
             user.is_premium = True
             user.save(update_fields=["is_premium"])
-            log_action(user, "Stripe payment confirmed — user upgraded to Premium", "INFO", request)
+            print(f"✅ User {user.email} upgraded to premium via Stripe webhook.")
+
+            # Optional: Create your subscription record here
+            Subscription.objects.update_or_create(
+                user_id_fk=user,
+                defaults={
+                    "stripe_session_id": stripe_session_id,
+                    "stripe_sub_id": stripe_subscription_id,
+                    "stripe_price_id": PRICE_MAP[plan.lower()],
+                    "status": "active",
+                    "started_at": timezone.now(),
+                },
+            )
         except User.DoesNotExist:
-            log_action(None, f"Stripe webhook tried to upgrade unknown user_id {user_id}", "ERROR", request)
-
-    # 2️⃣ Recurring invoice paid (renewal)
-    if typ == "invoice.paid":
-        _update_next_renewal(event["data"]["object"]["subscription"])
-
-    # 3️⃣ Payment failed / subscription cancelled / downgraded
-    if typ in ("invoice.payment_failed", "customer.subscription.updated"):
-        _check_status(event["data"]["object"]["id"])
+            print(f"❌ Webhook failed: No user found for ID {user_id}")
 
     return HttpResponse(status=200)
+
 
 # ─────────────  4)  Helpers  ─────────────
 def _create_sub_record(
