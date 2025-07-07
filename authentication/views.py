@@ -1229,6 +1229,7 @@ def checkout_cancel(request):
 @csrf_exempt
 # BillingController
 def stripe_webhook(request):
+    print("✅ Webhook hit!")
     payload = request.body
     sig     = request.headers.get("stripe-signature", "")
     try:
