@@ -74,7 +74,6 @@
                 </div>
                 {{ form.email }}
               </div>
-              <div id="email-feedback" class="feedback-message"></div>
               {% for error in form.email.errors %}
               <span class="text-error">{{ error }}</span>
               {% endfor %}
@@ -211,49 +210,6 @@
 {% block javascripts %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    // Email validation feedback
-    const emailInput = document.getElementById("id_email");
-    const emailFeedback = document.getElementById("email-feedback");
-
-    let debounceTimeout;
-
-    emailInput.addEventListener("input", () => {
-      clearTimeout(debounceTimeout);
-      debounceTimeout = setTimeout(checkEmail, 300);
-    });
-
-    async function checkEmail() {
-      const email = emailInput.value.trim();
-
-      const isValidFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-      if (!email) {
-        emailFeedback.innerHTML = "";
-        return;
-      }
-
-      if (!isValidFormat) {
-        emailFeedback.innerHTML = `<span style="color: red;">❌ Invalid email format</span>`;
-        return;
-      }
-
-      // Show checking while waiting for response
-      emailFeedback.innerHTML = `<span style="color: #999;">🔍 Checking email...</span>`;
-
-      try {
-        const res = await fetch(`/check_email/?email=${encodeURIComponent(email)}`);
-        const data = await res.json();
-
-        if (data.exists) {
-          emailFeedback.innerHTML = `<span style="color: red;">❌ Email is already registered</span>`;
-        } else {
-          emailFeedback.innerHTML = `<span style="color: green;">✅ Email is available</span>`;
-        }
-      } catch (err) {
-        emailFeedback.innerHTML = `<span style="color: orange;">⚠️ Could not check email</span>`;
-      }
-    }
-
     // Check password strength and breach status
     const passwordInput = document.getElementById("id_password");
     const emoji = document.getElementById("password-emoji");
