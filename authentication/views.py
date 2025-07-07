@@ -458,14 +458,12 @@ def profile_view(request):
     ]
 
     languages = [pl.language_id_fk.language_name for pl in profile.languages.all()]
-    pets      = [pp.pet_id_fk.pet_type for pp in profile.profilepet_set.all()]
 
     return render(request, "pages/profile.html", {
         "profile":       profile,
         "primary_image": primary_image_url,
         "images":        all_images,      
         "languages":     languages,
-        "pets":          pets,
     })
 
 MAX_IMAGES = 6 # ← adjust if needed
