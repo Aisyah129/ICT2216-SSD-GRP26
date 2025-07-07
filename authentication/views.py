@@ -1218,10 +1218,13 @@ def stripe_webhook(request):
             stripe_session_id = session["id"],
         )
 
+        user.is_premium = True
+        user.save(update_fields=["is_premium"])
+
         try:
             user = User.objects.get(user_id=user_id)
-            user.is_premium = True
-            user.save(update_fields=["is_premium"])
+            #user.is_premium = True
+            #user.save(update_fields=["is_premium"])
             log_action(user, "Stripe payment confirmed — user upgraded to Premium", "INFO", request)
         except User.DoesNotExist:
             log_action(None, f"Stripe webhook tried to upgrade unknown user_id {user_id}", "ERROR", request)
