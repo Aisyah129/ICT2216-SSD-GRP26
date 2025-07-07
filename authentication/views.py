@@ -1228,56 +1228,59 @@ def checkout_cancel(request):
 # ─────────────  3)  Stripe web-hook  ─────────────
 @csrf_exempt
 def stripe_webhook(request):
-    payload = request.body
-    sig     = request.headers.get("stripe-signature", "")
-
     try:
-        event = stripe.Webhook.construct_event(
-            payload, sig, settings.STRIPE_WEBHOOK_SECRET
-        )
-    except (ValueError, stripe.error.SignatureVerificationError):
-        return HttpResponse(status=400)
-
-    typ = event["type"]
-
-    # 1️⃣ Checkout finished
-    if typ == "checkout.session.completed":
-        session = event["data"]["object"]
-
-        # Expand to safely access line_items and subscription
-        session = stripe.checkout.Session.retrieve(
-            session["id"],
-            expand=["line_items", "subscription"]
-        )
-
-        sub_id   = session.subscription.id
-        user_id  = session.metadata.get("user_id")
-        price_id = session.line_items.data[0].price.id
-
-        _create_sub_record(
-            user_uuid         = user_id,
-            stripe_sub_id     = sub_id,
-            price_id          = price_id,
-            stripe_session_id = session["id"],
-        )
+        payload = request.body
+        sig = request.headers.get("stripe-signature", "")
 
         try:
-            user = User.objects.get(user_id=user_id)
-            user.is_premium = True
-            user.save(update_fields=["is_premium"])
-            log_action(user, "Stripe payment confirmed — user upgraded to Premium", "INFO", request)
-        except User.DoesNotExist:
-            log_action(None, f"Stripe webhook tried to upgrade unknown user_id {user_id}", "ERROR", request)
+            event = stripe.Webhook.construct_event(
+                payload, sig, settings.STRIPE_WEBHOOK_SECRET
+            )
+        except (ValueError, stripe.error.SignatureVerificationError) as e:
+            print("Webhook signature verification failed:", e)
+            return HttpResponse(status=400)
 
-    # 2️⃣ Recurring invoice paid (renewal)
-    elif typ == "invoice.paid":
-        _update_next_renewal(event["data"]["object"]["subscription"])
+        typ = event["type"]
+        print("⚡ Received event type:", typ)
 
-    # 3️⃣ Payment failed / subscription cancelled / downgraded
-    elif typ in ("invoice.payment_failed", "customer.subscription.updated"):
-        _check_status(event["data"]["object"]["id"])
+        if typ == "checkout.session.completed":
+            session = event["data"]["object"]
+            print("🧾 Session object:", session)
 
-    return HttpResponse(status=200)
+            # Expand the session to include subscription details
+            session = stripe.checkout.Session.retrieve(
+                session["id"],
+                expand=["line_items", "subscription"]
+            )
+            sub_id = session.subscription.id
+            user_id = session.metadata.get("user_id")
+            price_id = session.line_items.data[0].price.id
+
+            print("✅ Creating sub record:", user_id, sub_id, price_id)
+
+            _create_sub_record(
+                user_uuid=user_id,
+                stripe_sub_id=sub_id,
+                price_id=price_id,
+                stripe_session_id=session["id"],
+            )
+
+            try:
+                user = User.objects.get(user_id=user_id)
+                user.is_premium = True
+                user.save(update_fields=["is_premium"])
+                print("🎉 Upgraded user to premium:", user_id)
+            except User.DoesNotExist:
+                print(f"❌ User not found: {user_id}")
+
+        return HttpResponse(status=200)
+
+    except Exception as e:
+        # Very important to catch any unhandled errors
+        print("🔥 Webhook error:", str(e))
+        import traceback
+        traceback.print_exc()
+        return HttpResponse(status=500)
 
 
 # ─────────────  4)  Helpers  ─────────────
