@@ -63,7 +63,7 @@ jobs:
         args: >
           --enableRetired
           --enableExperimental
-          --scan app/
+          --scan core/
           --scan requirements*.txt
           --out reports
 
