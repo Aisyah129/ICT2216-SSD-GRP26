@@ -1187,7 +1187,6 @@ def stripe_webhook(request):
 
     # 1️⃣ Checkout finished
     if typ == "checkout.session.completed":
-        print("✅ Webhook: Payment completed, upgrading user to premium")
         session   = event["data"]["object"]
         sub_id    = session["subscription"]           # the real sub ID
         user_id   = session["metadata"]["user_id"]
@@ -1255,8 +1254,7 @@ def _create_sub_record(
         },
     )
 
-    #user.is_premium = True
-    #user.save(update_fields=["is_premium"])
+
 
 def _update_next_renewal(stripe_sub_id: str):
     sub_json = stripe.Subscription.retrieve(stripe_sub_id)
