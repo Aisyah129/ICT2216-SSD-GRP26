@@ -134,6 +134,16 @@ class SignUpForm(forms.Form):
 
     captcha = ReCaptchaField(widget=ReCaptchaV2Checkbox())
 
+
+    def clean_email(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("Unable to process your request. Please try a different email.")
+        return email
+
     def clean_password(self):
         pwd = self.cleaned_data.get('password')
         
