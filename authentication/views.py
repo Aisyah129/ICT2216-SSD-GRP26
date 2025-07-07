@@ -1227,11 +1227,10 @@ def checkout_cancel(request):
 
 # ─────────────  3)  Stripe web-hook  ─────────────
 @csrf_exempt
-# BillingController
 def stripe_webhook(request):
-    print("✅ Webhook hit!")
     payload = request.body
     sig     = request.headers.get("stripe-signature", "")
+
     try:
         event = stripe.Webhook.construct_event(
             payload, sig, settings.STRIPE_WEBHOOK_SECRET
@@ -1245,40 +1244,41 @@ def stripe_webhook(request):
     if typ == "checkout.session.completed":
         session = event["data"]["object"]
 
-    # Expand to safely access line_items and subscription
-    session = stripe.checkout.Session.retrieve(
-        session["id"],
-        expand=["line_items", "subscription"]
-    )
+        # Expand to safely access line_items and subscription
+        session = stripe.checkout.Session.retrieve(
+            session["id"],
+            expand=["line_items", "subscription"]
+        )
 
-    sub_id   = session.subscription.id
-    user_id  = session.metadata.get("user_id")
-    price_id = session.line_items.data[0].price.id
+        sub_id   = session.subscription.id
+        user_id  = session.metadata.get("user_id")
+        price_id = session.line_items.data[0].price.id
 
-    _create_sub_record(
-        user_uuid         = user_id,
-        stripe_sub_id     = sub_id,
-        price_id          = price_id,
-        stripe_session_id = session["id"],
-    )
+        _create_sub_record(
+            user_uuid         = user_id,
+            stripe_sub_id     = sub_id,
+            price_id          = price_id,
+            stripe_session_id = session["id"],
+        )
 
-    try:
-        user = User.objects.get(user_id=user_id)
-        user.is_premium = True
-        user.save(update_fields=["is_premium"])
-        log_action(user, "Stripe payment confirmed — user upgraded to Premium", "INFO", request)
-    except User.DoesNotExist:
-        log_action(None, f"Stripe webhook tried to upgrade unknown user_id {user_id}", "ERROR", request)
+        try:
+            user = User.objects.get(user_id=user_id)
+            user.is_premium = True
+            user.save(update_fields=["is_premium"])
+            log_action(user, "Stripe payment confirmed — user upgraded to Premium", "INFO", request)
+        except User.DoesNotExist:
+            log_action(None, f"Stripe webhook tried to upgrade unknown user_id {user_id}", "ERROR", request)
 
     # 2️⃣ Recurring invoice paid (renewal)
-    if typ == "invoice.paid":
+    elif typ == "invoice.paid":
         _update_next_renewal(event["data"]["object"]["subscription"])
 
     # 3️⃣ Payment failed / subscription cancelled / downgraded
-    if typ in ("invoice.payment_failed", "customer.subscription.updated"):
+    elif typ in ("invoice.payment_failed", "customer.subscription.updated"):
         _check_status(event["data"]["object"]["id"])
 
     return HttpResponse(status=200)
+
 
 # ─────────────  4)  Helpers  ─────────────
 # BillingController
