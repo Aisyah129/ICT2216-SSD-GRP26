@@ -48,7 +48,7 @@ def log_action(user, action_type, severity='INFO', request=None, target_id=None,
         metadata = metadata,
         log_hash=log_hash
     )
-# utils.py
+
 
 def has_permission(user, action, obj=None):
     """
