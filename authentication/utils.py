@@ -27,7 +27,7 @@ def log_action(user, action_type, severity='INFO', request=None, target_id=None,
         else:
             raw_ip = request.META.get('REMOTE_ADDR')
 
-    # Pseudonymise the IP (mask last octet)
+    # Pseudonymise the IP (mask the last octet)
     pseudonymised_ip = mask_ip(raw_ip) if raw_ip else None
 
     if metadata and not isinstance(metadata, str):
