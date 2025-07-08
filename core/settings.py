@@ -52,7 +52,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-CSRF_TRUSTED_ORIGINS = ['www.aisteadmai.shop']
+CSRF_TRUSTED_ORIGINS = ['http://www.aisteadmai.shop',
+    'http://aisteadmai.shop',]
 
 # Prevent clickjacking
 X_FRAME_OPTIONS = "DENY"
