@@ -24,7 +24,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG')
 
-ALLOWED_HOSTS = ['3.129.248.34', 'localhost', '127.0.0.1', 'www.aisteadmai.shop']
+ALLOWED_HOSTS = ['www.aisteadmai.shop', 'aisteadmai.shop','3.129.248.34', 'localhost', '127.0.0.1']
 
 # Application definition
 
