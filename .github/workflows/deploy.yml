@@ -32,7 +32,12 @@ jobs:
         port: 22
         script: |
           cd ~/ICT2216-SSD-GRP26
-          git pull origin merge/all
+
+          # Safe Git sync (works even after revert or force push)
+          git fetch origin merge/all
+          git reset --hard origin/merge/all
+          git clean -fd  # remove untracked files
+
           source venv/bin/activate
 
           export DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
