@@ -156,9 +156,18 @@ def request_password_reset(request):
             request.session['reset_code_time'] = timezone.now().isoformat()
             send_reset_code_email(email, code)
             log_action(user, "Requested password reset", "INFO", request) # ✅ Log password reset requested
-            return redirect('verify_reset_code')
+            #return redirect('verify_reset_code')
         except User.DoesNotExist:
-            msg = "Invalid email address."
+            #msg = "Invalid email address."
+            # Fake code, do NOT send email
+            request.session['reset_email'] = email
+            request.session['reset_code'] = None  # Or '000000' if you want consistency
+            request.session['reset_code_time'] = timezone.now().isoformat()
+            # Optional: Log attempt without revealing existence
+            log_action(None, f"Password reset attempt for non-existent email: {email}", "WARNING", request)
+        
+        # In all cases: redirect to verification page
+        return redirect('verify_reset_code')
 
     return render(request, "accounts/password_reset_request.html", {"form": form, "msg": msg})
 
@@ -193,39 +202,41 @@ def verify_reset_code(request):
     form = VerificationCodeForm(request.POST or None)
     msg = None
 
-    if request.method == "POST" and form.is_valid():
-        entered_code = form.cleaned_data['code']
-        stored_code = request.session.get('reset_code')
-        code_time_str = request.session.get('reset_code_time')
-        email = request.session.get('reset_email')
-
-        if stored_code and code_time_str and email:
-            code_time = datetime.fromisoformat(code_time_str).replace(tzinfo=dt_timezone.utc)
-
-
-            if timezone.now() - code_time > timedelta(minutes=1):
-                # Code expired — generate and send new one
-                new_code = str(random.randint(100000, 999999))
-                request.session['reset_code'] = new_code
-                request.session['reset_code_time'] = timezone.now().isoformat()
-
-                send_reset_code_email(email, new_code)
-                log_action(None, f"Reset code expired and new one sent to {email}", "INFO", request)
-
-                msg = "Your code expired. A new one has been emailed to you."
-            elif entered_code == stored_code:
-                try:
-                    user = User.objects.get(email=email)
-                    log_action(user, "Verified reset code", "INFO", request)
-                except User.DoesNotExist:
-                    log_action(None, f"Reset code verified but user {email} not found", "WARNING", request)
-
-                return redirect('set_new_password')
-            else:
-                log_action(None, f"Failed reset code attempt for {email}", "WARNING", request)
-                msg = "Invalid verification code."
+    if request.method == "POST":
+        if not form.is_valid():
+            msg = "Please try again."
         else:
-            msg = "No verification code found. Please request again."
+            entered_code = form.cleaned_data['code']
+            stored_code = request.session.get('reset_code')
+            code_time_str = request.session.get('reset_code_time')
+            email = request.session.get('reset_email')
+
+            if stored_code and code_time_str and email:
+                code_time = datetime.fromisoformat(code_time_str).replace(tzinfo=dt_timezone.utc)
+
+                if timezone.now() - code_time > timedelta(minutes=1):
+                    # Code expired — generate and send new one
+                    new_code = str(random.randint(100000, 999999))
+                    request.session['reset_code'] = new_code
+                    request.session['reset_code_time'] = timezone.now().isoformat()
+
+                    send_reset_code_email(email, new_code)
+                    log_action(None, f"Reset code expired and new one sent to {email}", "INFO", request)
+
+                    msg = "Your code expired. A new one has been emailed to you."
+                elif entered_code == stored_code:
+                    try:
+                        user = User.objects.get(email=email)
+                        log_action(user, "Verified reset code", "INFO", request)
+                    except User.DoesNotExist:
+                        log_action(None, f"Reset code verified but user {email} not found", "WARNING", request)
+
+                    return redirect('set_new_password')
+                else:
+                    log_action(None, f"Failed reset code attempt for {email}", "WARNING", request)
+                    msg = "Invalid verification code."
+            else:
+                msg = "Please try again."
 
     return render(request, "accounts/password_reset_verify.html", {"form": form, "msg": msg})
 
