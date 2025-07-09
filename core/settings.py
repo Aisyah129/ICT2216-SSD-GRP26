@@ -36,7 +36,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'authentication',  
-    'django_recaptcha' 
+    'django_recaptcha',
+    'axes',
+
 ]
 
 MIDDLEWARE = [
@@ -49,7 +51,13 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'authentication.middleware.SessionTimeoutMiddleware',
     'csp.middleware.CSPMiddleware',
+    'axes.middleware.AxesMiddleware',
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesBackend', 
+    'django.contrib.auth.backends.ModelBackend',
 ]
 
 CSRF_TRUSTED_ORIGINS = ['https://www.aisteadmai.shop',
@@ -232,4 +240,22 @@ CSP_CONNECT_SRC = (
     "https://api.stripe.com",
     "https://js.stripe.com",
 )
+
+# Axes config
+from datetime import timedelta
+# Lockout after 5 failed attempts
+AXES_FAILURE_LIMIT = 5
+
+# Lockout duration: 20 minutes
+AXES_COOLOFF_TIME = timedelta(minutes=1)
+
+# Lockout is triggered after the failure limit is hit
+AXES_LOCK_OUT_AT_FAILURE = True
+
+# Lock out based on IP and user-agent (more secure)
+AXES_LOCK_OUT_BY_IP_AND_USER_AGENT = True
+
+# Count failures across users per IP (optional: False to count per username)
+AXES_ONLY_USER_FAILURES = False
+
 

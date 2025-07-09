@@ -22,3 +22,5 @@ unipath==1.1
 django-captcha
 django-simple-captcha
 captcha
+django-axes
+

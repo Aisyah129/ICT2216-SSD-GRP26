@@ -48,6 +48,8 @@ from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.cache import never_cache
 from django.templatetags.static import static
 from sklearn.metrics.pairwise import cosine_similarity
+from axes.utils import is_already_locked
+
 import numpy as np
 
 from django.db import transaction
@@ -95,6 +97,15 @@ def login_view(request):
     msg = None
 
     if request.method == "POST":
+
+        if is_already_locked(request):
+            messages.error(request, "locked_out")
+            return render(request, "accounts/login.html", {
+                "form": form,
+                "msg": None,
+                "session_timeout": False
+            })
+        
         if form.is_valid():
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']

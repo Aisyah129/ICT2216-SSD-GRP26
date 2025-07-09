@@ -86,7 +86,17 @@
             <div class="text-danger text-center">{{ msg }}</div>
             {% endif %}
 
-            <!-- test -->
+            <!-- LOCKOUT -->
+
+            {% if messages %}
+            {% for message in messages %}
+              {% if message == "locked_out" %}
+                <script>
+                  alert("🚫 Too many login attempts. You're temporarily locked out. Please try again in 20 minutes.");
+                </script>
+              {% endif %}
+            {% endfor %}
+            {% endif %}
           
           </form>
         </div>
