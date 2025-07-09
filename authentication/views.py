@@ -156,9 +156,18 @@ def request_password_reset(request):
             request.session['reset_code_time'] = timezone.now().isoformat()
             send_reset_code_email(email, code)
             log_action(user, "Requested password reset", "INFO", request) # ✅ Log password reset requested
-            return redirect('verify_reset_code')
+            #return redirect('verify_reset_code')
         except User.DoesNotExist:
-            msg = "Invalid email address."
+            #msg = "Invalid email address."
+            # Fake code, do NOT send email
+            request.session['reset_email'] = email
+            request.session['reset_code'] = None  # Or '000000' if you want consistency
+            request.session['reset_code_time'] = timezone.now().isoformat()
+            # Optional: Log attempt without revealing existence
+            log_action(None, f"Password reset attempt for non-existent email: {email}", "WARNING", request)
+        
+        # In all cases: redirect to verification page
+        return redirect('verify_reset_code')
 
     return render(request, "accounts/password_reset_request.html", {"form": form, "msg": msg})
 
@@ -193,39 +202,41 @@ def verify_reset_code(request):
     form = VerificationCodeForm(request.POST or None)
     msg = None
 
-    if request.method == "POST" and form.is_valid():
-        entered_code = form.cleaned_data['code']
-        stored_code = request.session.get('reset_code')
-        code_time_str = request.session.get('reset_code_time')
-        email = request.session.get('reset_email')
-
-        if stored_code and code_time_str and email:
-            code_time = datetime.fromisoformat(code_time_str).replace(tzinfo=dt_timezone.utc)
-
-
-            if timezone.now() - code_time > timedelta(minutes=1):
-                # Code expired — generate and send new one
-                new_code = str(random.randint(100000, 999999))
-                request.session['reset_code'] = new_code
-                request.session['reset_code_time'] = timezone.now().isoformat()
-
-                send_reset_code_email(email, new_code)
-                log_action(None, f"Reset code expired and new one sent to {email}", "INFO", request)
-
-                msg = "Your code expired. A new one has been emailed to you."
-            elif entered_code == stored_code:
-                try:
-                    user = User.objects.get(email=email)
-                    log_action(user, "Verified reset code", "INFO", request)
-                except User.DoesNotExist:
-                    log_action(None, f"Reset code verified but user {email} not found", "WARNING", request)
-
-                return redirect('set_new_password')
-            else:
-                log_action(None, f"Failed reset code attempt for {email}", "WARNING", request)
-                msg = "Invalid verification code."
+    if request.method == "POST":
+        if not form.is_valid():
+            msg = "Please try again."
         else:
-            msg = "No verification code found. Please request again."
+            entered_code = form.cleaned_data['code']
+            stored_code = request.session.get('reset_code')
+            code_time_str = request.session.get('reset_code_time')
+            email = request.session.get('reset_email')
+
+            if stored_code and code_time_str and email:
+                code_time = datetime.fromisoformat(code_time_str).replace(tzinfo=dt_timezone.utc)
+
+                if timezone.now() - code_time > timedelta(minutes=1):
+                    # Code expired — generate and send new one
+                    new_code = str(random.randint(100000, 999999))
+                    request.session['reset_code'] = new_code
+                    request.session['reset_code_time'] = timezone.now().isoformat()
+
+                    send_reset_code_email(email, new_code)
+                    log_action(None, f"Reset code expired and new one sent to {email}", "INFO", request)
+
+                    msg = "Your code expired. A new one has been emailed to you."
+                elif entered_code == stored_code:
+                    try:
+                        user = User.objects.get(email=email)
+                        log_action(user, "Verified reset code", "INFO", request)
+                    except User.DoesNotExist:
+                        log_action(None, f"Reset code verified but user {email} not found", "WARNING", request)
+
+                    return redirect('set_new_password')
+                else:
+                    log_action(None, f"Failed reset code attempt for {email}", "WARNING", request)
+                    msg = "Invalid verification code."
+            else:
+                msg = "Please try again."
 
     return render(request, "accounts/password_reset_verify.html", {"form": form, "msg": msg})
 
@@ -673,16 +684,19 @@ def delete_profile_image(request, pk):
 def admin_dashboard(request):
     if not has_permission(request.user, "admin_dashboard_access"):
         return redirect('browse')
-    users = User.objects.all().order_by('-created_at')
-    logs = ActionLog.objects.order_by('-timestamp')
+
+    # 🟢 Users queryset
+    users_qs = User.objects.all().order_by('-created_at')
+    # 🟢 Logs queryset
+    logs_qs = ActionLog.objects.order_by('-timestamp')
 
     # 🔍 Filter logs
     user_email = request.GET.get('user_email')
     severity = request.GET.get('severity')
     if user_email:
-        logs = logs.filter(user__email__icontains=user_email)
+        logs_qs = logs_qs.filter(user__email__icontains=user_email)
     if severity:
-        logs = logs.filter(severity=severity)
+        logs_qs = logs_qs.filter(severity=severity)
 
     # 🔍 Filter users
     search_user = request.GET.get('search_user')
@@ -690,16 +704,19 @@ def admin_dashboard(request):
     premium_filter = request.GET.get('is_premium')
 
     if search_user:
-        users = users.filter(email__icontains=search_user)
+        users_qs = users_qs.filter(email__icontains=search_user)
     if role_filter in ['user', 'admin']:
-        users = users.filter(role=role_filter)
+        users_qs = users_qs.filter(role=role_filter)
     if premium_filter in ['true', 'false']:
-        users = users.filter(is_premium=(premium_filter == 'true'))
+        users_qs = users_qs.filter(is_premium=(premium_filter == 'true'))
 
-    # 📄 Pagination (10 logs per page)
-    paginator = Paginator(logs, 10)
-    page_number = request.GET.get("page")
-    logs = paginator.get_page(page_number)
+    # 🆕 Paginate users (10 per page)
+    user_paginator = Paginator(users_qs, 10)
+    users = user_paginator.get_page(request.GET.get('page_users'))
+
+    # 📄 Paginate logs (10 per page)
+    log_paginator = Paginator(logs_qs, 10)
+    logs = log_paginator.get_page(request.GET.get("page"))
 
     return render(request, 'accounts/admin_dashboard.html', {
         'users': users,
@@ -1987,7 +2004,8 @@ def submit_report(request):
                     severity="WARNING",
                     request=request,
                     target_id=reported_profile_id,
-                    target_type="User"
+                    target_type="User",
+                    metadata={"reason": reason, "details": details}
                 )
                 messages.success(request, "🚩 Report submitted successfully.")
                 print(f"✅ Report saved: {report.report_id}")
