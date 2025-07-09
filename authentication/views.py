@@ -48,7 +48,7 @@ from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.cache import never_cache
 from django.templatetags.static import static
 from sklearn.metrics.pairwise import cosine_similarity
-from axes.helpers import is_already_locked
+from axes.handlers.proxy import AxesProxyHandler
 import numpy as np
 
 from django.db import transaction
@@ -97,8 +97,8 @@ def login_view(request):
 
     if request.method == "POST":
 
-        if is_already_locked(request):
-            messages.error(request, "locked_out")
+        if AxesProxyHandler.is_locked(request):
+            messages.error(request, "🚫 Too many failed attempts. Try again later.")
             return render(request, "accounts/login.html", {
                 "form": form,
                 "msg": None,
