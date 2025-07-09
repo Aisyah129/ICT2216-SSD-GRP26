@@ -51,7 +51,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'authentication.middleware.SessionTimeoutMiddleware',
     'csp.middleware.CSPMiddleware',
-    'axes.middleware.AxesMiddleware',
+    #'axes.middleware.AxesMiddleware',
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     'authentication.middleware.SessionValidationMiddleware',
 ]
