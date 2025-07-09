@@ -41,6 +41,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
+from django.utils.html import escape
+from django.utils.text import Truncator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.cache import never_cache
@@ -1942,6 +1944,7 @@ def dislike_profile(request):
         index = int(request.POST.get("index") or request.GET.get("index", 0))
         return redirect(f"/browse/?index={index}")
     
+
 @login_required
 # ReportController
 def submit_report(request):
@@ -1954,10 +1957,15 @@ def submit_report(request):
         print("📥 POST data:", request.POST)
 
         if reason and reported_profile_id:
-            # Check for existing report by this user on this profile
+            # Sanitize user input
+            safe_reason = escape(reason.strip())  # Escape HTML tags
+            safe_details = escape(details.strip())  # Escape HTML tags
+            safe_details = Truncator(safe_details).chars(300)  # Optional: Truncate
+
+            # Check for existing report
             existing_report = Report.objects.filter(
-            reporter_user=request.user,
-            reported_user_id=reported_profile_id
+                reporter_user=request.user,
+                reported_user_id=reported_profile_id
             ).first()
 
             if existing_report:
@@ -1968,19 +1976,25 @@ def submit_report(request):
                     report_id=uuid.uuid4(),
                     reporter_user=request.user,
                     reported_user_id=reported_profile_id,
-                    reason=reason,
-                    details=details or '',
+                    reason=safe_reason,
+                    details=safe_details or '',
                     created_at=timezone.now()
                 )
                 report.save()
-                log_action(user=request.user, action_type=f"Submitted report on user {reported_profile_id}", severity="WARNING",
-                    request=request, target_id=reported_profile_id, target_type="User", metadata={"reason": reason, "details": details})
+                log_action(
+                    user=request.user,
+                    action_type=f"Submitted report on user {reported_profile_id}",
+                    severity="WARNING",
+                    request=request,
+                    target_id=reported_profile_id,
+                    target_type="User"
+                )
                 messages.success(request, "🚩 Report submitted successfully.")
                 print(f"✅ Report saved: {report.report_id}")
 
                 Like.objects.update_or_create(
                     liker_user_id=request.user,
-                    liked_user_id=User.objects.get(user_id=reported_profile_id),  # ← FIXED
+                    liked_user_id=User.objects.get(user_id=reported_profile_id),
                     defaults={
                         'like_status': 'passed',
                         'liked_at': timezone.now()
@@ -1989,16 +2003,17 @@ def submit_report(request):
 
             current_index = int(request.GET.get("index", 0))
             return redirect(f'/browse/?index={current_index + 1}')
-
         else:
             messages.error(request, "❌ Please fill in all required fields.")
             print("❌ Missing reason or reported_profile_id")
     else:
         print("❌ Not a POST request")
 
-    if request.POST.get('reported_profile_id') != request.session.get('last_profile_id'):
-        messages.error(request, "Profile mismatch. Report rejected.")
+    if request.method == 'POST':
+        if request.POST.get('reported_profile_id') != request.session.get('last_profile_id'):
+            messages.error(request, "Profile mismatch. Report rejected.")
     return redirect(f'/browse/?index={request.GET.get("index", 0)}')
+
 
 # Admin Reports Functionalities
 @never_cache
@@ -2067,7 +2082,6 @@ def delete_report(request, report_id):
     log_action(user=request.user, action_type=f"Deleted report {report.report_id}", severity="WARNING", request=request,
         target_id=report.report_id, target_type="Report")
     report.delete()
-    print(request, "Report deleted.")
     return redirect('admin_report_dashboard')
 
 @never_cache
@@ -2080,7 +2094,6 @@ def admin_toggle_premium(request, user_id):
     user.save()
 
     status = "upgraded to Premium" if user.is_premium else "downgraded to Free"
-    print(request, f"User {user.email} {status}.")
     log_action(request.user, f"Toggled premium status for {user.email} to {user.is_premium}", severity="INFO",
         request=request, target_id=user.user_id, target_type="User")
     return redirect('admin_dashboard')  
@@ -2096,13 +2109,13 @@ def admin_delete_user(request, user_id):
     try:
         with transaction.atomic():
             # Delete related profile first
-            user.profile.delete()
+            if hasattr(user, 'profile'):
+                user.profile.delete()
             user.delete()
 
-        print(request, f"User {user.email} account deleted.")
         log_action(request.user, f"Deleted user account {user.email}", severity="WARNING",
             request=request, target_id=user_id, target_type="User")
     except Exception as e:
-        print(request, f"Failed to delete user: {str(e)}")
+        print(f"❌ Failed to delete user {user.email}: {e}")
 
     return redirect('admin_dashboard')

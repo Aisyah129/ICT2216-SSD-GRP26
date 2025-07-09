@@ -165,7 +165,7 @@
               <td>{{ log.ip_address|default:"-" }}</td>
               <td>
                 {% if log.metadata %}
-                <code style="white-space: pre-wrap;">{{ log.metadata|safe }}</code>
+                <code style="white-space: pre-wrap;">{{ log.metadata|escape }}</code>
                 {% else %}
                 -
                 {% endif %}
