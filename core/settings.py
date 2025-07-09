@@ -259,4 +259,8 @@ AXES_LOCK_OUT_BY_IP_AND_USER_AGENT = True
 # Count failures across users per IP (optional: False to count per username)
 AXES_ONLY_USER_FAILURES = False
 
+AUTHENTICATION_BACKENDS = [
+    'core.authentication_backend.CustomBackendForAxes',  # ← adjust path to your file
+    'django.contrib.auth.backends.ModelBackend',
+]
 

@@ -31,6 +31,7 @@ from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout
 from django.contrib.auth import get_user_model
+from django.contrib.auth import authenticate
 from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -108,6 +109,9 @@ def login_view(request):
         if form.is_valid():
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
+
+            # Trigger Axes logging here
+            authenticate(request, username=email, password=password)
 
             try:
                 user = User.objects.get(email=email)
