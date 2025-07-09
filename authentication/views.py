@@ -673,16 +673,19 @@ def delete_profile_image(request, pk):
 def admin_dashboard(request):
     if not has_permission(request.user, "admin_dashboard_access"):
         return redirect('browse')
-    users = User.objects.all().order_by('-created_at')
-    logs = ActionLog.objects.order_by('-timestamp')
+
+    # 🟢 Users queryset
+    users_qs = User.objects.all().order_by('-created_at')
+    # 🟢 Logs queryset
+    logs_qs = ActionLog.objects.order_by('-timestamp')
 
     # 🔍 Filter logs
     user_email = request.GET.get('user_email')
     severity = request.GET.get('severity')
     if user_email:
-        logs = logs.filter(user__email__icontains=user_email)
+        logs_qs = logs_qs.filter(user__email__icontains=user_email)
     if severity:
-        logs = logs.filter(severity=severity)
+        logs_qs = logs_qs.filter(severity=severity)
 
     # 🔍 Filter users
     search_user = request.GET.get('search_user')
@@ -690,16 +693,19 @@ def admin_dashboard(request):
     premium_filter = request.GET.get('is_premium')
 
     if search_user:
-        users = users.filter(email__icontains=search_user)
+        users_qs = users_qs.filter(email__icontains=search_user)
     if role_filter in ['user', 'admin']:
-        users = users.filter(role=role_filter)
+        users_qs = users_qs.filter(role=role_filter)
     if premium_filter in ['true', 'false']:
-        users = users.filter(is_premium=(premium_filter == 'true'))
+        users_qs = users_qs.filter(is_premium=(premium_filter == 'true'))
 
-    # 📄 Pagination (10 logs per page)
-    paginator = Paginator(logs, 10)
-    page_number = request.GET.get("page")
-    logs = paginator.get_page(page_number)
+    # 🆕 Paginate users (10 per page)
+    user_paginator = Paginator(users_qs, 10)
+    users = user_paginator.get_page(request.GET.get('page_users'))
+
+    # 📄 Paginate logs (10 per page)
+    log_paginator = Paginator(logs_qs, 10)
+    logs = log_paginator.get_page(request.GET.get("page"))
 
     return render(request, 'accounts/admin_dashboard.html', {
         'users': users,
