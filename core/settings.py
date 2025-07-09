@@ -51,15 +51,10 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'authentication.middleware.SessionTimeoutMiddleware',
     'csp.middleware.CSPMiddleware',
-    #'axes.middleware.AxesMiddleware',
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     'authentication.middleware.SessionValidationMiddleware',
 ]
 
-# AUTHENTICATION_BACKENDS = [
-#     #'axes.backends.AxesBackend', 
-#     'django.contrib.auth.backends.ModelBackend',
-# ]
 
 CSRF_TRUSTED_ORIGINS = ['https://www.aisteadmai.shop',
     'https://aisteadmai.shop',]
@@ -263,7 +258,7 @@ AXES_RAISE_PERMISSION_DENIED = False
 
 
 AUTHENTICATION_BACKENDS = [
-    'core.authentication_backend.CustomBackendForAxes',  # ← adjust path to your file
+    'core.authentication_backend.CustomBackendForAxes',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
