@@ -48,7 +48,7 @@ from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.cache import never_cache
 from django.templatetags.static import static
 from sklearn.metrics.pairwise import cosine_similarity
-from axes.attempts import is_already_locked
+from axes.helpers import is_already_locked
 import numpy as np
 
 from django.db import transaction
