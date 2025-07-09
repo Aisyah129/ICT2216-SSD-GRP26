@@ -56,10 +56,10 @@ MIDDLEWARE = [
     'authentication.middleware.SessionValidationMiddleware',
 ]
 
-# AUTHENTICATION_BACKENDS = [
-#     'axes.backends.AxesBackend', 
-#     'django.contrib.auth.backends.ModelBackend',
-# ]
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesBackend', 
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 CSRF_TRUSTED_ORIGINS = ['https://www.aisteadmai.shop',
     'https://aisteadmai.shop',]
@@ -260,8 +260,7 @@ AXES_LOCK_OUT_BY_IP_AND_USER_AGENT = True
 AXES_ONLY_USER_FAILURES = False
 
 AUTHENTICATION_BACKENDS = [
-    'core.authentication_backend.CustomBackendForAxes',
-    'axes.backends.AxesBackend',
+    'core.authentication_backend.CustomBackendForAxes',  # ← adjust path to your file
     'django.contrib.auth.backends.ModelBackend',
 ]
 
