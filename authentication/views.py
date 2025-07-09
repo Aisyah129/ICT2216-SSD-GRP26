@@ -72,6 +72,7 @@ from .forms import (
 from .models import User, Report
 from authentication.decorators import user_only
 from .utils import has_permission
+from authentication.middleware import get_client_ip
 
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
@@ -79,7 +80,6 @@ os.environ['SSL_CERT_FILE'] = certifi.where()
 
 def is_admin(user):
     return user.is_authenticated and has_permission(user, "view_admin_dashboard")
-
 
 # AuthController
 def login_view(request):
@@ -115,6 +115,10 @@ def login_view(request):
                 if user.check_password(password):
                     auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     request.session['user_id'] = user.user_id
+
+                    # When user logs in
+                    request.session['ip'] = get_client_ip(request)
+                    request.session['ua'] = request.META.get('HTTP_USER_AGENT')
 
                     # ✅ LOG success
                     log_action(user, "User logged in", "INFO", request)

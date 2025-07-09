@@ -53,6 +53,7 @@ MIDDLEWARE = [
     'csp.middleware.CSPMiddleware',
     'axes.middleware.AxesMiddleware',
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'authentication.middleware.SessionValidationMiddleware',
 ]
 
 AUTHENTICATION_BACKENDS = [
