@@ -459,27 +459,38 @@ def profile_view(request):
 
     # --------- POST: save edits ---------
     if request.method == "POST":
-        form = ProfileForm(request.POST, instance=profile)
+        editable_fields = [
+            'age', 'gender', 'height_cm', 'sexual_orientation', 'pronouns',
+            'body_type', 'location', 'education_level', 'occupation',
+            'religion', 'ethnicity', 'politics', 'smoking', 'drinking',
+            'drug_use', 'has_kids', 'wants_kids', 'zodiac_sign',
+            'relationship_goals', 'hobbies', 'bio'
+        ]
 
-        if form.is_valid():
-            profile = form.save(commit=False)
-            profile.last_updated = timezone.now()
-            profile.save()
+        for field in editable_fields:
+            if field in request.POST:
+                value = request.POST.get(field).strip()
+                setattr(profile, field, value or None)
 
-            # Clear and update language links
-            profile.languages.all().delete()
-            selected_lang_ids = request.POST.getlist("languages")
-            for lang_id in selected_lang_ids:
-                try:
-                    lang_obj = Language.objects.get(language_id=lang_id)
-                    ProfileLanguage.objects.create(profile_id_fk=profile, language_id_fk=lang_obj)
-                except Language.DoesNotExist:
-                    continue
+        profile.last_updated = timezone.now()
+        profile.save(update_fields=editable_fields + ['last_updated'])
 
-            log_action(request.user, "Updated profile information", "INFO", request)
-            return redirect('profile')  # Redirect on success
-    else:
-        form = ProfileForm(instance=profile)
+        # Clear previous language links
+        profile.languages.all().delete()
+
+        # Save selected language IDs
+        selected_lang_ids = request.POST.getlist("languages")  # ← .getlist handles multiple values
+
+        for lang_id in selected_lang_ids:
+            try:
+                lang_obj = Language.objects.get(language_id=lang_id)
+                ProfileLanguage.objects.create(profile_id_fk=profile, language_id_fk=lang_obj)
+            except Language.DoesNotExist:
+                continue
+
+
+        log_action(request.user, "Updated profile information", "INFO", request) # Log Profile Changes
+        return redirect('profile')
 
     # --------- GET: display page ---------
 
@@ -497,14 +508,13 @@ def profile_view(request):
         for img in profile.profileimage_set.order_by('-uploaded_at')
     ]
 
-    #languages = [pl.language_id_fk.language_name for pl in profile.languages.all()]
+    languages = [pl.language_id_fk.language_name for pl in profile.languages.all()]
 
     all_languages = Language.objects.all()
     selected_language_ids = list(profile.languages.values_list('language_id_fk__language_id', flat=True))
 
 
     return render(request, "pages/profile.html", {
-    "form": form,
     "profile": profile,
     "primary_image": primary_image_url,
     "images": all_images,
