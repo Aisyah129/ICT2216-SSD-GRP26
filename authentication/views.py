@@ -467,49 +467,71 @@ def profile_view(request):
     if not has_permission(request.user, "edit_own_profile", profile):
         return redirect('login')
 
+    # --------- POST: save edits ---------
     if request.method == "POST":
-        form = ProfileForm(request.POST, instance=profile)
-        if form.is_valid():
-            profile = form.save(commit=False)
-            profile.last_updated = timezone.now()
-            profile.save()
+        editable_fields = [
+            'age', 'gender', 'height_cm', 'sexual_orientation', 'pronouns',
+            'body_type', 'location', 'education_level', 'occupation',
+            'religion', 'ethnicity', 'politics', 'smoking', 'drinking',
+            'drug_use', 'has_kids', 'wants_kids', 'zodiac_sign',
+            'relationship_goals', 'hobbies', 'bio'
+        ]
 
-            # Clear previous languages and save new ones
-            profile.languages.all().delete()
-            selected_lang_ids = request.POST.getlist("languages")
-            for lang_id in selected_lang_ids:
-                try:
-                    lang_obj = Language.objects.get(language_id=lang_id)
-                    ProfileLanguage.objects.create(profile_id_fk=profile, language_id_fk=lang_obj)
-                except Language.DoesNotExist:
-                    continue
+        for field in editable_fields:
+            if field in request.POST:
+                value = request.POST.get(field).strip()
+                setattr(profile, field, value or None)
 
-            log_action(request.user, "Updated profile information", "INFO", request)
-            return redirect('profile')
-    else:
-        form = ProfileForm(instance=profile)
+        profile.last_updated = timezone.now()
+        profile.save(update_fields=editable_fields + ['last_updated'])
 
+        # Clear previous language links
+        profile.languages.all().delete()
+
+        # Save selected language IDs
+        selected_lang_ids = request.POST.getlist("languages")  # ← .getlist handles multiple values
+
+        for lang_id in selected_lang_ids:
+            try:
+                lang_obj = Language.objects.get(language_id=lang_id)
+                ProfileLanguage.objects.create(profile_id_fk=profile, language_id_fk=lang_obj)
+            except Language.DoesNotExist:
+                continue
+
+
+        log_action(request.user, "Updated profile information", "INFO", request) # Log Profile Changes
+        return redirect('profile')
+
+    # --------- GET: display page ---------
+
+    # Always show full image quality on own profile
     primary_image = profile.profileimage_set.filter(is_primary=True).first()
+
     primary_image_url = get_safe_profile_image_url(primary_image, True)
+
     all_images = [
         {
             "id": img.image_id,
-            "url": get_safe_profile_image_url(img, True),
+            "url": get_safe_profile_image_url(img, True),  # No blur
             "is_primary": img.is_primary
         }
         for img in profile.profileimage_set.order_by('-uploaded_at')
     ]
+
+    languages = [pl.language_id_fk.language_name for pl in profile.languages.all()]
+
     all_languages = Language.objects.all()
     selected_language_ids = list(profile.languages.values_list('language_id_fk__language_id', flat=True))
 
+
     return render(request, "pages/profile.html", {
-        "form": form,
-        "profile": profile,
-        "primary_image": primary_image_url,
-        "images": all_images,
-        "all_languages": all_languages,
-        "selected_language_ids": selected_language_ids
-    })
+    "profile": profile,
+    "primary_image": primary_image_url,
+    "images": all_images,
+    "languages": [pl.language_id_fk.language_name for pl in profile.languages.all()],
+    "all_languages": all_languages,
+    "selected_language_ids": selected_language_ids,
+})
 
 MAX_IMAGES = 6 # ← adjust if needed
 
