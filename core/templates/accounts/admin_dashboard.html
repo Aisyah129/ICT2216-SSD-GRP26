@@ -97,32 +97,15 @@
         <h3 class="mb-0">Recent Activity</h3>
         <form method="get" class="form-inline">
           <input type="text" name="user_email" placeholder="Search by user email" class="form-control mr-2 mb-1"
-            value="{{ request.GET.user_email }}">
+            value="{{ user_email|default_if_none:'' }}">
 
-          {% with severity_value=request.GET.severity %}
           <select name="severity" class="form-control mr-2 mb-1">
             <option value="">All Severities</option>
-
-            {% if severity_value == "INFO" %}
-            <option value="INFO" selected>INFO</option>
-            {% else %}
-            <option value="INFO">INFO</option>
-            {% endif %}
-
-            {% if severity_value == "WARNING" %}
-            <option value="WARNING" selected>WARNING</option>
-            {% else %}
-            <option value="WARNING">WARNING</option>
-            {% endif %}
-
-            {% if severity_value == "CRITICAL" %}
-            <option value="CRITICAL" selected>CRITICAL</option>
-            {% else %}
-            <option value="CRITICAL">CRITICAL</option>
-            {% endif %}
+            <option value="INFO" {% if severity == "INFO" %}selected{% endif %}>INFO</option>
+            <option value="WARNING" {% if severity == "WARNING" %}selected{% endif %}>WARNING</option>
+            <option value="CRITICAL" {% if severity == "CRITICAL" %}selected{% endif %}>CRITICAL</option>
           </select>
 
-          {% endwith %}
 
           <button type="submit" class="btn btn-primary mb-1">Filter</button>
         </form>
