@@ -245,7 +245,7 @@ CSP_CONNECT_SRC = (
 # Axes config
 from datetime import timedelta
 # Lockout after 5 failed attempts
-AXES_FAILURE_LIMIT = 5
+AXES_FAILURE_LIMIT = 2
 
 # Lockout duration: 20 minutes
 AXES_COOLOFF_TIME = timedelta(minutes=1)
