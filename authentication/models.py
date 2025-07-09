@@ -3,6 +3,7 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.db import models
 from django.utils import timezone
+from datetime import timedelta
 import uuid
 
 
@@ -51,6 +52,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_premium  = models.BooleanField(default=False)
     created_at  = models.DateTimeField(default=timezone.now)
     last_login = models.DateTimeField(null=True, blank=True)
+
+    failed_attempts = models.IntegerField(default=0)
+    account_locked_until = models.DateTimeField(null=True, blank=True)
 
     # --- Django-required flags --------------------------------------
     is_active   = models.BooleanField(default=True)

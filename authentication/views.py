@@ -97,13 +97,26 @@ def login_view(request):
 
     if request.method == "POST":
 
-        if AxesProxyHandler.is_locked(request):
-            messages.error(request, "🚫 Too many failed attempts. Try again later.")
-            return render(request, "accounts/login.html", {
-                "form": form,
-                "msg": None,
-                "session_timeout": False
-            })
+        # if AxesProxyHandler.is_locked(request):
+        #     messages.error(request, "🚫 Too many failed attempts. Try again later.")
+        #     return render(request, "accounts/login.html", {
+        #         "form": form,
+        #         "msg": None,
+        #         "session_timeout": False
+        #     })
+
+        try:
+            user = User.objects.get(email=form.cleaned_data['email'])
+            if user.account_locked_until and user.account_locked_until > timezone.now():
+                messages.error(request, "🚫 Your account is locked. Try again later.")
+                return render(request, "accounts/login.html", {
+                    "form": form,
+                    "msg": None,
+                    "session_timeout": False
+                })
+        except User.DoesNotExist:
+            pass  # Let it continue to generic msg later
+
         
         if form.is_valid():
             email = form.cleaned_data['email']
@@ -111,15 +124,17 @@ def login_view(request):
 
             try:
                 user = User.objects.get(email=email)
+                
+                # Check if account is locked (already done above)
                 if user.check_password(password):
+                    user.failed_attempts = 0
+                    user.account_locked_until = None
+                    user.save()
+
                     auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     request.session['user_id'] = user.user_id
-
-                    # When user logs in
                     request.session['ip'] = get_client_ip(request)
                     request.session['ua'] = request.META.get('HTTP_USER_AGENT')
-
-                    # ✅ LOG success
                     log_action(user, "User logged in", "INFO", request)
 
                     if has_permission(user, "admin_dashboard_access"):
@@ -127,9 +142,15 @@ def login_view(request):
                     return redirect('browse')
 
                 else:
-                    # ✅ LOG wrong password
-                    log_action(user, "Failed login attempt (wrong password)", "WARNING", request)
+                    user.failed_attempts += 1
+                    if user.failed_attempts >= 5:
+                        user.account_locked_until = timezone.now() + timedelta(minutes=15)
+                        log_action(user, "Account locked due to failed attempts", "WARNING", request)
+                    else:
+                        log_action(user, "Failed login attempt", "WARNING", request)
+                    user.save()
                     msg = "Incorrect email or password."
+
             except User.DoesNotExist:
                 # ✅ LOG invalid email (no such user)
                 log_action(None, "Failed login - user not found", "WARNING", request, metadata={"email": email})
