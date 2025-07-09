@@ -8,6 +8,19 @@
 <!-- Choices.js CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
 
+{% if msg %}
+  <div class="alert alert-danger text-center">{{ msg }}</div>
+{% endif %}
+
+{% if form.non_field_errors %}
+  <div class="alert alert-danger">
+    {% for error in form.non_field_errors %}
+      <p>{{ error }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
+
+
 
 <!-- Header -->
 <div class="header pb-8 pt-5 pt-lg-8 d-flex align-items-center justify-content-center text-center"
@@ -136,10 +149,13 @@
             <div class="row">
               <div class="col-lg-4">
                 <div class="form-group">
-                  <label>Age</label>
-                  <input name="age" type="number" min="18" max="90" class="form-control form-control-alternative"
-                    value="{{ profile.age|default:'' }}" placeholder="Your age">
+                  <label for="id_age">Age</label>
+                  {{ form.age }}
+                  {% for error in form.age.errors %}
+                    <span class="text-error">{{ error }}</span>
+                  {% endfor %}
                 </div>
+
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
@@ -152,10 +168,19 @@
               </div>
               <div class="col-lg-4">
                 <div class="form-group">
-                  <label>Height (cm)</label>
-                  <input name="height_cm" type="number" min="100" max="250" class="form-control form-control-alternative"
-                    value="{{ profile.height_cm|default:'' }}" placeholder="e.g. 170">
+                  <label for="id_height_cm">Height (cm)</label>
+                  <input id="id_height_cm" name="height_cm" type="number" min="100" max="250"
+                    class="form-control form-control-alternative"
+                    value="{{ form.height_cm.value|default:profile.height_cm|default:'' }}"
+                    placeholder="e.g. 170">
+
+                  {% if form.height_cm.errors %}
+                    {% for error in form.height_cm.errors %}
+                      <small class="text-danger">{{ error }}</small>
+                    {% endfor %}
+                  {% endif %}
                 </div>
+
               </div>
             </div>
 
@@ -205,18 +230,25 @@
               </div>
               <div class="col-lg-6">
                 <div class="form-group">
-                  <label>Location</label>
+                  <label for="id_location">Location</label>
                   <input
-                    id="locationInput"
+                    id="id_location"
                     name="location"
                     type="text"
                     class="form-control form-control-alternative"
-                    value="{{ profile.location|default:'' }}"
+                    value="{{ form.location.value|default:profile.location|default:'' }}"
                     placeholder="e.g. Singapore, Kuala Lumpur"
                     maxlength="50"
                   >
                   <small id="locationCharCount" class="text-muted char-counter d-none">0/50 characters</small>
+
+                  {% if form.location.errors %}
+                    {% for error in form.location.errors %}
+                      <small class="text-danger">{{ error }}</small>
+                    {% endfor %}
+                  {% endif %}
                 </div>
+
               </div>
             </div>
 
@@ -235,20 +267,27 @@
               </div>
               <div class="col-lg-6">
                 <div class="form-group">
-                  <label>Occupation</label>
+                  <label for="id_occupation">Occupation</label>
                   <input
-                    id="occupationInput"
+                    id="id_occupation"
                     name="occupation"
                     type="text"
                     class="form-control form-control-alternative"
-                    value="{{ profile.occupation|default:'' }}"
+                    value="{{ form.occupation.value|default:profile.occupation|default:'' }}"
                     placeholder="e.g. Software Engineer"
                     maxlength="100"
                     pattern="[A-Za-z0-9\s\-\.\&]{2,100}"
                     title="2–100 chars: letters, numbers, space, hyphen (-), period (.), ampersand (&)"
                   >
                   <small id="occupationCharCount" class="text-muted char-counter d-none">0/100 characters</small>
+
+                  {% if form.occupation.errors %}
+                    {% for error in form.occupation.errors %}
+                      <small class="text-danger">{{ error }}</small>
+                    {% endfor %}
+                  {% endif %}
                 </div>
+
               </div>
             </div>
 
@@ -405,31 +444,45 @@
             </select>
 
             <div class="form-group">
-              <label>Hobbies</label>
+              <label for="id_hobbies">Hobbies</label>
               <textarea
-                id="hobbiesTextarea"
+                id="id_hobbies"
                 name="hobbies"
                 rows="3"
                 class="form-control form-control-alternative"
                 maxlength="200"
                 placeholder="e.g. Photography, Reading"
                 title="Only letters, commas, and spaces (max 200 chars)"
-              >{{ profile.hobbies|default:'' }}</textarea>
+              >{{ form.hobbies.value|default:profile.hobbies|default:'' }}</textarea>
               <small id="hobbiesCharCount" class="text-muted char-counter d-none">0/200 characters</small>
+
+              {% if form.hobbies.errors %}
+                {% for error in form.hobbies.errors %}
+                  <small class="text-danger">{{ error }}</small>
+                {% endfor %}
+              {% endif %}
             </div>
 
+
             <div class="form-group">
-              <label>About Me</label>
+              <label for="id_bio">About Me</label>
               <textarea
-                id="bioTextarea"
+                id="id_bio"
                 name="bio"
                 rows="4"
                 class="form-control form-control-alternative"
                 maxlength="500"
                 placeholder="Tell us more about yourself…"
-              >{{ profile.bio|default:'' }}</textarea>
+              >{{ form.bio.value|default:profile.bio|default:'' }}</textarea>
               <small id="bioCharCount" class="text-muted char-counter d-none">0/500 characters</small>
+
+              {% if form.bio.errors %}
+                {% for error in form.bio.errors %}
+                  <small class="text-danger">{{ error }}</small>
+                {% endfor %}
+              {% endif %}
             </div>
+
 
           </div>
           <div class="text-right">

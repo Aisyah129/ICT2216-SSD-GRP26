@@ -197,3 +197,33 @@ class ProfileForm(forms.ModelForm):
             'bio':     forms.Textarea(attrs={'rows': 4, 'class': 'form-control form-control-alternative'}),
             'hobbies': forms.Textarea(attrs={'rows': 3, 'class': 'form-control form-control-alternative'})
         })
+
+        def clean_age(self):
+            age = self.cleaned_data.get('age')
+            if not (18 <= age <= 90):
+                raise forms.ValidationError("Age must be between 18 and 90.")
+            return age
+
+        def clean_height_cm(self):
+            height = self.cleaned_data.get('height_cm')
+            if height is not None and not (100 <= height <= 250):
+                raise forms.ValidationError("Height must be between 100 and 250 cm.")
+            return height
+
+        def clean_location(self):
+            location = self.cleaned_data.get('location')
+            if location and not re.match(r'^[A-Za-z\s,]{2,50}$', location):
+                raise forms.ValidationError("Only letters, spaces, and commas allowed.")
+            return location
+
+        def clean_hobbies(self):
+            hobbies = self.cleaned_data.get('hobbies')
+            if hobbies and len(hobbies) > 200:
+                raise forms.ValidationError("Hobbies must not exceed 200 characters.")
+            return hobbies
+
+        def clean_bio(self):
+            bio = self.cleaned_data.get('bio')
+            if bio and len(bio) > 500:
+                raise forms.ValidationError("Bio should not exceed 500 characters.")
+            return bio
