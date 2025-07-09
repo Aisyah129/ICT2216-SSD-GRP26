@@ -32,25 +32,60 @@ jobs:
         port: 22
         script: |
           cd ~/ICT2216-SSD-GRP26
-          git pull origin merge/all
+
+          # ✅ Safe Git sync (handles reverts & force pushes)
+          git fetch origin merge/all
+          git reset --hard origin/merge/all
+          git clean -fd
+
+          # ✅ Recreate .env file using GitHub secrets
+          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" > .env
+          echo "DEBUG=${{ secrets.DEBUG }}" >> .env
+
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+
+          echo "MONGO_URI=${{ secrets.MONGO_URI }}" >> .env
+          echo "MONGO_DB_NAME=${{ secrets.MONGO_DB_NAME }}" >> .env
+
+          echo "AES_KEY=${{ secrets.AES_KEY }}" >> .env
+
+          echo "IMAGEKIT_PUBLIC_KEY=${{ secrets.IMAGEKIT_PUBLIC_KEY }}" >> .env
+          echo "IMAGEKIT_PRIVATE_KEY=${{ secrets.IMAGEKIT_PRIVATE_KEY }}" >> .env
+          echo "IMAGEKIT_URL_ENDPOINT=${{ secrets.IMAGEKIT_URL_ENDPOINT }}" >> .env
+          echo "IMAGEKIT_UPLOAD_ENDPOINT=${{ secrets.IMAGEKIT_UPLOAD_ENDPOINT }}" >> .env
+
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+          echo "AWS_STORAGE_BUCKET_NAME=${{ secrets.AWS_STORAGE_BUCKET_NAME }}" >> .env
+          echo "AWS_S3_REGION_NAME=${{ secrets.AWS_S3_REGION_NAME }}" >> .env
+          echo "AWS_S3_ENDPOINT=${{ secrets.AWS_S3_ENDPOINT }}" >> .env
+
+          echo "SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}" >> .env
+          echo "FROM_EMAIL=${{ secrets.FROM_EMAIL }}" >> .env
+
+          echo "STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }}" >> .env
+          echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env
+          echo "STRIPE_PRICE_ID_WEEK=${{ secrets.STRIPE_PRICE_ID_WEEK }}" >> .env
+          echo "STRIPE_PRICE_ID_MONTH=${{ secrets.STRIPE_PRICE_ID_MONTH }}" >> .env
+          echo "STRIPE_PRICE_ID_QUARTER=${{ secrets.STRIPE_PRICE_ID_QUARTER }}" >> .env
+          echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" >> .env
+
+          # ✅ Activate virtualenv and run app setup
           source venv/bin/activate
-
-          export DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
-          export RECAPTCHA_PUBLIC_KEY=${{ secrets.RECAPTCHA_PUBLIC_KEY }}
-          export RECAPTCHA_PRIVATE_KEY=${{ secrets.RECAPTCHA_PRIVATE_KEY }}
-
-          export DB_NAME=${{ secrets.DB_NAME }}
-          export DB_USER=${{ secrets.DB_USER }}
-          export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          export DB_HOST=${{ secrets.DB_HOST }}
-          export DB_PORT=${{ secrets.DB_PORT }}
-
-          export MONGO_URI=${{ secrets.MONGO_URI }}
-          export STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
-          export STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+          gunicorn core.wsgi:application --bind 127.0.0.1:8000
 
           pip install -r requirements.txt
           python manage.py collectstatic --noinput
           python manage.py migrate
-          sudo systemctl restart gunicorn
+
+          # 🔥 Kill any existing Gunicorn processes
+          pkill gunicorn || true
+
+          # 🚀 Start Gunicorn manually using port binding
+          nohup gunicorn core.wsgi:application --bind 127.0.0.1:8000 > gunicorn.log 2>&1 &
+          
           sudo systemctl reload nginx
