@@ -36,19 +36,6 @@
         </div>
 
         <div class="card-body d-flex flex-column">
-
-          {# Illustration #}
-          {% if plan.slug == 'week' %}
-            <img src="{% static 'img/premium-week.png' %}" class="mb-3 mx-auto"
-                 style="max-height:72px;" alt="Week plan">
-          {% elif plan.slug == 'month' %}
-            <img src="{% static 'img/premium-month.png' %}" class="mb-3 mx-auto"
-                 style="max-height:72px;" alt="Month plan">
-          {% elif plan.slug == 'quarter' %}
-            <img src="{% static 'img/premium-3months.png' %}" class="mb-3 mx-auto"
-                 style="max-height:72px;" alt="3-months plan">
-          {% endif %}
-
           <h2 class="card-title pricing-card-title">
             ${{ plan.price }}
             <small class="text-muted font-weight-normal"

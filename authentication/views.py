@@ -72,8 +72,10 @@ from .utils import has_permission
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
 # AuthController
+
 def is_admin(user):
-    return user.is_authenticated and user.role == 'admin'
+    return user.is_authenticated and has_permission(user, "view_admin_dashboard")
+
 
 # AuthController
 def login_view(request):
@@ -81,7 +83,9 @@ def login_view(request):
         # Already logged in — redirect based on role
         try:
             user = User.objects.get(user_id=request.session['user_id'])
-            return redirect('browse' if user.role == 'user' else 'admin_dashboard')
+            if has_permission(user, "admin_dashboard_access"):
+                return redirect('admin_dashboard')
+            return redirect('browse')
         except User.DoesNotExist:
             pass  # fall through to login screen if session is stale
 
@@ -102,7 +106,10 @@ def login_view(request):
                     # ✅ LOG success
                     log_action(user, "User logged in", "INFO", request)
 
-                    return redirect('admin_dashboard' if user.role == 'admin' else 'browse')
+                    if has_permission(user, "admin_dashboard_access"):
+                        return redirect('admin_dashboard')
+                    return redirect('browse')
+
                 else:
                     # ✅ LOG wrong password
                     log_action(user, "Failed login attempt (wrong password)", "WARNING", request)
@@ -1213,11 +1220,86 @@ def create_checkout_session(request, plan: str):
     return redirect(session.url)
 
 # ─────────────  2)  Success / cancel splash pages  ─────────────
-@login_required
 # BillingController
+@login_required
 def checkout_success(request):
+    session_id = request.GET.get("session_id")
+    if not session_id:
+        print("❌ No session ID in URL.")
+        return redirect("home")
+
+    try:
+        # Retrieve the session and expand subscription details
+        session = stripe.checkout.Session.retrieve(
+            session_id,
+            expand=["subscription"]
+        )
+
+        if session["payment_status"] != "paid" or session["status"] != "complete":
+            print("❌ Session not completed or not paid.")
+            return redirect("home")
+
+        user_id = session.get("metadata", {}).get("user_id")
+
+        # Fix: Extract subscription ID safely
+        subscription_obj = session.get("subscription")
+        sub_id = subscription_obj["id"] if isinstance(subscription_obj, dict) else subscription_obj
+
+        customer_id = session.get("customer")
+
+        # Fallback in case price ID is not accessible via deprecated display_items
+        price_id = None
+        try:
+            line_items = stripe.checkout.Session.list_line_items(session_id)
+            if line_items.data:
+                price_id = line_items.data[0].price.id
+        except Exception as e:
+            print("⚠️ Failed to fetch price ID from line_items:", e)
+
+        if not user_id:
+            print("❌ No user ID found in metadata.")
+            return redirect("home")
+
+        # Update subscription
+        try:
+            subscription = Subscription.objects.get(stripe_session_id=session_id)
+            subscription.status = "active"
+            subscription.stripe_subscription_id = sub_id
+            subscription.stripe_customer_id = customer_id
+            if price_id:
+                subscription.stripe_price_id = price_id
+            subscription.save()
+        except Subscription.DoesNotExist:
+            Subscription.objects.create(
+                user_uuid=user_id,
+                stripe_session_id=session_id,
+                stripe_subscription_id=sub_id,
+                stripe_customer_id=customer_id,
+                stripe_price_id=price_id,
+                status="active"
+            )
+
+        # Upgrade user
+        try:
+            user = User.objects.get(user_id=user_id)
+            user.is_premium = True
+            user.save(update_fields=["is_premium"])
+            print("🎉 User upgraded to premium:", user.user_id)
+        except User.DoesNotExist:
+            print("❌ User not found:", user_id)
+
+    except stripe.error.StripeError as e:
+        print("❌ Stripe error:", e)
+        return redirect("home")
+    except Exception as e:
+        print("🔥 Unexpected error in checkout_success:", e)
+        import traceback
+        traceback.print_exc()
+        return redirect("home")
+
     log_action(request.user, "Visited Stripe success page", "INFO", request)
     return render(request, "billing/success.html")
+
 
 @login_required
 # BillingController
@@ -1227,58 +1309,59 @@ def checkout_cancel(request):
 
 # ─────────────  3)  Stripe web-hook  ─────────────
 @csrf_exempt
-# BillingController
 def stripe_webhook(request):
-    print("✅ Webhook hit!")
-    payload = request.body
-    sig     = request.headers.get("stripe-signature", "")
+    print("🚀 Webhook endpoint hit!")
     try:
-        event = stripe.Webhook.construct_event(
-            payload, sig, settings.STRIPE_WEBHOOK_SECRET
-        )
-    except (ValueError, stripe.error.SignatureVerificationError):
-        return HttpResponse(status=400)
+        payload = request.body
+        sig = request.headers.get("stripe-signature", "")
 
-    typ = event["type"]
+        try:
+            event = stripe.Webhook.construct_event(
+                payload, sig, settings.STRIPE_WEBHOOK_SECRET
+            )
+        except (ValueError, stripe.error.SignatureVerificationError) as e:
+            print("❌ Webhook signature verification failed:", e)
+            return HttpResponse(status=400)
 
-    # 1️⃣ Checkout finished
-    if typ == "checkout.session.completed":
-        session = event["data"]["object"]
+        event_type = event["type"]
+        print("⚡ Received event type:", event_type)
 
-    # Expand to safely access line_items and subscription
-    session = stripe.checkout.Session.retrieve(
-        session["id"],
-        expand=["line_items", "subscription"]
-    )
+        if event_type == "checkout.session.completed":
+            session = event["data"]["object"]
+            session_id = session["id"]
+            print("🧾 Session object:", session)
 
-    sub_id   = session.subscription.id
-    user_id  = session.metadata.get("user_id")
-    price_id = session.line_items.data[0].price.id
+            # 🔍 Lookup the pending subscription using session_id
+            from .models import Subscription, User  # adjust if needed
+            try:
+                subscription = Subscription.objects.get(stripe_session_id=session_id)
+            except Subscription.DoesNotExist:
+                print(f"❌ No matching subscription found for session ID: {session_id}")
+                return HttpResponse(status=404)
 
-    _create_sub_record(
-        user_uuid         = user_id,
-        stripe_sub_id     = sub_id,
-        price_id          = price_id,
-        stripe_session_id = session["id"],
-    )
+            # ✅ Update subscription with customer/subscription ID from Stripe
+            subscription.status = "active"
+            subscription.stripe_customer_id = session.get("customer")
+            subscription.stripe_subscription_id = session.get("subscription")
+            subscription.save()
 
-    try:
-        user = User.objects.get(user_id=user_id)
-        user.is_premium = True
-        user.save(update_fields=["is_premium"])
-        log_action(user, "Stripe payment confirmed — user upgraded to Premium", "INFO", request)
-    except User.DoesNotExist:
-        log_action(None, f"Stripe webhook tried to upgrade unknown user_id {user_id}", "ERROR", request)
+            # ✅ Upgrade the user to premium
+            try:
+                user = User.objects.get(user_id=subscription.user_uuid)
+                user.is_premium = True
+                user.save(update_fields=["is_premium"])
+                print("🎉 Upgraded user to premium:", user.user_id)
+            except User.DoesNotExist:
+                print(f"❌ User not found: {subscription.user_uuid}")
 
-    # 2️⃣ Recurring invoice paid (renewal)
-    if typ == "invoice.paid":
-        _update_next_renewal(event["data"]["object"]["subscription"])
+        return HttpResponse(status=200)
 
-    # 3️⃣ Payment failed / subscription cancelled / downgraded
-    if typ in ("invoice.payment_failed", "customer.subscription.updated"):
-        _check_status(event["data"]["object"]["id"])
+    except Exception as e:
+        print("🔥 Webhook error:", str(e))
+        import traceback
+        traceback.print_exc()
+        return HttpResponse(status=500)
 
-    return HttpResponse(status=200)
 
 # ─────────────  4)  Helpers  ─────────────
 # BillingController

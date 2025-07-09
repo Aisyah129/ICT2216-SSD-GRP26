@@ -50,6 +50,13 @@ def log_action(user, action_type, severity='INFO', request=None, target_id=None,
     )
 
 
+# utils.py
+ROLE_PERMISSIONS = {
+    "admin": {"delete_account", "edit_any_profile", "view_admin_dashboard","admin_dashboard_access",},
+    "manager": {"edit_any_profile"},
+    "user": {"edit_own_profile", "submit_report", "view_premium_content"}
+}
+
 def has_permission(user, action, obj=None):
     """
     Centralized access control check.
@@ -57,21 +64,14 @@ def has_permission(user, action, obj=None):
     if not user.is_authenticated:
         return False
 
-    if user.role == 'admin':
-        # Admins can do everything
+    # Get permissions for the user's role
+    permissions = ROLE_PERMISSIONS.get(user.role, set())
+
+    # Check if action is allowed for the role
+    if action in permissions:
+        if action == "edit_own_profile":
+            return obj and obj.user_id_fk == user
         return True
 
-    if action == "edit_own_profile":
-        return obj and obj.user_id_fk == user
-
-    if action == "view_premium_content":
-        return user.is_premium
-
-    if action == "admin_dashboard_access":
-        return user.role == "admin"
-
-    if action == "submit_report":
-        return user.role == "user"
-
-    # Default deny
     return False
+

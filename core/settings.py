@@ -24,7 +24,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG')
 
-ALLOWED_HOSTS = ['3.129.248.34', 'localhost', '127.0.0.1', 'aisteadmai.zapto.org']
+ALLOWED_HOSTS = ['www.aisteadmai.shop', 'aisteadmai.shop','3.129.248.34', 'localhost', '127.0.0.1']
 
 # Application definition
 
@@ -52,7 +52,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-CSRF_TRUSTED_ORIGINS = ['https://aisteadmai.zapto.org']
+CSRF_TRUSTED_ORIGINS = ['https://www.aisteadmai.shop',
+    'https://aisteadmai.shop',]
 
 # Prevent clickjacking
 X_FRAME_OPTIONS = "DENY"
@@ -173,13 +174,13 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-# STATIC_ROOT production load 
-STATIC_ROOT = PROJECT_DIR.child('core').child('staticfiles')
+# For production
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# STATIC_ROOT development load 
-STATICFILES_DIRS = (
+# For development (optional, if you want to load from app folders too)
+STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "core/static"),
-)
+]
 
 AUTH_USER_MODEL = 'authentication.User'
 
