@@ -56,10 +56,10 @@ MIDDLEWARE = [
     'authentication.middleware.SessionValidationMiddleware',
 ]
 
-AUTHENTICATION_BACKENDS = [
-    #'axes.backends.AxesBackend', 
-    'django.contrib.auth.backends.ModelBackend',
-]
+# AUTHENTICATION_BACKENDS = [
+#     #'axes.backends.AxesBackend', 
+#     'django.contrib.auth.backends.ModelBackend',
+# ]
 
 CSRF_TRUSTED_ORIGINS = ['https://www.aisteadmai.shop',
     'https://aisteadmai.shop',]
