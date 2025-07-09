@@ -50,6 +50,7 @@ from django.views.decorators.cache import never_cache
 from django.templatetags.static import static
 from sklearn.metrics.pairwise import cosine_similarity
 from axes.handlers.proxy import AxesProxyHandler
+from axes.exceptions import AxesSignalPermissionDenied
 import numpy as np
 
 from django.db import transaction
@@ -98,22 +99,17 @@ def login_view(request):
 
     if request.method == "POST":
 
-        if AxesProxyHandler.is_locked(request):
-            messages.error(request, "🚫 Too many failed attempts. Try again later.")
-            return render(request, "accounts/login.html", {
-                "form": form,
-                "msg": None,
-                "session_timeout": False
-            })
+
         
         if form.is_valid():
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
 
-            # Trigger Axes logging here
-            authenticate(request, username=email, password=password)
 
             try:
+                # Trigger Axes logging here
+                authenticate(request, username=email, password=password)
+
                 user = User.objects.get(email=email)
                 if user.check_password(password):
                     auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
@@ -138,6 +134,14 @@ def login_view(request):
                 # ✅ LOG invalid email (no such user)
                 log_action(None, "Failed login - user not found", "WARNING", request, metadata={"email": email})
                 msg = "Incorrect email or password."
+            except AxesSignalPermissionDenied:
+                # 🚫 Caught Axes lockout event
+                messages.error(request, "🚫 Too many failed login attempts. Please try again later.")
+                return render(request, "accounts/login.html", {
+                    "form": form,
+                    "msg": None,
+                    "session_timeout": False
+                })
         else:
             msg = "Please correct the errors below."
     session_timeout = False
