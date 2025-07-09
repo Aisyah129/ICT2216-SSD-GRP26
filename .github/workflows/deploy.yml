@@ -74,6 +74,11 @@ jobs:
           echo "STRIPE_PRICE_ID_QUARTER=${{ secrets.STRIPE_PRICE_ID_QUARTER }}" >> .env
           echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" >> .env
 
+          echo "RECAPTCHA_PUBLIC_KEY=${{ secrets.RECAPTCHA_PUBLIC_KEY }}" >> .env
+          echo "RECAPTCHA_PRIVATE_KEY=${{ secrets.RECAPTCHA_PRIVATE_KEY }}" >> .env
+          echo "SILENCED_SYSTEM_CHECKS=${{ secrets.SILENCED_SYSTEM_CHECKS }}" >> .env
+
+
           # ✅ Activate virtualenv and run app setup
           source venv/bin/activate
           gunicorn core.wsgi:application --bind 127.0.0.1:8000
