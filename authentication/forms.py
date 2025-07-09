@@ -141,7 +141,8 @@ class SignUpForm(forms.Form):
 
         email = self.cleaned_data.get('email')
         if User.objects.filter(email=email).exists():
-            raise forms.ValidationError("Unable to process your request. Please try a different email.")
+            #raise forms.ValidationError("Unable to process your request. Please try a different email.")
+            self.add_error(None, "Unable to process your request. Please try again.")
         return email
 
     def clean_password(self):
