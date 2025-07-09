@@ -1987,7 +1987,8 @@ def submit_report(request):
                     severity="WARNING",
                     request=request,
                     target_id=reported_profile_id,
-                    target_type="User"
+                    target_type="User",
+                    metadata={"reason": reason, "details": details}
                 )
                 messages.success(request, "🚩 Report submitted successfully.")
                 print(f"✅ Report saved: {report.report_id}")
