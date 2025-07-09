@@ -174,13 +174,13 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-# STATIC_ROOT production load 
-STATIC_ROOT = PROJECT_DIR.child('core').child('staticfiles')
+# For production
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# STATIC_ROOT development load 
-STATICFILES_DIRS = (
+# For development (optional, if you want to load from app folders too)
+STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "core/static"),
-)
+]
 
 AUTH_USER_MODEL = 'authentication.User'
 
