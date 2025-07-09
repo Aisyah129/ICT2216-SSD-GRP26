@@ -50,6 +50,7 @@ MIDDLEWARE = [
     'authentication.middleware.SessionTimeoutMiddleware',
     'csp.middleware.CSPMiddleware',
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'authentication.middleware.SessionValidationMiddleware',
 ]
 
 CSRF_TRUSTED_ORIGINS = ['https://www.aisteadmai.shop',
