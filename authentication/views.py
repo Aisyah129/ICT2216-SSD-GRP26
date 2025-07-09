@@ -98,17 +98,20 @@ def login_view(request):
 
     if request.method == "POST":
 
-        if AxesProxyHandler.is_locked(request):
-            messages.error(request, "🚫 Too many failed attempts. Try again later.")
-            return render(request, "accounts/login.html", {
-                "form": form,
-                "msg": None,
-                "session_timeout": False
-            })
+        
         
         if form.is_valid():
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
+
+            # 🔒 Check lock AFTER valid form, BEFORE querying user
+            if AxesProxyHandler.is_locked(request):
+                msg = "🚫 Too many failed login attempts. Please try again later."
+                return render(request, "accounts/login.html", {
+                    "form": form,
+                    "msg": msg,
+                    "session_timeout": False
+                })
 
             # Trigger Axes logging here
             authenticate(request, username=email, password=password)
