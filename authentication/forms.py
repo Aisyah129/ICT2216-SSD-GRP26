@@ -114,6 +114,7 @@ class SignUpForm(forms.Form):
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
             'placeholder': 'Email',
+            'id': 'id_email',
             'data-testid': 'email-input'  
         })
     )
