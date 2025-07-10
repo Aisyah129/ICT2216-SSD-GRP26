@@ -107,8 +107,7 @@ os.environ['SSL_CERT_FILE'] = certifi.where()
 def is_admin(user):
     return user.is_authenticated and has_permission(user, "view_admin_dashboard")
 
-<<<<<<< HEAD
-=======
+
 @csrf_exempt
 def test_login(request):
     from django.contrib.auth import authenticate, login
