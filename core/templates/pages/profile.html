@@ -451,33 +451,22 @@
 </div>
 </div>
 
-<!-- Choices.js -->
+<!-- Choices.js JS -->
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const languageSelect = document.getElementById('languageSelect');
-    const editButton = document.getElementById('editButton');
 
-    // Initialize Choices
-    const choicesInstance = new Choices(languageSelect, {
-      removeItemButton: true,
-      shouldSort: false,
-      searchEnabled: true,
-      placeholderValue: 'Select languages...',
-    });
-
-    // Immediately disable it via Choices API
-    choicesInstance.disable();
-
-    // Enable on Edit click
-    if (editButton) {
-      editButton.addEventListener('click', function () {
-        choicesInstance.enable();
+    if (languageSelect && !languageSelect.disabled) {
+      new Choices(languageSelect, {
+        removeItemButton: true,
+        shouldSort: false,
+        searchEnabled: true,
+        placeholderValue: 'Select languages...'
       });
     }
   });
 </script>
-
 
 
 
