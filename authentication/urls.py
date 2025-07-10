@@ -1,5 +1,4 @@
 from django.urls import path
-from . import views
 from .views import *
 from django.contrib.auth.views import LogoutView
 
@@ -9,7 +8,6 @@ urlpatterns = [
     path('register/', register_user, name="register"),
     path('verify/', verify_email, name='verify_email'),
     path('check_email/', check_email, name='check_email'),
-    path('test-login/', views.test_login, name='test_login'),
 
     path("reset/", request_password_reset, name="password_reset"),
     path("reset/verify/", verify_reset_code, name="verify_reset_code"),

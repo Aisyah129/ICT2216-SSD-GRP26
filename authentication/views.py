@@ -81,14 +81,6 @@ os.environ['SSL_CERT_FILE'] = certifi.where()
 def is_admin(user):
     return user.is_authenticated and has_permission(user, "view_admin_dashboard")
 
-@csrf_exempt
-def test_login(request):
-    from django.contrib.auth import authenticate, login
-    user = authenticate(request, username="user1@example.com", password="user1")
-    if user:
-        login(request, user)
-        return redirect('/profile/')
-    return HttpResponse("Test login failed", status=401)
 
 # AuthController
 def login_view(request):
