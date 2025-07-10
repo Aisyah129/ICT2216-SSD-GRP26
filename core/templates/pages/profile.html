@@ -397,7 +397,7 @@
 
             <div class="form-group">
               <label>Languages</label>
-              <select name="languages" id="languageSelect" class="form-control" multiple>
+              <select name="languages" id="languageSelect" class="form-control" multiple disabled>
                 {% for language in all_languages %}
                   <option value="{{ language.language_id }}"
                     {% if language.language_id in selected_language_ids %}selected{% endif %}>
