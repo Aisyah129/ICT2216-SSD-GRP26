@@ -9,7 +9,6 @@ from decouple import config
 from unipath import Path
 import pymysql
 from base64 import b64decode
-import sys
 
 AES_KEY = b64decode(config('AES_KEY'))  # This will load the AES key from .env
 
@@ -264,4 +263,3 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-TESTING = 'test' in sys.argv
