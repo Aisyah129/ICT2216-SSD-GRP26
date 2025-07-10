@@ -395,19 +395,14 @@
               </div>
             </div>
 
-            <div class="form-group">
-  <label>Languages</label>
-  <select name="languages" id="languageSelect" class="form-control" multiple disabled>
-    {% for language in all_languages %}
-      <option value="{{ language.language_id }}"
-        {% if language.language_id in selected_language_ids %}selected{% endif %}>
-        {{ language.language_name|title }}
-      </option>
-    {% endfor %}
-  </select>
-</div>
-
-
+            <select name="languages" id="languageSelect" class="form-control" multiple>
+              {% for language in all_languages %}
+                <option value="{{ language.language_id }}"
+                  {% if language.language_id in selected_language_ids %}selected{% endif %}>
+                  {{ language.language_name|title }}
+                </option>
+              {% endfor %}
+            </select>
 
             <div class="form-group">
               <label>Hobbies</label>
@@ -477,59 +472,41 @@
   /* ─────────────────────────────────────────────────────────────
      1.  PROFILE “EDIT / SAVE / CANCEL” TOGGLE
      ────────────────────────────────────────────────────────────*/
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('profile-form');
-  const editBtn = document.getElementById('editProfileBtn');
-  const saveBtn = document.getElementById('saveProfileBtn');
-  const cancelBtn = document.getElementById('cancelProfileBtn');
-  const inputs = form.querySelectorAll('input, textarea, select');
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('profile-form');
+    const editBtn = document.getElementById('editProfileBtn');
+    const saveBtn = document.getElementById('saveProfileBtn');
+    const cancelBtn = document.getElementById('cancelProfileBtn');
+    const inputs = form.querySelectorAll('input, textarea, select');
+    const counters  = document.querySelectorAll('.char-counter');
 
-  const languageSelect = document.getElementById('languageSelect');
+    const setDisabled = (state) => {
+      inputs.forEach(el => state
+        ? el.setAttribute('disabled', '')
+        : el.removeAttribute('disabled'));
+    };
 
-  // Initialize Choices.js on the disabled select
-  const languageChoices = new Choices(languageSelect, {
-    removeItemButton: true,
-    shouldSort: false,
-    searchEnabled: true,
-    placeholderValue: 'Select languages...'
-  });
+    /* start page in read-only mode */
+    setDisabled(true);
+    counters.forEach(c => c.classList.add('d-none'));
 
-  // Set all fields to read-only on page load
-  const setDisabled = (state) => {
-    inputs.forEach(el => {
-      el.disabled = state;
+    editBtn.addEventListener('click', () => {
+      setDisabled(false);
+      editBtn.classList.add('d-none');
+      saveBtn.classList.remove('d-none');
+      cancelBtn.classList.remove('d-none');
+      counters.forEach(c => c.classList.remove('d-none'));
     });
 
-    // Choices.js won't reflect 'disabled' properly, so handle manually:
-    const container = languageSelect.closest('.choices');
-    if (container) {
-      if (state) {
-        container.classList.add('choices__disabled');
-        languageSelect.setAttribute('disabled', '');
-      } else {
-        container.classList.remove('choices__disabled');
-        languageSelect.removeAttribute('disabled');
-      }
-    }
-  };
-
-  setDisabled(true); // page loads in view-only mode
-
-  editBtn.addEventListener('click', () => {
-    setDisabled(false); // enable all inputs
-    editBtn.classList.add('d-none');
-    saveBtn.classList.remove('d-none');
-    cancelBtn.classList.remove('d-none');
+    cancelBtn.addEventListener('click', () => {
+      form.reset();                 // discard unsaved edits
+      setDisabled(true);
+      saveBtn.classList.add('d-none');
+      cancelBtn.classList.add('d-none');
+      editBtn.classList.remove('d-none');
+      counters.forEach(c => c.classList.add('d-none'));
+    });
   });
-
-  cancelBtn.addEventListener('click', () => {
-    form.reset();
-    setDisabled(true);
-    saveBtn.classList.add('d-none');
-    cancelBtn.classList.add('d-none');
-    editBtn.classList.remove('d-none');
-  });
-});
 
   /* ─────────────────────────────────────────────────────────────
      2.  IMAGE UPLOAD (+), DELETE, SET-PRIMARY
@@ -766,5 +743,3 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 {% endblock javascripts %}
-
-
