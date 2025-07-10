@@ -21,7 +21,6 @@ def open_register_page(driver):
 # ✅ Test 1: Weak password (no special character)
 def test_register_weak_password(driver):
     open_register_page(driver)
-    driver.find_element(By.CSS_SELECTOR, '[data-testid="email-input"]').send_keys("weakpass@example.com")
     driver.find_element(By.ID, "id_password").send_keys("Password123")  # no special char
     driver.find_element(By.ID, "id_confirm_password").send_keys("Password123")
     driver.find_element(By.ID, "id_name").send_keys("Valid Name")
@@ -33,7 +32,6 @@ def test_register_weak_password(driver):
 # ✅ Test 2: Mismatched passwords
 def test_register_mismatched_passwords(driver):
     open_register_page(driver)
-    driver.find_element(By.CSS_SELECTOR, '[data-testid="email-input"]').send_keys("mismatch@example.com")
     driver.find_element(By.ID, "id_password").send_keys("ValidPass!1")
     driver.find_element(By.ID, "id_confirm_password").send_keys("InvalidPass!2")
     driver.find_element(By.ID, "id_name").send_keys("Valid Name")
@@ -45,7 +43,6 @@ def test_register_mismatched_passwords(driver):
 # ✅ Test 3: Invalid name
 def test_register_invalid_name(driver):
     open_register_page(driver)
-    driver.find_element(By.CSS_SELECTOR, '[data-testid="email-input"]').send_keys("invalidname@example.com")
     driver.find_element(By.ID, "id_password").send_keys("ValidPass!1")
     driver.find_element(By.ID, "id_confirm_password").send_keys("ValidPass!1")
     driver.find_element(By.ID, "id_name").send_keys("!@#$%^&*")
@@ -57,7 +54,6 @@ def test_register_invalid_name(driver):
 # ✅ Test 4: Exceeding location length
 def test_register_long_location(driver):
     open_register_page(driver)
-    driver.find_element(By.CSS_SELECTOR, '[data-testid="email-input"]').send_keys("longloc@example.com")
     driver.find_element(By.ID, "id_password").send_keys("ValidPass!1")
     driver.find_element(By.ID, "id_confirm_password").send_keys("ValidPass!1")
     driver.find_element(By.ID, "id_name").send_keys("Valid Name")

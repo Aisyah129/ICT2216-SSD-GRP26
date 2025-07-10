@@ -110,6 +110,7 @@ def is_pwned_password(password):
 
 class SignUpForm(forms.Form):
     email = forms.EmailField(
+        required=False,
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
             'placeholder': 'Email',
