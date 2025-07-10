@@ -395,7 +395,7 @@
               </div>
             </div>
 
-            <select name="languages" id="languageSelect" class="form-control" multiple>
+            <select name="languages" id="languageSelect" class="form-control" multiple disabled>
               {% for language in all_languages %}
                 <option value="{{ language.language_id }}"
                   {% if language.language_id in selected_language_ids %}selected{% endif %}>
@@ -448,20 +448,33 @@
 
 <!-- Choices.js JS -->
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const languageSelect = document.getElementById('languageSelect');
+<script nonce="{{ request.csp_nonce }}">
+  let languageChoices = null;
 
-    if (languageSelect && !languageSelect.disabled) {
-      new Choices(languageSelect, {
+  function initLanguageChoices() {
+    const select = document.getElementById('languageSelect');
+    if (!select) return;
+
+    // Destroy previous Choices instance if exists
+    if (languageChoices) {
+      languageChoices.destroy();
+      languageChoices = null;
+    }
+
+    // Only enable if not disabled
+    if (!select.disabled) {
+      languageChoices = new Choices(select, {
         removeItemButton: true,
         shouldSort: false,
         searchEnabled: true,
         placeholderValue: 'Select languages...'
       });
     }
-  });
+  }
+
+  document.addEventListener('DOMContentLoaded', initLanguageChoices);
 </script>
+
 
 
 {% endblock content %}
@@ -481,10 +494,25 @@
     const counters  = document.querySelectorAll('.char-counter');
 
     const setDisabled = (state) => {
-      inputs.forEach(el => state
-        ? el.setAttribute('disabled', '')
-        : el.removeAttribute('disabled'));
+      inputs.forEach(el => {
+        // Skip language select so we can handle it manually
+        if (el.id !== 'languageSelect') {
+          state ? el.setAttribute('disabled', '') : el.removeAttribute('disabled');
+        }
+      });
+
+      // Handle language select + Choices.js
+      const langSelect = document.getElementById('languageSelect');
+      if (state) {
+        langSelect.setAttribute('disabled', '');
+      } else {
+        langSelect.removeAttribute('disabled');
+      }
+
+      // Reinitialize Choices.js based on the new disabled state
+      initLanguageChoices();
     };
+
 
     /* start page in read-only mode */
     setDisabled(true);
