@@ -63,7 +63,6 @@ from .utils import log_action
 from .forms import (
     LoginForm,
     PasswordResetEmailForm,
-    ProfileForm,
     SetNewPasswordForm,
     SignUpForm,
     VerificationCodeForm,
@@ -73,6 +72,34 @@ from .models import User, Report
 from authentication.decorators import user_only
 from .utils import has_permission
 from authentication.middleware import get_client_ip
+from authentication.models import Profile
+from .forms import ProfileUpdateForm
+from authentication.models import Language
+from authentication.models import ProfileImage
+from .forms import PreferencesForm
+from authentication.models import Preferences
+from authentication.models import PreferencesGender
+from authentication.models import Like
+
+from authentication.models import (
+    Preferences,
+    PreferencesBodyType,
+    PreferencesEducation,
+    PreferencesReligion,
+    PreferencesEthnicity,
+    PreferencesPolitics,
+    PreferencesSmoking,
+    PreferencesDrinking,
+    PreferencesDrug,
+    PreferencesHasKids,
+    PreferencesWantsKids,
+    PreferencesLanguage,
+    PreferencesZodiac,
+    PreferencesRelationship
+)
+from .forms import ReportForm
+from .forms import MessageForm
+from authentication.models import Match
 
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
@@ -471,74 +498,39 @@ def user_dashboard(request):
 @login_required
 def profile_view(request):
     profile = get_object_or_404(Profile, user_id_fk=request.user)
-    if not has_permission(request.user, "edit_own_profile", profile):
-        return redirect('login')
 
-    # --------- POST: save edits ---------
     if request.method == "POST":
-        editable_fields = [
-            'age', 'gender', 'height_cm', 'sexual_orientation', 'pronouns',
-            'body_type', 'location', 'education_level', 'occupation',
-            'religion', 'ethnicity', 'politics', 'smoking', 'drinking',
-            'drug_use', 'has_kids', 'wants_kids', 'zodiac_sign',
-            'relationship_goals', 'hobbies', 'bio'
-        ]
+        form = ProfileUpdateForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "✅ Profile updated successfully.")
+            return redirect('profile')
+        else:
+            messages.error(request, "❌ Please correct the errors below.")
+    else:
+        form = ProfileUpdateForm(instance=profile)
 
-        for field in editable_fields:
-            if field in request.POST:
-                value = request.POST.get(field).strip()
-                setattr(profile, field, value or None)
-
-        profile.last_updated = timezone.now()
-        profile.save(update_fields=editable_fields + ['last_updated'])
-
-        # Clear previous language links
-        profile.languages.all().delete()
-
-        # Save selected language IDs
-        selected_lang_ids = request.POST.getlist("languages")  # ← .getlist handles multiple values
-
-        for lang_id in selected_lang_ids:
-            try:
-                lang_obj = Language.objects.get(language_id=lang_id)
-                ProfileLanguage.objects.create(profile_id_fk=profile, language_id_fk=lang_obj)
-            except Language.DoesNotExist:
-                continue
-
-
-        log_action(request.user, "Updated profile information", "INFO", request) # Log Profile Changes
-        return redirect('profile')
-
-    # --------- GET: display page ---------
-
-    # Always show full image quality on own profile
     primary_image = profile.profileimage_set.filter(is_primary=True).first()
-
     primary_image_url = get_safe_profile_image_url(primary_image, True)
-
     all_images = [
         {
             "id": img.image_id,
-            "url": get_safe_profile_image_url(img, True),  # No blur
+            "url": get_safe_profile_image_url(img, True),
             "is_primary": img.is_primary
         }
         for img in profile.profileimage_set.order_by('-uploaded_at')
     ]
-
-    languages = [pl.language_id_fk.language_name for pl in profile.languages.all()]
-
     all_languages = Language.objects.all()
     selected_language_ids = list(profile.languages.values_list('language_id_fk__language_id', flat=True))
 
-
     return render(request, "pages/profile.html", {
-    "profile": profile,
-    "primary_image": primary_image_url,
-    "images": all_images,
-    "languages": [pl.language_id_fk.language_name for pl in profile.languages.all()],
-    "all_languages": all_languages,
-    "selected_language_ids": selected_language_ids,
-})
+        "form": form,
+        "profile": profile,
+        "primary_image": primary_image_url,
+        "images": all_images,
+        "all_languages": all_languages,
+        "selected_language_ids": selected_language_ids,
+    })
 
 MAX_IMAGES = 6 # ← adjust if needed
 
@@ -1105,9 +1097,6 @@ def messages_with(request, user_id):
 
     liked_date = like.liked_at if like else None
 
-
-    #avatar_url = img.image_url if img else settings.STATIC_URL + "img/avatar-placeholder.png"#
-
     # ------------------------------------------------------------------
     # 1️⃣  Find the *active* Match row involving these two users
     #      (order-agnostic, UUID fields)
@@ -1125,34 +1114,44 @@ def messages_with(request, user_id):
         raise Http404("No active match between these users.")
 
     # ------------------------------------------------------------------
-    # 2️⃣  POST ⇒ send a new message to Mongo
+    # 2️⃣  POST ⇒ send a new message to Mongo (validated)
     # ------------------------------------------------------------------
     if request.method == "POST":
-        body = request.POST.get("message", "").strip()
-        if body:
+        form = MessageForm(request.POST)
+        if form.is_valid():
+            body = form.cleaned_data['content']
             append_message(match, str(request.user.user_id), body)
-            log_action(request.user, f"Sent message to user {user_id}", "INFO", request, metadata={"message_length": len(body)})
-        # after sending, redirect to GET avoids resubmission on refresh
-        return redirect("messages_with", user_id=other_user.user_id)
+            log_action(
+                request.user, f"Sent message to user {user_id}", "INFO", request,
+                metadata={"message_length": len(body)}
+            )
+            return redirect("messages_with", user_id=other_user.user_id)  # Redirect after POST
+        else:
+            messages.error(
+                request,
+                "❌ " + "; ".join(form.errors.get("content", []))
+            )
+    else:
+        form = MessageForm()
 
     # ------------------------------------------------------------------
     # 3️⃣  GET ⇒ fetch message list and mark partner’s messages as read
     # ------------------------------------------------------------------
-    messages = fetch_messages(match)              # list[dict] from Mongo
-    mark_read(match, str(request.user.user_id))   # mark incoming as read
+    chat_messages = fetch_messages(match)              # list[dict] from Mongo
+    mark_read(match, str(request.user.user_id))        # mark incoming as read
 
     # ------------------------------------------------------------------
     # 4️⃣  Render page
     # ------------------------------------------------------------------
     context = {
-        "conversations":   get_conversations_for(request.user),
-        "selected_user":   other_user,
-        "selected_name":   display_name,
-        "selected_avatar": avatar_url,
-        "messages":        messages,
-        "user":            request.user,
-
-        "selected_user_age": selected_profile.age,
+        "form":               form,
+        "conversations":      get_conversations_for(request.user),
+        "selected_user":      other_user,
+        "selected_name":      display_name,
+        "selected_avatar":    avatar_url,
+        "messages":           chat_messages,
+        "user":               request.user,
+        "selected_user_age":  selected_profile.age,
         "selected_user_liked_date": liked_date,
     }
     return render(request, "pages/messages.html", context)
@@ -1868,68 +1867,138 @@ def like_profile(request):
 
 @login_required
 # MatchController
+@login_required
 def save_preferences(request):
-    if request.method == 'POST':
-        if 'user_id' not in request.session:
-            return redirect('login')
+    profile = get_object_or_404(Profile, user_id_fk=request.user)
 
-        user_id = request.session['user_id']
-        profile = get_object_or_404(Profile, user_id_fk=user_id)
+    if request.method == "POST":
+        form = PreferencesForm(request.POST, instance=profile.preferences)
+        if form.is_valid():
+            preferences = form.save(commit=False)
+            preferences.profile_id_fk = profile
+            preferences.save()
 
-        preferences, _ = Preferences.objects.update_or_create(
-            profile_id_fk=profile,
-            defaults={
-                'preferred_age_min': request.POST.get('preferred_age_min')or None,
-                'preferred_age_max': request.POST.get('preferred_age_max')or None,
-                'preferred_distance_km': request.POST.get('preferred_distance_km')or None,
-                'preferred_height_min': request.POST.get('preferred_height_min') or None,
-                'preferred_height_max': request.POST.get('preferred_height_max') or None,
-                'last_updated': timezone.now()
-            }
-        )
+            # 🛠 Nested helper function can access request directly
+            def update_pref(model, field, post_key, allowed_values=None):
+                val = request.POST.get(post_key)
+                if not val or val == "---":
+                    model.objects.filter(preference_id_fk=preferences).delete()
+                else:
+                    val = val.replace("'", "’")  # Normalize apostrophes
+                    if allowed_values is None or val in allowed_values:
+                        model.objects.update_or_create(
+                            preference_id_fk=preferences, defaults={field: val}
+                        )
 
-        def update_pref(model, field, post_key, allowed_values=None):
-            val = request.POST.get(post_key)
-            if not val or val == "---":
-                model.objects.filter(preference_id_fk=preferences).delete()
-            else:
-                val = val.replace("'", "’")
-                if allowed_values is None or val in allowed_values:
-                    model.objects.update_or_create(preference_id_fk=preferences, defaults={field: val})
+            # ✅ Update each preference
+            update_pref(PreferencesGender, 'gender_type', 'gender_type')
+            update_pref(PreferencesBodyType, 'body_type_value', 'body_type_value')
+            update_pref(PreferencesEducation, 'education_level', 'education_level')
+            update_pref(PreferencesReligion, 'religion_type', 'religion_type')
+            update_pref(PreferencesEthnicity, 'ethnicity_type', 'ethnicity_type')
+            update_pref(PreferencesPolitics, 'politics_type', 'politics_type')
+            update_pref(PreferencesSmoking, 'smoking_type', 'smoking_type')
+            update_pref(PreferencesDrinking, 'drinking_type', 'drinking_type')
+            update_pref(PreferencesDrug, 'drug_type', 'drug_type')
+            update_pref(PreferencesHasKids, 'has_kids_type', 'has_kids_type')
+
+            # ✅ ENUM-protected field
+            update_pref(
+                PreferencesWantsKids,
+                'wants_kids_type',
+                'wants_kids_type',
+                allowed_values=["want kids", "don’t want kids", "open to kids"]
+            )
+
+            update_pref(PreferencesZodiac, 'zodiac_type', 'zodiac_type')
+            update_pref(PreferencesRelationship, 'relationship_type', 'relationship_type')
+
+            # ✅ Handle language separately
+            lang_id = request.POST.get('language_id_fk')
+            if lang_id:
+                PreferencesLanguage.objects.update_or_create(
+                    preference_id_fk=preferences,
+                    defaults={'language_id_fk_id': lang_id}
+                )
+
+            log_action(request.user, "Updated preferences", "INFO", request)
+            messages.success(request, "✅ Preferences updated successfully.")
+            return redirect('browse_one')
+        else:
+            messages.error(request, "❌ Please correct the errors below.")
+    else:
+        form = PreferencesForm(instance=profile.preferences)
+
+    return render(request, "pages/preferences_modal_form.html", {
+        "form": form,
+        "profile": profile,
+    })
 
 
+def save_preferences(request):
+    profile = get_object_or_404(Profile, user_id_fk=request.user)
 
-        # Update each
-        update_pref(PreferencesGender, 'gender_type', 'gender_type')
-        update_pref(PreferencesBodyType, 'body_type_value', 'body_type_value')
-        update_pref(PreferencesEducation, 'education_level', 'education_level')
-        update_pref(PreferencesReligion, 'religion_type', 'religion_type')
-        update_pref(PreferencesEthnicity, 'ethnicity_type', 'ethnicity_type')
-        update_pref(PreferencesPolitics, 'politics_type', 'politics_type')
-        update_pref(PreferencesSmoking, 'smoking_type', 'smoking_type')
-        update_pref(PreferencesDrinking, 'drinking_type', 'drinking_type')
-        update_pref(PreferencesDrug, 'drug_type', 'drug_type')
-        update_pref(PreferencesHasKids, 'has_kids_type', 'has_kids_type')
+    if request.method == "POST":
+        form = PreferencesForm(request.POST, instance=profile.preferences)
+        if form.is_valid():
+            preferences = form.save(commit=False)
+            preferences.profile_id_fk = profile
+            preferences.save()
 
-        # ✅ ENUM-protected
-        update_pref(
-            PreferencesWantsKids,
-            'wants_kids_type',
-            'wants_kids_type',
-            allowed_values=["want kids", "don’t want kids", "open to kids"]
-        )
+            # 🛠 Nested helper function
+            def update_pref(model, field, post_key, allowed_values=None):
+                val = request.POST.get(post_key)
+                if not val or val == "---":
+                    model.objects.filter(preference_id_fk=preferences).delete()
+                else:
+                    val = val.replace("'", "’")
+                    if allowed_values is None or val in allowed_values:
+                        model.objects.update_or_create(
+                            preference_id_fk=preferences, defaults={field: val}
+                        )
 
-        update_pref(PreferencesZodiac, 'zodiac_type', 'zodiac_type')
-        update_pref(PreferencesRelationship, 'relationship_type', 'relationship_type')
+            # ✅ Update each preference
+            update_pref(PreferencesGender, 'gender_type', 'gender_type')
+            update_pref(PreferencesBodyType, 'body_type_value', 'body_type_value')
+            update_pref(PreferencesEducation, 'education_level', 'education_level')
+            update_pref(PreferencesReligion, 'religion_type', 'religion_type')
+            update_pref(PreferencesEthnicity, 'ethnicity_type', 'ethnicity_type')
+            update_pref(PreferencesPolitics, 'politics_type', 'politics_type')
+            update_pref(PreferencesSmoking, 'smoking_type', 'smoking_type')
+            update_pref(PreferencesDrinking, 'drinking_type', 'drinking_type')
+            update_pref(PreferencesDrug, 'drug_type', 'drug_type')
+            update_pref(PreferencesHasKids, 'has_kids_type', 'has_kids_type')
 
+            # ✅ ENUM-protected field
+            update_pref(
+                PreferencesWantsKids,
+                'wants_kids_type',
+                'wants_kids_type',
+                allowed_values=["want kids", "don’t want kids", "open to kids"]
+            )
 
-        lang_id = request.POST.get('language_id_fk')
-        if lang_id:
-            PreferencesLanguage.objects.update_or_create(preference_id_fk=preferences, defaults={
-                'language_id_fk_id': lang_id
-            })
+            update_pref(PreferencesZodiac, 'zodiac_type', 'zodiac_type')
+            update_pref(PreferencesRelationship, 'relationship_type', 'relationship_type')
 
-        return redirect('browse_one')
+            # ✅ Handle language separately
+            lang_id = request.POST.get('language_id_fk')
+            if lang_id:
+                PreferencesLanguage.objects.update_or_create(
+                    preference_id_fk=preferences,
+                    defaults={'language_id_fk_id': lang_id}
+                )
+
+            # ✅ Redirect is now properly indented
+            return redirect('browse_one')
+        else:
+            messages.error(request, "❌ Please correct the errors below.")
+    else:
+        form = PreferencesForm(instance=profile.preferences)
+
+    return render(request, "pages/preferences_modal_form.html", {
+        "form": form,
+        "profile": profile,
+    })
 
 @login_required
 # MatchController
@@ -1984,21 +2053,22 @@ def dislike_profile(request):
     
 
 @login_required
-# ReportController
 def submit_report(request):
     if not has_permission(request.user, "submit_report"):
         return redirect('browse')
-    if request.method == 'POST':
-        reason = request.POST.get('reason')
-        details = request.POST.get('details')
-        reported_profile_id = request.POST.get('reported_profile_id')
-        print("📥 POST data:", request.POST)
 
-        if reason and reported_profile_id:
-            # Sanitize user input
-            safe_reason = escape(reason.strip())  # Escape HTML tags
-            safe_details = escape(details.strip())  # Escape HTML tags
-            safe_details = Truncator(safe_details).chars(300)  # Optional: Truncate
+    if request.method == 'POST':
+        reported_profile_id = request.POST.get('reported_profile_id')
+
+        # Prevent session mismatch
+        if reported_profile_id != request.session.get('last_profile_id'):
+            messages.error(request, "❌ Profile mismatch. Report rejected.")
+            return redirect(f'/browse/?index={request.GET.get("index", 0)}')
+
+        form = ReportForm(request.POST)
+        if form.is_valid():
+            reason = form.cleaned_data['reason']
+            details = form.cleaned_data['details']
 
             # Check for existing report
             existing_report = Report.objects.filter(
@@ -2008,17 +2078,14 @@ def submit_report(request):
 
             if existing_report:
                 messages.warning(request, "⚠️ You've already reported this user.")
-                print("⚠️ Duplicate report attempt.")
             else:
-                report = Report(
-                    report_id=uuid.uuid4(),
-                    reporter_user=request.user,
-                    reported_user_id=reported_profile_id,
-                    reason=safe_reason,
-                    details=safe_details or '',
-                    created_at=timezone.now()
-                )
+                report = form.save(commit=False)
+                report.report_id = uuid.uuid4()
+                report.reporter_user = request.user
+                report.reported_user_id = reported_profile_id
+                report.created_at = timezone.now()
                 report.save()
+
                 log_action(
                     user=request.user,
                     action_type=f"Submitted report on user {reported_profile_id}",
@@ -2029,8 +2096,8 @@ def submit_report(request):
                     metadata={"reason": reason, "details": details}
                 )
                 messages.success(request, "🚩 Report submitted successfully.")
-                print(f"✅ Report saved: {report.report_id}")
 
+                # Skip the reported profile
                 Like.objects.update_or_create(
                     liker_user_id=request.user,
                     liked_user_id=User.objects.get(user_id=reported_profile_id),
@@ -2043,16 +2110,9 @@ def submit_report(request):
             current_index = int(request.GET.get("index", 0))
             return redirect(f'/browse/?index={current_index + 1}')
         else:
-            messages.error(request, "❌ Please fill in all required fields.")
-            print("❌ Missing reason or reported_profile_id")
-    else:
-        print("❌ Not a POST request")
+            messages.error(request, "❌ Please correct the errors below.")
 
-    if request.method == 'POST':
-        if request.POST.get('reported_profile_id') != request.session.get('last_profile_id'):
-            messages.error(request, "Profile mismatch. Report rejected.")
     return redirect(f'/browse/?index={request.GET.get("index", 0)}')
-
 
 # Admin Reports Functionalities
 @never_cache
