@@ -20,8 +20,7 @@ from django_recaptcha.fields import ReCaptchaField
 from django_recaptcha.widgets import ReCaptchaV2Checkbox
 import hashlib
 import requests
->> >> >> > Stashed
-changes
+
 from authentication.models import Preferences
 from authentication.models import Report
 from django import forms
