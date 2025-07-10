@@ -452,14 +452,15 @@
   document.addEventListener('DOMContentLoaded', function () {
     const languageSelect = document.getElementById('languageSelect');
 
-    if (languageSelect && !languageSelect.disabled) {
-      new Choices(languageSelect, {
-        removeItemButton: true,
-        shouldSort: false,
-        searchEnabled: true,
-        placeholderValue: 'Select languages...'
-      });
-    }
+   const languageChoices = new Choices(languageSelect, {
+  removeItemButton: true,
+  shouldSort: false,
+  searchEnabled: true,
+  placeholderValue: 'Select languages...'
+});
+
+// ⛔ But keep the <select> disabled on load
+languageSelect.setAttribute('disabled', '');  // Prevent editing until user clicks "Edit"
   });
 </script>
 
@@ -468,45 +469,63 @@
 
 <!-- Specific JS goes HERE -->
 {% block javascripts %}
-<script nonce="{{ request.csp_nonce }}">
-  /* ─────────────────────────────────────────────────────────────
-     1.  PROFILE “EDIT / SAVE / CANCEL” TOGGLE
-     ────────────────────────────────────────────────────────────*/
-  document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('profile-form');
-    const editBtn = document.getElementById('editProfileBtn');
-    const saveBtn = document.getElementById('saveProfileBtn');
-    const cancelBtn = document.getElementById('cancelProfileBtn');
-    const inputs = form.querySelectorAll('input, textarea, select');
-    const counters  = document.querySelectorAll('.char-counter');
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('profile-form');
+  const editBtn = document.getElementById('editProfileBtn');
+  const saveBtn = document.getElementById('saveProfileBtn');
+  const cancelBtn = document.getElementById('cancelProfileBtn');
+  const inputs = form.querySelectorAll('input, textarea, select');
+  const counters  = document.querySelectorAll('.char-counter');
+  const languageSelect = document.getElementById('languageSelect');
 
-    const setDisabled = (state) => {
-      inputs.forEach(el => state
-        ? el.setAttribute('disabled', '')
-        : el.removeAttribute('disabled'));
-    };
-
-    /* start page in read-only mode */
-    setDisabled(true);
-    counters.forEach(c => c.classList.add('d-none'));
-
-    editBtn.addEventListener('click', () => {
-      setDisabled(false);
-      editBtn.classList.add('d-none');
-      saveBtn.classList.remove('d-none');
-      cancelBtn.classList.remove('d-none');
-      counters.forEach(c => c.classList.remove('d-none'));
-    });
-
-    cancelBtn.addEventListener('click', () => {
-      form.reset();                 // discard unsaved edits
-      setDisabled(true);
-      saveBtn.classList.add('d-none');
-      cancelBtn.classList.add('d-none');
-      editBtn.classList.remove('d-none');
-      counters.forEach(c => c.classList.add('d-none'));
-    });
+  // ✅ Choices.js init
+  const languageChoices = new Choices(languageSelect, {
+    removeItemButton: true,
+    shouldSort: false,
+    searchEnabled: true,
+    placeholderValue: 'Select languages...'
   });
+
+  // 🔒 Disable on page load
+  languageSelect.setAttribute('disabled', '');
+
+  // 🛠 Enable before submit so Django gets it
+  form.addEventListener('submit', () => {
+    languageSelect.removeAttribute('disabled');
+  });
+
+  const setDisabled = (state) => {
+    inputs.forEach(el => state
+      ? el.setAttribute('disabled', '')
+      : el.removeAttribute('disabled'));
+  };
+
+  setDisabled(true);
+  counters.forEach(c => c.classList.add('d-none'));
+
+  // ✏️ Edit button
+  editBtn.addEventListener('click', () => {
+    setDisabled(false);
+    languageSelect.removeAttribute('disabled'); // ✅ make language editable
+    editBtn.classList.add('d-none');
+    saveBtn.classList.remove('d-none');
+    cancelBtn.classList.remove('d-none');
+    counters.forEach(c => c.classList.remove('d-none'));
+  });
+
+  // ❌ Cancel button
+  cancelBtn.addEventListener('click', () => {
+    form.reset();
+    setDisabled(true);
+    languageSelect.setAttribute('disabled', ''); // 🔒 lock again
+    saveBtn.classList.add('d-none');
+    cancelBtn.classList.add('d-none');
+    editBtn.classList.remove('d-none');
+    counters.forEach(c => c.classList.add('d-none'));
+  });
+});
+
 
   /* ─────────────────────────────────────────────────────────────
      2.  IMAGE UPLOAD (+), DELETE, SET-PRIMARY
