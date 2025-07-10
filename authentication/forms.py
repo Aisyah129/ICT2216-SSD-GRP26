@@ -1,3 +1,4 @@
+
 # authentication/forms.py
 
 from django import forms
@@ -8,26 +9,12 @@ from django_recaptcha.fields import ReCaptchaField
 from django_recaptcha.widgets import ReCaptchaV2Checkbox
 import hashlib
 import requests
-
-from authentication.models import Language
-# authentication/forms.py
-
-from django import forms
-from django.contrib.auth.password_validation import validate_password
-from authentication.models import Profile
-import re
-from django_recaptcha.fields import ReCaptchaField
-from django_recaptcha.widgets import ReCaptchaV2Checkbox
-import hashlib
-import requests
-
 from authentication.models import Preferences
 from authentication.models import Report
 from django import forms
 from django import forms
 from django.utils.html import strip_tags
-from django.conf import settings
-from authentication.models import Language
+
 
 class LoginForm(forms.Form):
     email = forms.EmailField(widget=forms.EmailInput(attrs={
@@ -112,15 +99,12 @@ class SignUpForm(forms.Form):
     email = forms.EmailField(
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Email',
-            'id': 'id_email',
-            'data-testid': 'email-input'  
+            'placeholder': 'Email'
         })
     )
 
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
-            'id': 'id_password',
             'class': 'form-control',
             'placeholder': 'Password',
             'minlength': '8',
@@ -133,7 +117,6 @@ class SignUpForm(forms.Form):
 
     confirm_password = forms.CharField(
         widget=forms.PasswordInput(attrs={
-            'id': 'id_confirm_password',
             'class': 'form-control',
             'placeholder': 'Confirm Password',
             'minlength': '8',
@@ -145,7 +128,6 @@ class SignUpForm(forms.Form):
     name = forms.CharField(
         max_length=255,
         widget=forms.TextInput(attrs={
-            'id': 'id_name',
             'class': 'form-control',
             'placeholder': 'Name'
         })
@@ -173,18 +155,12 @@ class SignUpForm(forms.Form):
     location = forms.CharField(
         max_length=255,
         widget=forms.TextInput(attrs={
-            'id': 'id_location',
             'class': 'form-control',
             'placeholder': 'Location'
         })
     )
 
     captcha = ReCaptchaField(widget=ReCaptchaV2Checkbox())
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if getattr(settings, 'TESTING', False):
-            self.fields.pop('captcha', None)
 
     def clean_email(self):
         from django.contrib.auth import get_user_model
@@ -237,13 +213,6 @@ class SignUpForm(forms.Form):
 
 
 class ProfileUpdateForm(forms.ModelForm):
-    # Add a field for selecting multiple languages
-    languages = forms.ModelMultipleChoiceField(
-        queryset=Language.objects.all(),
-        widget=forms.CheckboxSelectMultiple,  # You can also use SelectMultiple for a dropdown
-        required=False
-    )
-
     class Meta:
         model = Profile
         fields = [
@@ -251,7 +220,7 @@ class ProfileUpdateForm(forms.ModelForm):
             'body_type', 'location', 'education_level', 'occupation',
             'religion', 'ethnicity', 'politics', 'smoking', 'drinking',
             'drug_use', 'has_kids', 'wants_kids', 'zodiac_sign',
-            'relationship_goals', 'hobbies', 'bio', 'languages'  # ✅ Add here
+            'relationship_goals', 'hobbies', 'bio'
         ]
 
     def clean_age(self):

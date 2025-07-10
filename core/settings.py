@@ -9,7 +9,6 @@ from decouple import config
 from unipath import Path
 import pymysql
 from base64 import b64decode
-import sys
 
 AES_KEY = b64decode(config('AES_KEY'))  # This will load the AES key from .env
 
@@ -242,10 +241,10 @@ CSP_CONNECT_SRC = (
 # Axes config
 from datetime import timedelta
 # Lockout after 5 failed attempts
-AXES_FAILURE_LIMIT = 5
+AXES_FAILURE_LIMIT = 2
 
-# Lockout duration: 10 minutes
-AXES_COOLOFF_TIME = timedelta(minutes=10)
+# Lockout duration: 20 minutes
+AXES_COOLOFF_TIME = timedelta(minutes=1)
 
 # Lockout is triggered after the failure limit is hit
 AXES_LOCK_OUT_AT_FAILURE = True
@@ -264,4 +263,3 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-TESTING = 'test' in sys.argv
