@@ -16,7 +16,7 @@ def driver():
 
 def open_register_page(driver):
     driver.get("https://www.aisteadmai.shop/register/")
-    time.sleep(1)
+    time.sleep(10) 
 
 # ✅ Test 1: Weak password (no special character)
 def test_register_weak_password(driver):
