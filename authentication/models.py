@@ -109,12 +109,14 @@ class Profile(models.Model):
     class Meta:
         managed = False
         db_table = 'Profile'
-@property
-def languages(self):
-    """
-    Returns a queryset of languages for this profile.
-    """
-    return Language.objects.filter(profilelanguage__profile_id_fk=self)
+
+    @property
+    def languages(self):
+        """
+        Returns a queryset of languages for this profile.
+        """
+        return Language.objects.filter(profilelanguage__profile_id_fk=self)
+
 
 class ProfileImage(models.Model):
     image_id = models.CharField(primary_key=True, max_length=36)
