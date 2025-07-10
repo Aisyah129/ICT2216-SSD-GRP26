@@ -117,7 +117,6 @@ def test_login(request):
         login(request, user)
         return redirect('/profile/')
     return HttpResponse("Test login failed", status=401)
->>>>>>> 15ac8bd1d30f9078126d17bdd549a819b4b462b0
 
 # AuthController
 def login_view(request):
