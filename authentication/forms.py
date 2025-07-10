@@ -28,7 +28,7 @@ from django import forms
 from django import forms
 from django.utils.html import strip_tags
 from django.conf import settings
-
+from authentication.models import Language
 
 class LoginForm(forms.Form):
     email = forms.EmailField(widget=forms.EmailInput(attrs={
