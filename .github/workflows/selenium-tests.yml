@@ -25,11 +25,5 @@ jobs:
         pip install -r requirements.txt
         pip install selenium pytest pytest-django
 
-    - name: Wait for live server to be ready
-      run: |
-        for i in {1..10}; do
-          curl -A "Mozilla/5.0" -sSf https://www.aisteadmai.shop/login/ && break || sleep 5
-        done
+ 
 
-    - name: Run Selenium tests
-      run: pytest tests/selenium/

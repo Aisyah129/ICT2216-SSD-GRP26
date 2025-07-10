@@ -81,7 +81,6 @@ os.environ['SSL_CERT_FILE'] = certifi.where()
 def is_admin(user):
     return user.is_authenticated and has_permission(user, "view_admin_dashboard")
 
-
 # AuthController
 def login_view(request):
     if request.session.get('user_id'):
