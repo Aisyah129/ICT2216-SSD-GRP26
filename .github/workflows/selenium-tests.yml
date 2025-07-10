@@ -2,30 +2,32 @@ name: Django Selenium Tests
 
 on: [push, pull_request]
 
+# .github/workflows/selenium.yml
 jobs:
   test:
     runs-on: ubuntu-latest
-
     services:
       selenium:
         image: selenium/standalone-chrome
-        ports:
-          - 4444:4444
-
+        ports: ["4444:4444"]
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with: 
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install selenium pytest pytest-django
+      - name: Start Django server
+        run: |
+          python manage.py migrate --no-input
+          python manage.py runserver 0.0.0.0:8000 &
+      - name: Run Selenium tests
+        env:
+          DJANGO_LIVE_SERVER_URL: "http://127.0.0.1:8000"
+        run: pytest --maxfail=1 --disable-warnings -q
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
-        pip install selenium pytest pytest-django
-
-    - name: Run Selenium tests
-      run: pytest tests/selenium/
  
 

@@ -1,27 +1,29 @@
+import os
+import time
 import pytest
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-import time
 
 @pytest.fixture
 def driver():
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    driver = webdriver.Chrome(options=options)
+    opts = webdriver.ChromeOptions()
+    opts.add_argument("--headless")
+    driver = webdriver.Remote(
+        command_executor="http://localhost:4444/wd/hub",
+        options=opts
+    )
     yield driver
     driver.quit()
 
-def open_register_page(driver):
-    driver.get("https://www.aisteadmai.shop/register/")
-    time.sleep(10)
-    print(driver.page_source)  # Debug fallback to check what HTML was actually loaded
+def open_register(driver):
+    base = os.environ.get("DJANGO_LIVE_SERVER_URL", "http://127.0.0.1:8000")
+    driver.get(base + "/register/")
+    time.sleep(0.5)    # give your JS a moment
+
 
 # ✅ Test 1: Weak password (no special character)
 def test_register_weak_password(driver):
-    open_register_page(driver)
+    open_register(driver)
     print(driver.page_source)  # Add here to debug this specific test
     # driver.find_element(By.CSS_SELECTOR, '[data-testid="email-input"]').send_keys("weakpass@example.com")
     driver.find_element(By.ID, 'id_email').send_keys("weakpass@example.com")
@@ -35,7 +37,7 @@ def test_register_weak_password(driver):
 
 # ✅ Test 2: Mismatched passwords
 def test_register_mismatched_passwords(driver):
-    open_register_page(driver)
+    open_register(driver)
     driver.find_element(By.ID, 'id_email').send_keys("weakpass@example.com")
     driver.find_element(By.ID, "id_password").send_keys("ValidPass!1")
     driver.find_element(By.ID, "id_confirm_password").send_keys("InvalidPass!2")
@@ -47,7 +49,7 @@ def test_register_mismatched_passwords(driver):
 
 # ✅ Test 3: Invalid name
 def test_register_invalid_name(driver):
-    open_register_page(driver)
+    open_register(driver)
     driver.find_element(By.ID, 'id_email').send_keys("weakpass@example.com")
     driver.find_element(By.ID, "id_password").send_keys("ValidPass!1")
     driver.find_element(By.ID, "id_confirm_password").send_keys("ValidPass!1")
@@ -59,7 +61,7 @@ def test_register_invalid_name(driver):
 
 # ✅ Test 4: Exceeding location length
 def test_register_long_location(driver):
-    open_register_page(driver)
+    open_register(driver)
     driver.find_element(By.ID, 'id_email').send_keys("weakpass@example.com")
     driver.find_element(By.ID, "id_password").send_keys("ValidPass!1")
     driver.find_element(By.ID, "id_confirm_password").send_keys("ValidPass!1")
