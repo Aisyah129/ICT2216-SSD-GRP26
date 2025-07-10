@@ -1,68 +1,49 @@
-# [Django Boilerplate](https://www.youtube.com/watch?v=bGGDGltRT_g)
+# AiSteadMai - Group 26
 
-**Open-Source Web App** coded in **Django Framework** on top of **Argon Dashboard** design. **Features**:
+🔐 A full-stack Django application with **custom user authentication**, **session management**, and a **modular structure** — designed for the **ICT2216 Secure Software Development** project.
 
-- SQLite, Django native ORM
-- Modular design
-- Session-Based authentication (login, register)
-- Forms validation
-- UI Kit: **Argon Dashboard** provided by **Creative-Tim**
+💘AiSteadMai is a secure and user-friendly Django web application that helps individuals connect meaningfully through an intelligent matching system. It features a clean UI, robust session-based authentication, and customizable preferences — all built with a focus on security, modularity, and scalability.
 
-<br />
-
-![Django Boilerplate - Open-Source Web App.](https://raw.githubusercontent.com/app-generator/static/master/products/django-boilerplate-intro.gif)
-
-<br />
-
-## How to use it
-
-```bash
-$ # Get the code
-$ git clone https://github.com/app-generator/django-boilerplate.git
-$ cd django-boilerplate
-$
-$ # Virtualenv modules installation (Unix based systems)
-$ virtualenv --no-site-packages env
-$ source env/bin/activate
-$
-$ # Virtualenv modules installation (Windows based systems)
-$ # virtualenv --no-site-packages env
-$ # .\env\Scripts\activate
-$ 
-$ # Install modules
-$ # SQLIte version
-$ pip3 install -r requirements.txt
-$
-$ # Create tables
-$ python manage.py makemigrations
-$ python manage.py migrate
-$
-$ # Start the application (development mode)
-$ python manage.py runserver
-$
-$ # Access the web app in browser: http://127.0.0.1:8000/
-```
-
-<br />
-
-## Docker execution
-
-@WIP
-
-<br />
-
-## Credits & Links
-
-- [Django Boilerplate](https://www.youtube.com/watch?v=bGGDGltRT_g) - yTube presentation
-- [Django Framework](https://www.djangoproject.com/) - Offcial website
-
-<br />
-
-## License
-
-@MIT
-
-<br />
+🔗 Live Production Site: https://www.aisteadmai.shop/login/
 
 ---
-[Django Boilerplate](https://www.youtube.com/watch?v=bGGDGltRT_g) - provided by **AppSeed**
+
+## 🚀 Features
+
+- 🧭 Browse Profiles: Users can swipe through other user profiles, view photos, bios, and match scores.
+- 💖 Like & Match System: Like users to build potential connections. When two users like each other, it becomes a match.
+- 🎯 Set Preferences: Users can filter matches by age, distance, height, religion, languages spoken, and more.
+- 🗣️ Multilingual Support: Profiles can include multiple spoken languages, improving cultural inclusivity.
+- 💬 In-App Messaging: Matched users can exchange messages in real-time via an integrated chat system.
+- 📸 Photo Upload & Gallery: Users can upload multiple profile photos and choose a primary display image.
+- ⭐ Premium Features: Premium users enjoy perks like full access to who liked them and advanced filtering options.
+- 🧠 AI-Enhanced Matching: Intelligent sorting of profile suggestions based on past likes and preference matching.
+- 🖥️ Admin Dashboard: Admins can view user stats, moderate content, and manage platform settings.
+
+---
+
+## 🛠️ Setup Instructions
+
+### 1. Clone the Repository
+
+```bash
+# Clone the repository
+git clone https://github.com/YOUR-USERNAME/ICT2216-SSD-GRP26.git
+cd ICT2216-SSD-GRP26
+
+# Create and Activate a Virtual Environment (Windows)
+python -m venv venv
+.\venv\Scripts\activate
+
+# Install Required Python Packages
+pip install -r requirements.txt
+
+# Apply Database Migrations
+python manage.py makemigrations
+python manage.py migrate
+
+# Run the Development Server
+python manage.py runserver
+
+
+
