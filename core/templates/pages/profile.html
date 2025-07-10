@@ -469,7 +469,6 @@
 </script>
 
 
-
 {% endblock content %}
 
 <!-- Specific JS goes HERE -->
@@ -506,7 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (container) {
       if (state) {
         container.classList.add('choices__disabled');
-        languageSelect.setAttribute('disabled', '');
+        languageSelect.setAttribute('disabled', 'disabled');
       } else {
         container.classList.remove('choices__disabled');
         languageSelect.removeAttribute('disabled');
