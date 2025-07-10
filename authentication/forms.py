@@ -12,8 +12,8 @@ import requests
 from authentication.models import Preferences
 from authentication.models import Report
 from django import forms
-from django import forms
 from django.utils.html import strip_tags
+
 
 class LoginForm(forms.Form):
     email = forms.EmailField(widget=forms.EmailInput(attrs={
@@ -74,12 +74,13 @@ class SetNewPasswordForm(forms.Form):
         validate_password(pwd)
         return cleaned_data
 
+
 def is_pwned_password(password):
     sha1pwd = hashlib.sha1(password.encode('utf-8')).hexdigest().upper()
     prefix = sha1pwd[:5]
     suffix = sha1pwd[5:]
     url = f"https://api.pwnedpasswords.com/range/{prefix}"
-    
+
     try:
         res = requests.get(url, timeout=5)
         if res.status_code == 200:
@@ -89,8 +90,9 @@ def is_pwned_password(password):
                     return True  # Found in breached DB
     except requests.RequestException:
         pass  # Optional: log or handle connection errors
-    
+
     return False
+
 
 class SignUpForm(forms.Form):
     email = forms.EmailField(
@@ -184,8 +186,9 @@ class SignUpForm(forms.Form):
 
         # Check if password has been breached
         if is_pwned_password(pwd):
-            raise forms.ValidationError("This password has appeared in a known data breach. Please choose a different one.")
-        
+            raise forms.ValidationError(
+                "This password has appeared in a known data breach. Please choose a different one.")
+
         return pwd
 
     def clean_confirm_password(self):
@@ -200,6 +203,12 @@ class SignUpForm(forms.Form):
         if not re.match(r'^[A-Za-z\s]+$', name):
             raise forms.ValidationError("Name can only contain letters and spaces.")
         return name
+
+    def clean_age(self):
+        age = self.cleaned_data.get('age')
+        if age is None or age < 18 or age > 90:
+            raise forms.ValidationError("Age must be between 18 and 90.")
+        return age
 
 
 class ProfileUpdateForm(forms.ModelForm):
@@ -230,6 +239,8 @@ class ProfileUpdateForm(forms.ModelForm):
         if len(bio) > 500:
             raise forms.ValidationError("Bio must be under 500 characters.")
         return bio
+
+
 class PreferencesForm(forms.ModelForm):
     class Meta:
         model = Preferences
@@ -272,6 +283,7 @@ class PreferencesForm(forms.ModelForm):
             self.add_error('preferred_distance_km', "Distance cannot be negative.")
 
         return cleaned_data
+
 
 class ReportForm(forms.ModelForm):
     class Meta:
