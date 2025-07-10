@@ -458,23 +458,22 @@
     const languageSelect = document.getElementById('languageSelect');
     const editButton = document.getElementById('editButton');
 
-    let choicesInstance = null;
+    let choicesInstance = new Choices(languageSelect, {
+      removeItemButton: true,
+      shouldSort: false,
+      searchEnabled: true,
+      placeholderValue: 'Select languages...'
+    });
+
+    // Disable it on load (Choices way)
+    choicesInstance.disable();
 
     editButton.addEventListener('click', function () {
-      languageSelect.disabled = false;
-
-      // Only initialize Choices if it hasn’t already been initialized
-      if (!choicesInstance) {
-        choicesInstance = new Choices(languageSelect, {
-          removeItemButton: true,
-          shouldSort: false,
-          searchEnabled: true,
-          placeholderValue: 'Select languages...'
-        });
-      }
+      choicesInstance.enable();  // ✅ This enables the rendered Choices UI
     });
   });
 </script>
+
 
 
 
