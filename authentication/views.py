@@ -527,12 +527,18 @@ def profile_view(request):
         if form.is_valid():
             profile = form.save()  # Save profile fields
 
-            # ✅ Save languages (ManyToMany)
-            languages = form.cleaned_data.get('languages')
-            if languages:
-                profile.languages.set(languages)  # Overwrite old languages
-            else:
-                profile.languages.clear()  # Clear if nothing selected
+            # ✅ Save languages manually via ProfileLanguage
+            submitted_language_ids = request.POST.getlist('languages')  # get list of selected IDs
+
+            # Clear old languages
+            ProfileLanguage.objects.filter(profile_id_fk=profile).delete()
+
+            # Add new languages
+            for lang_id in submitted_language_ids:
+                ProfileLanguage.objects.create(
+                    profile_id_fk=profile,
+                    language_id_fk_id=lang_id
+                )
 
             messages.success(request, "✅ Profile updated successfully.")
             return redirect('profile')
