@@ -477,7 +477,7 @@
   /* ─────────────────────────────────────────────────────────────
      1.  PROFILE “EDIT / SAVE / CANCEL” TOGGLE
      ────────────────────────────────────────────────────────────*/
-  document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('profile-form');
   const editBtn = document.getElementById('editProfileBtn');
   const saveBtn = document.getElementById('saveProfileBtn');
@@ -485,6 +485,8 @@
   const inputs = form.querySelectorAll('input, textarea, select');
 
   const languageSelect = document.getElementById('languageSelect');
+
+  // Initialize Choices.js on the disabled select
   const languageChoices = new Choices(languageSelect, {
     removeItemButton: true,
     shouldSort: false,
@@ -492,34 +494,36 @@
     placeholderValue: 'Select languages...'
   });
 
-  // Toggle form disable state
+  // Set all fields to read-only on page load
   const setDisabled = (state) => {
     inputs.forEach(el => {
-      if (!el.classList.contains('always-enabled')) {
-        state ? el.setAttribute('disabled', '') : el.removeAttribute('disabled');
-      }
+      el.disabled = state;
     });
 
-    // Must manually enable/disable Choices.js target
-    if (state) {
-      languageSelect.setAttribute('disabled', '');
-    } else {
-      languageSelect.removeAttribute('disabled');
+    // Choices.js won't reflect 'disabled' properly, so handle manually:
+    const container = languageSelect.closest('.choices');
+    if (container) {
+      if (state) {
+        container.classList.add('choices__disabled');
+        languageSelect.setAttribute('disabled', '');
+      } else {
+        container.classList.remove('choices__disabled');
+        languageSelect.removeAttribute('disabled');
+      }
     }
   };
 
-  // Initial: disable all
-  setDisabled(true);
+  setDisabled(true); // page loads in view-only mode
 
   editBtn.addEventListener('click', () => {
-    setDisabled(false);
+    setDisabled(false); // enable all inputs
     editBtn.classList.add('d-none');
     saveBtn.classList.remove('d-none');
     cancelBtn.classList.remove('d-none');
   });
 
   cancelBtn.addEventListener('click', () => {
-    form.reset(); // discard changes
+    form.reset();
     setDisabled(true);
     saveBtn.classList.add('d-none');
     cancelBtn.classList.add('d-none');
