@@ -1,185 +1,746 @@
 {% extends 'layouts/base.html' %}
+{% load static %}
+
 
 {% block title %} Profile {% endblock title %}
 
 {% block content %}
+<!-- Choices.js CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
 
-    <!-- Header -->
-    <div class="header pb-8 pt-5 pt-lg-8 d-flex align-items-center" 
-         style="min-height: 600px; background-image: url(/static/assets/img/theme/profile-cover.jpg); background-size: cover; background-position: center top;">
-      <!-- Mask -->
-      <span class="mask bg-gradient-default opacity-8"></span>
-      <!-- Header container -->
-      <div class="container-fluid d-flex align-items-center">
-        <div class="row">
-          <div class="col-lg-7 col-md-10">
-            <h1 class="display-2 text-white">Hello {{ request.user.username }}</h1>
-            <p class="text-white mt-0 mb-5">This is your profile page. You can see the progress you've made with your work and manage your projects or assigned tasks</p>
-            <a href="#!" class="btn btn-info">Edit profile</a>
-          </div>
-        </div>
+
+<!-- Header -->
+<div class="header pb-8 pt-5 pt-lg-8 d-flex align-items-center justify-content-center text-center"
+  style="min-height: 400px; background: linear-gradient(to right, #1e3c72, #2a5298);">
+
+  <!-- Mask -->
+  <span class="mask bg-gradient-default opacity-8"></span>
+  <!-- Header container -->
+  <div class="container-fluid d-flex align-items-center justify-content-center">
+    <div class="row text-center">
+      <div class="col-lg-12">
+
+        <h1 class="display-2 text-white">Welcome {{ profile.name }}</h1>
+        <p class="text-white mt-0 mb-5">Download love, one profile at a time—because love shouldn’t be left on read.</p>
       </div>
     </div>
+  </div>
+</div>
+<div class="container-fluid mt--7">
+  <div class="row">
+    <div class="col-xl-4 order-xl-2 mb-5 mb-xl-0">
+      <div class="card bg-white shadow">
+        <div class="row justify-content-center">
+          <div class="col-lg-3 order-lg-2">
+            <div class="card-profile-image">
+              <a href="#">
+                {% if primary_image %}
+                <img src="{{ primary_image }}" class="rounded-circle shadow-lg"
+                  style="object-fit: cover; width: 140px; height: 140px; margin-top: -30px; margin-bottom: 20px; border: 3px solid white;"
+                  alt="{{ profile.name }}">
+                {% else %}
+                <img src="{% static 'images/default-avatar.jpg' %}" class="rounded-circle shadow-lg"
+                  style="object-fit: cover; width: 140px; height: 140px; margin-top: -30px; margin-bottom: 20px; border: 3px solid white;"
+                  alt="{{ profile.name }}">
 
-    <div class="container-fluid mt--7">
-
-      <div class="row">
-        <div class="col-xl-4 order-xl-2 mb-5 mb-xl-0">
-          <div class="card card-profile shadow">
-            <div class="row justify-content-center">
-              <div class="col-lg-3 order-lg-2">
-                <div class="card-profile-image">
-                  <a href="#">
-                    <img src="/static/assets/img/theme/team-4-800x800.jpg" class="rounded-circle">
-                  </a>
-                </div>
-              </div>
-            </div>
-            <div class="card-header text-center border-0 pt-8 pt-md-4 pb-0 pb-md-4">
-              <div class="d-flex justify-content-between">
-                <a href="#" class="btn btn-sm btn-info mr-4">Connect</a>
-                <a href="#" class="btn btn-sm btn-default float-right">Message</a>
-              </div>
-            </div>
-            <div class="card-body pt-0 pt-md-4">
-              <div class="row">
-                <div class="col">
-                  <div class="card-profile-stats d-flex justify-content-center mt-md-5">
-                    <div>
-                      <span class="heading">22</span>
-                      <span class="description">Friends</span>
-                    </div>
-                    <div>
-                      <span class="heading">10</span>
-                      <span class="description">Photos</span>
-                    </div>
-                    <div>
-                      <span class="heading">89</span>
-                      <span class="description">Comments</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="text-center">
-                <h3>
-                  {{ request.user.username }}
-                </h3>
-                <div class="h5 font-weight-300">
-                  {{ request.user.email }}
-                </div>
-                <div class="h5 mt-4">
-                  <i class="ni business_briefcase-24 mr-2"></i>Solution Manager - Creative Tim Officer
-                </div>
-                <div>
-                  <i class="ni education_hat mr-2"></i>University of Computer Science
-                </div>
-                <hr class="my-4" />
-                <p>Ryan — the name taken by Melbourne-raised, Brooklyn-based Nick Murphy — writes, performs and records all of his own music.</p>
-                <a href="#">Show more</a>
-              </div>
+                {% endif %}
+              </a>
             </div>
           </div>
         </div>
-        <div class="col-xl-8 order-xl-1">
-          <div class="card bg-secondary shadow">
-            <div class="card-header bg-white border-0">
-              <div class="row align-items-center">
-                <div class="col-8">
-                  <h3 class="mb-0">My account</h3>
-                </div>
-                <div class="col-4 text-right">
-                  <a href="#!" class="btn btn-sm btn-primary">Settings</a>
-                </div>
-              </div>
+
+        <div class="card-header text-center border-0 pt-8 pt-md-4 pb-0 pb-md-4">
+          <div class="d-flex justify-content-between">
+
+          </div>
+        </div>
+
+        <div class="card-body pt-0 pt-md-4">
+          <div class="text-center">
+            <h3>{{ request.user.username }}</h3>
+            <div class="h1 mt-4">
+              <i class="ni business_briefcase-24 mr-2"></i>{{ profile.name }}
             </div>
-            <div class="card-body">
-              <form>
-                <h6 class="heading-small text-muted mb-4">User information</h6>
-                <div class="pl-lg-4">
-                  <div class="row">
-                    <div class="col-lg-6">
-                      <div class="form-group">
-                        <label class="form-control-label" for="input-username">Username</label>
-                        <input type="text" id="input-username" class="form-control form-control-alternative" placeholder="Username" 
-                               value="{{ request.user.username }}">
-                      </div>
+            <div class="h3 font-weight-300">{{ request.user.email }}</div>
+            <div><i class="ni education_hat mr-2"></i>Education Level: {{profile.education_level}}</div>
+            <hr />
+            <div class="text-left px-3 pb-3">
+              <div class="row" id="galleryGrid">
+
+                {% if images|length < 6 %} <div class="col-md-4 col-sm-6 mb-4" id="uploadCardContainer">
+                  <div class="card shadow-sm upload-card h-100 d-flex justify-content-center align-items-center"
+                    id="uploadTrigger" style="cursor: pointer;">
+                    <div class="text-center">
+                      <div class="upload-icon mb-2" style="font-size: 2.5rem; color: #888;">+</div>
+                      <div class="text-muted" style="font-size: 0.9rem;">Add Photo</div>
                     </div>
-                    <div class="col-lg-6">
-                      <div class="form-group">
-                        <label class="form-control-label" for="input-email">Email address</label>
-                        <input type="email" id="input-email" class="form-control form-control-alternative" 
-                               placeholder="{{ request.user.email }}">
-                      </div>
-                    </div>
+                    <!-- 🔁 Moved inside -->
+                    <input type="file" class="d-none" name="image" accept="image/*" required>
+                    <input type="checkbox" class="d-none" name="is_primary" value="1">
                   </div>
-                  <div class="row">
-                    <div class="col-lg-6">
-                      <div class="form-group">
-                        <label class="form-control-label" for="input-first-name">First name</label>
-                        <input type="text" id="input-first-name" class="form-control form-control-alternative" >
-                      </div>
-                    </div>
-                    <div class="col-lg-6">
-                      <div class="form-group">
-                        <label class="form-control-label" for="input-last-name">Last name</label>
-                        <input type="text" id="input-last-name" class="form-control form-control-alternative" >
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <hr class="my-4" />
-                <!-- Address -->
-                <h6 class="heading-small text-muted mb-4">Contact information</h6>
-                <div class="pl-lg-4">
-                  <div class="row">
-                    <div class="col-md-12">
-                      <div class="form-group">
-                        <label class="form-control-label" for="input-address">Address</label>
-                        <input id="input-address" class="form-control form-control-alternative" placeholder="Home Address" value="Bld Mihail Kogalniceanu, nr. 8 Bl 1, Sc 1, Ap 09" type="text">
-                      </div>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-lg-4">
-                      <div class="form-group">
-                        <label class="form-control-label" for="input-city">City</label>
-                        <input type="text" id="input-city" class="form-control form-control-alternative" placeholder="City" value="New York">
-                      </div>
-                    </div>
-                    <div class="col-lg-4">
-                      <div class="form-group">
-                        <label class="form-control-label" for="input-country">Country</label>
-                        <input type="text" id="input-country" class="form-control form-control-alternative" placeholder="Country" value="United States">
-                      </div>
-                    </div>
-                    <div class="col-lg-4">
-                      <div class="form-group">
-                        <label class="form-control-label" for="input-country">Postal code</label>
-                        <input type="number" id="input-postal-code" class="form-control form-control-alternative" placeholder="Postal code">
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <hr class="my-4" />
-                <!-- Description -->
-                <h6 class="heading-small text-muted mb-4">About me</h6>
-                <div class="pl-lg-4">
-                  <div class="form-group">
-                    <label>About Me</label>
-                    <textarea rows="4" class="form-control form-control-alternative" placeholder="A few words about you ...">A beautiful Dashboard for Bootstrap 4. It is Free and Open Source.</textarea>
-                  </div>
-                </div>
+              </div>
+
+              <!-- Hidden actual file input + form -->
+              <form id="uploadForm" enctype="multipart/form-data" class="d-none">
+                <input type="file" id="fileInput" name="image" accept="image/*" required>
+                <input type="checkbox" id="primaryCheck" name="is_primary" value="1">
               </form>
+
+              {% endif %}
+
+              {% for img in images %}
+              <div class="col-md-4 col-sm-6 mb-4 gallery-item" data-id="{{ img.id }}">
+                <div class="card shadow-sm position-relative h-100">
+                  <img src="{{ img.url }}" class="card-img-top rounded-top"
+                    style="object-fit: cover; height: 250px;" alt="Profile image">
+                  {% if img.is_primary %}
+                  <span class="badge badge-success position-absolute"
+                    style="top: 10px; left: 10px; font-size: 0.75rem;">PRIMARY</span>
+                  {% endif %}
+                  <div class="card-body py-2 px-3 text-center">
+                    <button class="btn btn-sm btn-outline-primary setPrimaryBtn mr-2">Set</button>
+                    <button class="btn btn-sm btn-outline-danger deleteBtn">Del</button>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+
             </div>
+          </div>
+
+          <hr class="my-4" />
+          <p>{{ profile.bio|default:"No bio yet." }}</p>
+          
+        </div>
+
+        <!-- ⬇️ Upload Form + Gallery -->
+
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-8 order-xl-1">
+    <div class="card bg-white shadow">
+      <div class="card-header bg-white border-0">
+        <div class="row align-items-center">
+          <div class="col-8">
+            <h3 class="mb-0">My account</h3>
           </div>
         </div>
       </div>
+      <div class="card-body">
 
-      {% include "includes/footer.html" %}
+        <form id="profile-form" method="POST" action="{% url 'profile' %}">
+          {% csrf_token %}
+          <h6 class="heading-small text-muted mb-4">Profile Details</h6>
+          <div class="pl-lg-4">
+            <div class="row">
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label>Age</label>
+                  <input name="age" type="number" min="18" max="90" class="form-control form-control-alternative"
+                    value="{{ profile.age|default:'' }}" placeholder="Your age">
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label>Gender</label>
+                  <select name="gender" class="form-select">
+                    <option value="male" {% if profile.gender == "male" %}selected{% endif %}>Male</option>
+                    <option value="female" {% if profile.gender == "female" %}selected{% endif %}>Female</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label>Height (cm)</label>
+                  <input name="height_cm" type="number" min="100" max="250" class="form-control form-control-alternative"
+                    value="{{ profile.height_cm|default:'' }}" placeholder="e.g. 170">
+                </div>
+              </div>
+            </div>
 
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>Sexual Orientation</label>
+                  <select name="sexual_orientation" class="form-select">
+                    <option value="">-- Select Sexual Orientation --</option>
+                    <option value="straight" {% if profile.sexual_orientation == "straight" %}selected{% endif %}>Straight</option>
+                    <option value="gay" {% if profile.sexual_orientation == "gay" %}selected{% endif %}>Homosexual</option>
+                    <option value="bisexual" {% if profile.sexual_orientation == "bisexual" %}selected{% endif %}>Bisexual</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>Pronouns</label>
+                  <select name="pronouns" class="form-select">
+                    <option value="">-- Select Pronouns --</option>
+                    <option value="he/him" {% if profile.pronouns == "he/him" %}selected{% endif %}>He/Him</option>
+                    <option value="she/her" {% if profile.pronouns == "she/her" %}selected{% endif %}>She/Her</option>
+                    <option value="they/them" {% if profile.pronouns == "they/them" %}selected{% endif %}>They/Them</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>Body Type</label>
+                  <select name="body_type" class="form-select">
+                    <option value="">-- Select Body Type --</option>
+                    <option value="thin" {% if profile.body_type == "thin" %}selected{% endif %}>Thin</option>
+                    <option value="skinny" {% if profile.body_type == "skinny" %}selected{% endif %}>Skinny</option>
+                    <option value="fit" {% if profile.body_type == "fit" %}selected{% endif %}>Fit</option>
+                    <option value="athletic" {% if profile.body_type == "athletic" %}selected{% endif %}>Athletic</option>
+                    <option value="jacked" {% if profile.body_type == "jacked" %}selected{% endif %}>Jacked</option>
+                    <option value="average" {% if profile.body_type == "average" %}selected{% endif %}>Average</option>
+                    <option value="curvy" {% if profile.body_type == "curvy" %}selected{% endif %}>Curvy</option>
+                    <option value="a little extra" {% if profile.body_type == "a little extra" %}selected{% endif %}>A little extra</option>
+                    <option value="full figured" {% if profile.body_type == "full figured" %}selected{% endif %}>Full figured</option>
+                    <option value="overweight" {% if profile.body_type == "overweight" %}selected{% endif %}>Overweight</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>Location</label>
+                  <input
+                    id="locationInput"
+                    name="location"
+                    type="text"
+                    class="form-control form-control-alternative"
+                    value="{{ profile.location|default:'' }}"
+                    placeholder="e.g. Singapore, Kuala Lumpur"
+                    maxlength="50"
+                  >
+                  <small id="locationCharCount" class="text-muted char-counter d-none">0/50 characters</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>Education Level</label>
+                  <select name="education_level" class="form-select">
+                    <option value="">-- Select Education Level --</option>
+                    <option value="secondary school" {% if profile.education_level == "secondary school" %}selected{% endif %}>Secondary School</option>
+                    <option value="diploma" {% if profile.education_level == "diploma" %}selected{% endif %}>Diploma</option>
+                    <option value="undergraduate" {% if profile.education_level == "undergraduate" %}selected{% endif %}>Undergraduate</option>
+                    <option value="postgraduate" {% if profile.education_level == "postgraduate" %}selected{% endif %}>Postgraduate</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>Occupation</label>
+                  <input
+                    id="occupationInput"
+                    name="occupation"
+                    type="text"
+                    class="form-control form-control-alternative"
+                    value="{{ profile.occupation|default:'' }}"
+                    placeholder="e.g. Software Engineer"
+                    maxlength="100"
+                    pattern="[A-Za-z0-9\s\-\.\&]{2,100}"
+                    title="2–100 chars: letters, numbers, space, hyphen (-), period (.), ampersand (&)"
+                  >
+                  <small id="occupationCharCount" class="text-muted char-counter d-none">0/100 characters</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label>Religion</label>
+                  <select name="religion" class="form-select">
+                    <option value="">-- Select Religion --</option>
+                    <option value="agnostic" {% if profile.religion == "agnostic" %}selected{% endif %}>Agnostic</option>
+                    <option value="atheist" {% if profile.religion == "atheist" %}selected{% endif %}>Atheist</option>
+                    <option value="buddhist" {% if profile.religion == "buddhist" %}selected{% endif %}>Buddhist</option>
+                    <option value="catholic" {% if profile.religion == "catholic" %}selected{% endif %}>Catholic</option>
+                    <option value="christian" {% if profile.religion == "christian" %}selected{% endif %}>Christian</option>
+                    <option value="hindu" {% if profile.religion == "hindu" %}selected{% endif %}>Hindu</option>
+                    <option value="islam" {% if profile.religion == "islam" %}selected{% endif %}>Islam</option>
+                    <option value="jewish" {% if profile.religion == "jewish" %}selected{% endif %}>Jewish</option>
+                    <option value="others" {% if profile.religion == "others" %}selected{% endif %}>Others</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label>Ethnicity</label>
+                  <select name="ethnicity" class="form-select" {% if not is_editing %}disabled{% endif %}>
+                    <option value="">-- Select Ethnicity --</option>
+                    <option value="asian" {% if profile.ethnicity == "asian" %}selected{% endif %}>Asian</option>
+                    <option value="black" {% if profile.ethnicity == "black" %}selected{% endif %}>Black</option>
+                    <option value="hispanic" {% if profile.ethnicity == "hispanic" %}selected{% endif %}>Hispanic</option>
+                    <option value="middle eastern" {% if profile.ethnicity == "middle eastern" %}selected{% endif %}>Middle Eastern</option>
+                    <option value="white" {% if profile.ethnicity == "white" %}selected{% endif %}>White</option>
+                    <option value="mixed" {% if profile.ethnicity == "mixed" %}selected{% endif %}>Mixed</option>
+                    <option value="other" {% if profile.ethnicity == "other" %}selected{% endif %}>Other</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label>Politics</label>
+                  <select name="politics" class="form-select" {% if not is_editing %}disabled{% endif %}>
+                    <option value="">-- Select Political View --</option>
+                    <option value="liberal" {% if profile.politics == "liberal" %}selected{% endif %}>Liberal</option>
+                    <option value="moderate" {% if profile.politics == "moderate" %}selected{% endif %}>Moderate</option>
+                    <option value="conservative" {% if profile.politics == "conservative" %}selected{% endif %}>Conservative</option>
+                    <option value="not political" {% if profile.politics == "not political" %}selected{% endif %}>Not Political</option>
+                    <option value="other" {% if profile.politics == "other" %}selected{% endif %}>Other</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label>Smoking</label>
+                  <select name="smoking" class="form-select" {% if not is_editing %}disabled{% endif %}>
+                    <option value="">-- Select Smoking Habit --</option>
+                    <option value="yes" {% if profile.smoking == "yes" %}selected{% endif %}>Yes</option>
+                    <option value="sometimes" {% if profile.smoking == "sometimes" %}selected{% endif %}>Sometimes</option>
+                    <option value="no" {% if profile.smoking == "no" %}selected{% endif %}>No</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label>Drinking</label>
+                  <select name="drinking" class="form-select" {% if not is_editing %}disabled{% endif %}>
+                    <option value="">-- Select Drinking Habit --</option>
+                    <option value="yes" {% if profile.drinking == "yes" %}selected{% endif %}>Yes</option>
+                    <option value="sometimes" {% if profile.drinking == "sometimes" %}selected{% endif %}>Sometimes</option>
+                    <option value="no" {% if profile.drinking == "no" %}selected{% endif %}>No</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label>Drug Use</label>
+                  <select name="drug_use" class="form-select" {% if not is_editing %}disabled{% endif %}>
+                    <option value="">-- Select Drug Use --</option>
+                    <option value="yes" {% if profile.drug_use == "yes" %}selected{% endif %}>Yes</option>
+                    <option value="sometimes" {% if profile.drug_use == "sometimes" %}selected{% endif %}>Sometimes</option>
+                    <option value="no" {% if profile.drug_use == "no" %}selected{% endif %}>No</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>Has Kids</label>
+                  <select name="has_kids" class="form-select" {% if not is_editing %}disabled{% endif %}>
+                    <option value="">-- Select Option --</option>
+                    <option value="1" {% if profile.has_kids == 1 %}selected{% endif %}>Yes</option>
+                    <option value="0" {% if profile.has_kids == 0 %}selected{% endif %}>No</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>Wants Kids</label>
+                  <select name="wants_kids" class="form-select" {% if not is_editing %}disabled{% endif %}>
+                    <option value="">-- Select Option --</option>
+                    <option value="don't want kids" {% if profile.wants_kids == "don't want kids" %}selected{% endif %}>Don't want kids</option>
+                    <option value="open to kids" {% if profile.wants_kids == "open to kids" %}selected{% endif %}>Open to having kids</option>
+                    <option value="want kids" {% if profile.wants_kids == "want kids" %}selected{% endif %}>Want kids</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>Zodiac Sign</label>
+                  <select name="zodiac_sign" class="form-select" {% if not is_editing %}disabled{% endif %}>
+                    <option value="">-- Select Sign --</option>
+                    <option value="aries" {% if profile.zodiac_sign == "aries" %}selected{% endif %}>Aries</option>
+                    <option value="taurus" {% if profile.zodiac_sign == "taurus" %}selected{% endif %}>Taurus</option>
+                    <option value="gemini" {% if profile.zodiac_sign == "gemini" %}selected{% endif %}>Gemini</option>
+                    <option value="cancer" {% if profile.zodiac_sign == "cancer" %}selected{% endif %}>Cancer</option>
+                    <option value="leo" {% if profile.zodiac_sign == "leo" %}selected{% endif %}>Leo</option>
+                    <option value="virgo" {% if profile.zodiac_sign == "virgo" %}selected{% endif %}>Virgo</option>
+                    <option value="libra" {% if profile.zodiac_sign == "libra" %}selected{% endif %}>Libra</option>
+                    <option value="scorpio" {% if profile.zodiac_sign == "scorpio" %}selected{% endif %}>Scorpio</option>
+                    <option value="sagittarius" {% if profile.zodiac_sign == "sagittarius" %}selected{% endif %}>Sagittarius</option>
+                    <option value="capricorn" {% if profile.zodiac_sign == "capricorn" %}selected{% endif %}>Capricorn</option>
+                    <option value="aquarius" {% if profile.zodiac_sign == "aquarius" %}selected{% endif %}>Aquarius</option>
+                    <option value="pisces" {% if profile.zodiac_sign == "pisces" %}selected{% endif %}>Pisces</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>Relationship Goals</label>
+                  <select name="relationship_goals" class="form-select" {% if not is_editing %}disabled{% endif %}>
+                    <option value="">-- Select Goal --</option>
+                    <option value="life partner" {% if profile.relationship_goals == "life partner" %}selected{% endif %}>Life Partner</option>
+                    <option value="long-term relationship" {% if profile.relationship_goals == "long-term relationship" %}selected{% endif %}>Long-Term Relationship</option>
+                    <option value="short-term relationship" {% if profile.relationship_goals == "short-term relationship" %}selected{% endif %}>Short-Term Relationship</option>
+                    <option value="casual" {% if profile.relationship_goals == "casual" %}selected{% endif %}>Casual</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <select name="languages" id="languageSelect" class="form-control" multiple>
+              {% for language in all_languages %}
+                <option value="{{ language.language_id }}"
+                  {% if language.language_id in selected_language_ids %}selected{% endif %}>
+                  {{ language.language_name|title }}
+                </option>
+              {% endfor %}
+            </select>
+
+            <div class="form-group">
+              <label>Hobbies</label>
+              <textarea
+                id="hobbiesTextarea"
+                name="hobbies"
+                rows="3"
+                class="form-control form-control-alternative"
+                maxlength="200"
+                placeholder="e.g. Photography, Reading"
+                title="Only letters, commas, and spaces (max 200 chars)"
+              >{{ profile.hobbies|default:'' }}</textarea>
+              <small id="hobbiesCharCount" class="text-muted char-counter d-none">0/200 characters</small>
+            </div>
+
+            <div class="form-group">
+              <label>About Me</label>
+              <textarea
+                id="bioTextarea"
+                name="bio"
+                rows="4"
+                class="form-control form-control-alternative"
+                maxlength="500"
+                placeholder="Tell us more about yourself…"
+              >{{ profile.bio|default:'' }}</textarea>
+              <small id="bioCharCount" class="text-muted char-counter d-none">0/500 characters</small>
+            </div>
+
+          </div>
+          <div class="text-right">
+            <button type="button" class="btn btn-info" id="editProfileBtn">Edit profile</button>
+            <button type="submit" class="btn btn-success d-none" id="saveProfileBtn">Save changes</button>
+            <button type="button" class="btn btn-secondary d-none" id="cancelProfileBtn">Cancel</button>
+          </div>
+
+        </form>
+      </div>
     </div>
+  </div>
+</div>
+</div>
+
+<!-- Choices.js JS -->
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const languageSelect = document.getElementById('languageSelect');
+
+    if (languageSelect && !languageSelect.disabled) {
+      new Choices(languageSelect, {
+        removeItemButton: true,
+        shouldSort: false,
+        searchEnabled: true,
+        placeholderValue: 'Select languages...'
+      });
+    }
+  });
+</script>
+
 
 {% endblock content %}
 
-<!-- Specific JS goes HERE --> 
-{% block javascripts %}{% endblock javascripts %}
+<!-- Specific JS goes HERE -->
+{% block javascripts %}
+<script nonce="{{ request.csp_nonce }}">
+  /* ─────────────────────────────────────────────────────────────
+     1.  PROFILE “EDIT / SAVE / CANCEL” TOGGLE
+     ────────────────────────────────────────────────────────────*/
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('profile-form');
+    const editBtn = document.getElementById('editProfileBtn');
+    const saveBtn = document.getElementById('saveProfileBtn');
+    const cancelBtn = document.getElementById('cancelProfileBtn');
+    const inputs = form.querySelectorAll('input, textarea, select');
+    const counters  = document.querySelectorAll('.char-counter');
+
+    const setDisabled = (state) => {
+      inputs.forEach(el => state
+        ? el.setAttribute('disabled', '')
+        : el.removeAttribute('disabled'));
+    };
+
+    /* start page in read-only mode */
+    setDisabled(true);
+    counters.forEach(c => c.classList.add('d-none'));
+
+    editBtn.addEventListener('click', () => {
+      setDisabled(false);
+      editBtn.classList.add('d-none');
+      saveBtn.classList.remove('d-none');
+      cancelBtn.classList.remove('d-none');
+      counters.forEach(c => c.classList.remove('d-none'));
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      form.reset();                 // discard unsaved edits
+      setDisabled(true);
+      saveBtn.classList.add('d-none');
+      cancelBtn.classList.add('d-none');
+      editBtn.classList.remove('d-none');
+      counters.forEach(c => c.classList.add('d-none'));
+    });
+  });
+
+  /* ─────────────────────────────────────────────────────────────
+     2.  IMAGE UPLOAD (+), DELETE, SET-PRIMARY
+     ────────────────────────────────────────────────────────────*/
+  const galleryGrid = document.getElementById('galleryGrid');
+  const statusDiv = document.getElementById('uploadStatus');
+  const csrfToken = '{{ csrf_token }}';
+
+  /* 2-a  Upload (traditional form submit still present somewhere) */
+  const uploadForm = document.getElementById('uploadForm');
+  uploadForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = new FormData(uploadForm);
+
+    const resp = await fetch('{% url "upload_profile_image" %}', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken },
+      body: form,
+    });
+    const data = await resp.json();
+
+    if (data.success) {
+      statusDiv.textContent = '✅ Uploaded.';
+      uploadForm.reset();
+      refreshGallery();
+    } else {
+      statusDiv.textContent = `❌ ${data.error || 'Upload failed'}`;
+    }
+  });
+
+  /* 2-b  Delegated click handler for Set / Del buttons */
+  galleryGrid?.addEventListener('click', async (e) => {
+    const card = e.target.closest('.gallery-item');
+    if (!card) return;
+
+    const id = card.dataset.id;
+
+    /* delete image */
+    if (e.target.classList.contains('deleteBtn')) {
+      if (!confirm('Delete this image?')) return;
+      await fetch(`/profile/image/${id}/delete/`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': csrfToken },
+      });
+      refreshGallery();
+    }
+
+    /* set primary */
+    if (e.target.classList.contains('setPrimaryBtn')) {
+      await fetch(`/profile/image/${id}/set-primary/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken },
+      });
+      refreshGallery();
+    }
+  });
+
+  /* ─────────────────────────────────────────────────────────────
+     3.  REFRESH GALLERY & AVATAR
+     ────────────────────────────────────────────────────────────*/
+  async function refreshGallery() {
+    const resp = await fetch('{% url "profile_images_json" %}');
+    const imgs = await resp.json();
+
+    /* ✨ 1. rebuild gallery html, including + card if < 6 */
+    let html = '';
+
+    if (imgs.length < 6) {
+      html += `
+      <div class="col-md-4 col-sm-6 mb-4" id="uploadCardContainer">
+        <div class="card shadow-sm upload-card h-100 d-flex justify-content-center align-items-center"
+             id="uploadTrigger" style="cursor:pointer;">
+          <div class="text-center">
+            <div class="upload-icon mb-2" style="font-size:2.5rem;color:#888;">+</div>
+            <div class="text-muted" style="font-size:.9rem;">Add Photo</div>
+          </div>
+          <input type="file" class="d-none" name="image" accept="image/*">
+          <input type="checkbox" class="d-none" name="is_primary" value="1">
+        </div>
+      </div>`;
+    }
+
+    html += imgs.map(img => `
+      <div class="col-md-4 col-sm-6 mb-4 gallery-item" data-id="${img.image_id}">
+        <div class="card shadow-sm position-relative h-100">
+          <img src="${img.image_url}" class="card-img-top rounded-top"
+               style="height:250px;object-fit:cover;object-position:center;">
+          ${img.is_primary
+        ? '<span class="badge badge-success position-absolute" style="top:10px;left:10px;font-size:.75rem;">PRIMARY</span>'
+        : ''}
+          <div class="card-body py-2 px-3 text-center">
+            <button class="btn btn-sm btn-outline-primary mr-2 setPrimaryBtn">Set</button>
+            <button class="btn btn-sm btn-outline-danger deleteBtn">Del</button>
+          </div>
+        </div>
+      </div>`).join('');
+
+    galleryGrid.innerHTML = html;
+
+    /* ✨ 2. re-attach the “+” card listener each refresh */
+    const plusCard = document.getElementById('uploadTrigger');
+    const plusInput = plusCard?.querySelector('input[type="file"]');
+    const plusCheck = plusCard?.querySelector('input[name="is_primary"]');
+
+    plusCard?.addEventListener('click', () => plusInput?.click());
+    plusInput?.addEventListener('change', async () => {
+      if (!plusInput.files.length) return;
+      const fd = new FormData();
+      fd.append('image', plusInput.files[0]);
+      if (plusCheck?.checked) fd.append('is_primary', '1');
+
+      const up = await fetch('{% url "upload_profile_image" %}', {
+        method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token }}' }, body: fd
+      });
+      const res = await up.json();
+      if (res.success) refreshGallery();
+    });
+
+    /* ✨ 3. sync avatar */
+    const avatar = document.querySelector('.card-profile-image img');
+    const primary = imgs.find(i => i.is_primary === 1);
+    if (primary && avatar) avatar.src = primary.image_url;
+  }
+
+  // 2-c: Handle upload via "+" card
+  const plusCard = document.getElementById('uploadTrigger');
+  const plusInput = plusCard?.querySelector('input[type="file"]');
+  const plusPrimaryCheckbox = plusCard?.querySelector('input[name="is_primary"]');
+
+  plusCard?.addEventListener('click', () => {
+    plusInput?.click();
+  });
+
+  plusInput?.addEventListener('change', async () => {
+    const file = plusInput.files[0];
+    if (!file) return;
+
+    const form = new FormData();
+    form.append('image', file);
+
+    if (plusPrimaryCheckbox?.checked) {
+      form.append('is_primary', '1');
+    }
+
+    const resp = await fetch("{% url 'upload_profile_image' %}", {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken },
+      body: form,
+    });
+
+    const data = await resp.json();
+    if (data.success) {
+      refreshGallery();
+    } else {
+      alert('❌ Upload failed: ' + (data.error || 'Unknown error'));
+    }
+
+    plusInput.value = ''; // reset file input
+  });
+</script>
+
+<script nonce="{{ request.csp_nonce }}">
+  document.addEventListener('DOMContentLoaded', () => {
+    const textarea = document.getElementById('bioTextarea');
+    const counter  = document.getElementById('bioCharCount');
+    const max      = 500;
+
+    const updateCount = () => {
+      const len = textarea.value.length;
+      counter.textContent = `${len}/${max} characters`;
+    };
+
+    // initialize on load
+    updateCount();
+
+    // update on input
+    textarea.addEventListener('input', updateCount);
+  });
+</script>
+
+<script nonce="{{ request.csp_nonce }}">
+  document.addEventListener('DOMContentLoaded', () => {
+    const textarea = document.getElementById('hobbiesTextarea');
+    const counter  = document.getElementById('hobbiesCharCount');
+    const max      = 200;
+
+    const update = () => {
+      const len = textarea.value.length;
+      counter.textContent = `${len}/${max} characters`;
+    };
+
+    // init
+    update();
+
+    // on every keystroke
+    textarea.addEventListener('input', update);
+  });
+</script>
+
+<script nonce="{{ request.csp_nonce }}">
+document.addEventListener('DOMContentLoaded', () => {
+  const occ    = document.getElementById('occupationInput');
+  const count  = document.getElementById('occupationCharCount');
+  const max    = 100;
+
+  const update = () => {
+    const len = occ.value.length;
+    count.textContent = `${len}/${max} characters`;
+  };
+
+  // initialize on load
+  update();
+
+  // update on each keystroke
+  occ.addEventListener('input', update);
+});
+</script>
+
+<script nonce="{{ request.csp_nonce }}">
+document.addEventListener('DOMContentLoaded', () => {
+  const loc   = document.getElementById('locationInput');
+  const count = document.getElementById('locationCharCount');
+  const max   = 50;
+
+  const update = () => {
+    const len = loc.value.length;
+    count.textContent = `${len}/${max} characters`;
+  };
+
+  // initialize and bind
+  update();
+  loc.addEventListener('input', update);
+});
+</script>
+
+{% endblock javascripts %}
+
+

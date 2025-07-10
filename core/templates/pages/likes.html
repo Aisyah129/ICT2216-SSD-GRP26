@@ -3,95 +3,565 @@
 {% block title %} Likes {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<style>
+  .modal-body {
+    gap: 2rem;
+  }
+
+  .left-pane {
+    width: 300px;
+    min-width: 260px;
+    max-height: 100%;
+    position: sticky;
+    top: 0;
+  }
+
+  .right-pane::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .right-pane::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 5px;
+  }
+
+  #modalImage {
+    border-radius: 1rem;
+  }
+
+  .modal-body .badge {
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+  }
+</style>
+
+<div class="container mt-4 position-relative">
   <h2 class="mb-4">💖 Likes</h2>
 
   <!-- Tabs -->
-  <ul class="nav nav-tabs mb-3" id="likesTab" role="tablist">
+  <ul class="nav nav-tabs mb-3">
     <li class="nav-item">
-      <a class="nav-link active" id="likes-you-tab" data-toggle="tab" href="#likes-you" role="tab">❤️ Likes You</a>
+      <a class="nav-link {% if active_tab == 'incoming' %}active{% endif %}" href="{% url 'likes' %}">❤️ Likes You</a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" id="intros-tab" data-toggle="tab" href="#intros" role="tab">✨ Intros</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" id="you-liked-tab" data-toggle="tab" href="#you-liked" role="tab">👍 You Liked</a>
+      <a class="nav-link {% if active_tab == 'outgoing' %}active{% endif %}" href="?tab=outgoing">👍 You Liked</a>
     </li>
   </ul>
 
-  <!-- Tab Contents -->
-  <div class="tab-content" id="likesTabContent">
-    
-    <!-- Likes You Tab -->
-    <div class="tab-pane fade show active" id="likes-you" role="tabpanel">
-      <div class="row">
-        {% for user in incoming_likes %}
-        <div class="col-md-4 mb-3">
-          <div class="card shadow-sm text-center position-relative">
-            {% if not request.user.is_premium %}
-              <div class="blur-overlay position-absolute w-100 h-100" style="backdrop-filter: blur(6px); z-index: 1;"></div>
-            {% endif %}
-            <div class="card-body" style="z-index: 2; position: relative;">
-              <h5 class="card-title">{{ user.name }}</h5>
-              <p class="card-text text-muted">Liked you on {{ user.liked_date|date:"d M Y" }}</p>
-            </div>
+  <!-- Likes You Tab -->
+  {% if active_tab == 'incoming' %}
+  {% if not viewer.is_premium %}
+  {% if page_obj|length > 0 %}
+  <div class="cards-blurred-behind">
+    <div class="row">
+      {% for user in page_obj %}
+      <div class="col-md-4 mb-3">
+        <div class="card shadow-sm text-center">
+          <div class="card-body">
+            <img src="{{ user.image_url }}" onerror="this.onerror=null;this.src='/static/images/default-avatar.jpg';"
+              alt="Profile Picture" class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: cover;">
+
+            <div class="placeholder-bar name-bar mb-2"></div>
+            <div class="placeholder-bar date-bar"></div>
           </div>
         </div>
-        {% empty %}
-        <p class="text-muted ml-3">No one has liked you yet.</p>
-        {% endfor %}
       </div>
-
-      {% if not request.user.is_premium %}
-        <div class="alert alert-warning mt-3 text-center">
-          <strong>Upgrade to Premium</strong> to see who liked you.
-        </div>
-      {% endif %}
+      {% endfor %}
     </div>
+  </div>
+  {% else %}
+  <p class="text-muted ml-3">No one has liked you yet.</p>
+  {% endif %}
 
-    <!-- Intros Tab -->
-    <div class="tab-pane fade" id="intros" role="tabpanel">
-      <div class="mt-3">
-        {% for intro in intros %}
-        <div class="card p-3 mb-2 shadow-sm">
-          <p><strong>{{ intro.name }}</strong> said: "{{ intro.message }}"</p>
-          <small class="text-muted">{{ intro.timestamp|date:"d M Y H:i" }}</small>
+  <div class="premium-overlay-message">
+    <div class="alert alert-warning text-center">
+      <a href="{% url 'upgrade_premium' %}" class="text-white font-weight-bold" style="text-decoration: underline;">
+        <strong>Upgrade to Premium</strong>
+      </a> to see who liked you.
+    </div>
+  </div>
+
+  {% else %}
+  {% if page_obj|length > 0 %}
+  <div class="row">
+    {% for user in page_obj %}
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm text-center clickable-card" data-user-id="{{ user.id }}"
+        data-user-name="{{ user.name }}" data-user-age="{{ user.age }}"
+        data-user-date="{{ user.liked_date|date:'d M Y' }}"
+        data-user-image="{{ user.image_url|default:'/static/images/default-avatar.jpg' }}">
+        <div id="user-{{ user.id }}" class="d-none" data-location="{{ user.location }}"
+          data-pronouns="{{ user.pronouns }}" data-sexual="{{ user.sexual_orientation }}"
+          data-zodiac="{{ user.zodiac_sign }}" data-smoking="{{ user.smoking }}" data-drinking="{{ user.drinking }}"
+          data-drugs="{{ user.drug_use }}" data-has-kids="{{ user.has_kids }}" data-wants-kids="{{ user.wants_kids }}"
+          data-education="{{ user.education_level }}" data-occupation="{{ user.occupation }}"
+          data-religion="{{ user.religion }}" data-politics="{{ user.politics }}" data-ethnicity="{{ user.ethnicity }}"
+          data-height="{{ user.height_cm }}" data-body="{{ user.body_type }}" data-hobbies="{{ user.hobbies }}"
+          data-relationship="{{ user.relationship_goals }}" data-bio="{{ user.bio }}">
         </div>
-        {% empty %}
-        <p class="text-muted">No intros yet.</p>
-        {% endfor %}
+
+        <div class="card-body">
+          <img src="{{ user.image_url }}"
+            onerror="this.onerror=null;this.src='/static/images/blurred-default-avatar.jpg';"
+            class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: cover;" alt="Blurred Profile Picture">
+
+          <h5 class="card-title">{{ user.name }}, {{ user.age }}</h5>
+          <p class="card-text text-muted">Liked you on {{ user.liked_date|date:"d M Y" }}</p>
+
+          <form method="POST" action="{% url 'like_profile' %}" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="liked_user_id" value="{{ user.id }}">
+            <input type="hidden" name="from_likes" value="{{ active_tab }}">
+
+
+            <button type="submit" class="btn btn-success btn-sm">Like</button>
+          </form>
+
+          <form method="POST" action="{% url 'dislike_profile' %}" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="disliked_user_id" value="{{ user.id }}">
+            <input type="hidden" name="from_likes" value="{{ active_tab }}">
+
+
+            <button type="submit" class="btn btn-outline-danger btn-sm">Dislike</button>
+          </form>
+
+        </div>
       </div>
     </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-muted ml-3">No one has liked you yet.</p>
+  {% endif %}
+  {% endif %}
+  {% endif %}
 
-    <!-- You Liked Tab -->
-    <div class="tab-pane fade" id="you-liked" role="tabpanel">
-      <div class="row mt-3">
-        {% for user in outgoing_likes %}
-        <div class="col-md-4 mb-3">
-          <div class="card shadow-sm text-center">
+  <!-- You Liked Tab -->
+  {% if active_tab == 'outgoing' %}
+  <div class="row mt-3">
+    {% for user in page_obj %}
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm text-center clickable-card" data-user-id="{{ user.id }}"
+        data-user-name="{{ user.name }}" data-user-age="{{ user.age }}"
+        data-user-date="{{ user.liked_date|date:'d M Y' }}"
+        data-user-image="{{ user.image_url|default:'/static/images/default-avatar.jpg' }}">
+        <div id="user-{{ user.id }}" class="d-none" data-location="{{ user.location }}"
+          data-pronouns="{{ user.pronouns }}" data-sexual="{{ user.sexual_orientation }}"
+          data-zodiac="{{ user.zodiac_sign }}" data-smoking="{{ user.smoking }}" data-drinking="{{ user.drinking }}"
+          data-drugs="{{ user.drug_use }}" data-has-kids="{{ user.has_kids }}" data-wants-kids="{{ user.wants_kids }}"
+          data-education="{{ user.education_level }}" data-occupation="{{ user.occupation }}"
+          data-religion="{{ user.religion }}" data-politics="{{ user.politics }}" data-ethnicity="{{ user.ethnicity }}"
+          data-height="{{ user.height_cm }}" data-body="{{ user.body_type }}" data-hobbies="{{ user.hobbies }}"
+          data-relationship="{{ user.relationship_goals }}" data-bio="{{ user.bio }}">
+        </div>
+
+        <div class="card-body">
+          <img src="{{ user.image_url }}" onerror="this.onerror=null;this.src='/static/images/default-avatar.jpg';"
+            alt="Profile Picture" class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: cover;">
+
+          <h5 class="card-title">{{ user.name }}, {{ user.age }}</h5>
+          <p class="card-text text-muted">You liked them on {{ user.liked_date|date:"d M Y" }}</p>
+
+          <form method="POST" action="{% url 'dislike_profile' %}">
+            {% csrf_token %}
+            <input type="hidden" name="disliked_user_id" value="{{ user.id }}">
+            <input type="hidden" name="from_likes" id="modalFromLikes" value="{{ active_tab }}">
+            <button type="submit" class="btn btn-outline-danger btn-sm mt-2">Dislike</button>
+          </form>
+
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <p class="text-muted ml-3">You haven't liked anyone yet.</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- Shared Modal -->
+<div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl custom-wide-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitle">Profile</h5>
+        <button type="button" class="custom-close-button" data-bs-dismiss="modal" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body d-flex flex-column flex-md-row px-4 py-4" style="height: 85vh; overflow: hidden;">
+        <!-- Left: Profile Image Section (50%) -->
+        <div class="d-flex flex-column align-items-center justify-content-center text-center" style="flex: 1;">
+          <img id="modalImage" class="img-fluid rounded shadow mb-3"
+            style="max-height: 500px; object-fit: cover; border-radius: 1rem;" alt="Profile"
+            onerror="this.onerror=null;this.src='/static/images/default-avatar.jpg';">
+
+          <h4 class="fw-semibold mb-0" id="modalNameAge">Name, Age</h4><br>
+          <span id="modalDate" class="badge bg-secondary text-uppercase small px-3 py-1">LIKED ON</span>
+        </div>
+
+        <!-- Right: Scrollable Info Panel -->
+        <div class="ps-md-4 pe-2 overflow-auto" style="flex: 1; max-height: 100%;">
+          <!-- YOUR CARDS -->
+          <div class="card mb-3 shadow-sm">
             <div class="card-body">
-              <h5 class="card-title">{{ user.name }}</h5>
-              <p class="card-text text-muted">You liked them on {{ user.liked_date|date:"d M Y" }}</p>
+              <h5 class="fw-bold mb-2">🌍 Basic Info</h5>
+              <p class="mb-1"><strong>Gender:</strong> <span id="info-gender"></span></p>
+              <p class="mb-1"><strong>Location:</strong> <span id="info-location"></span></p>
+              <p class="mb-1"><strong>Pronouns:</strong> <span id="info-pronouns"></span></p>
+              <p class="mb-1"><strong>Sexual Orientation:</strong> <span id="info-sexual"></span></p>
+              <p><strong>Zodiac Sign:</strong> <span id="info-zodiac"></span></p>
             </div>
           </div>
-        </div>
-        {% empty %}
-        <p class="text-muted ml-3">You haven't liked anyone yet.</p>
-        {% endfor %}
-      </div>
-    </div>
 
+          <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+              <h5 class="fw-bold mb-2">🍹 Lifestyle</h5>
+              <p class="mb-1"><strong>Smoking:</strong> <span id="info-smoking"></span></p>
+              <p class="mb-1"><strong>Drinking:</strong> <span id="info-drinking"></span></p>
+              <p class="mb-1"><strong>Drug Use:</strong> <span id="info-drugs"></span></p>
+              <p class="mb-1"><strong>Has Kids:</strong> <span id="info-hasKids"></span></p>
+              <p><strong>Wants Kids:</strong> <span id="info-wantsKids"></span></p>
+            </div>
+          </div>
+
+          <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+              <h5 class="fw-bold mb-2">🎓 Education & Career</h5>
+              <p class="mb-1"><strong>Education:</strong> <span id="info-education"></span></p>
+              <p><strong>Occupation:</strong> <span id="info-occupation"></span></p>
+            </div>
+          </div>
+
+          <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+              <h5 class="fw-bold mb-2">🧠 Values & Beliefs</h5>
+              <p class="mb-1"><strong>Religion:</strong> <span id="info-religion"></span></p>
+              <p class="mb-1"><strong>Politics:</strong> <span id="info-politics"></span></p>
+              <p><strong>Ethnicity:</strong> <span id="info-ethnicity"></span></p>
+            </div>
+          </div>
+
+          <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+              <h5 class="fw-bold mb-2">📏 Height & Body</h5>
+              <p class="mb-1"><strong>Height:</strong> <span id="info-height"></span> cm</p>
+              <p><strong>Body Type:</strong> <span id="info-body"></span></p>
+            </div>
+          </div>
+
+          <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+              <h5 class="fw-bold mb-2">🎯 Hobbies & Goals</h5>
+              <p class="mb-1"><strong>Hobbies:</strong> <span id="info-hobbies"></span></p>
+              <p><strong>Relationship Goals:</strong> <span id="info-relationship"></span></p>
+            </div>
+          </div>
+
+          <div class="text-center mt-3">
+            <form id="modalDislikeForm" method="POST" action="/dislike/">
+              {% csrf_token %}
+              <input type="hidden" name="disliked_user_id" id="modalDislikeUserId">
+              <input type="hidden" name="from_likes" id="modalFromLikes" value="{{ active_tab }}">
+              <button type="submit" class="btn btn-outline-danger px-4 py-2">Dislike</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+
+
+    </div>
   </div>
 </div>
+
+<!-- Pagination -->
+<div class="fixed-pagination">
+  <ul class="pagination justify-content-center m-0">
+    {% if page_obj.has_previous %}
+    <li class="page-item">
+      <a class="page-link" href="?tab={{ active_tab }}&page={{ page_obj.previous_page_number }}" aria-label="Previous">
+        <span aria-hidden="true">&laquo;</span>
+      </a>
+    </li>
+    {% else %}
+    <li class="page-item disabled">
+      <span class="page-link">&laquo;</span>
+    </li>
+    {% endif %}
+
+    {% for i in page_obj.paginator.page_range %}
+    <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+      <a class="page-link" href="?tab={{ active_tab }}&page={{ i }}">{{ i }}</a>
+    </li>
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+    <li class="page-item">
+      <a class="page-link" href="?tab={{ active_tab }}&page={{ page_obj.next_page_number }}" aria-label="Next">
+        <span aria-hidden="true">&raquo;</span>
+      </a>
+    </li>
+    {% else %}
+    <li class="page-item disabled">
+      <span class="page-link">&raquo;</span>
+    </li>
+    {% endif %}
+  </ul>
+</div>
+
+
+{% if match_popup %}
+<div class="modal fade" id="matchModal" tabindex="-1" aria-modal="true" role="dialog">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center p-4 shadow rounded">
+      <h2 class="mb-3">💘 It's a Match!</h2>
+      <div class="d-flex flex-column align-items-center">
+        <img src="{{ match_popup.image|default:'/static/images/default-avatar.jpg' }}" alt="{{ match_popup.name }}"
+          class="img-fluid rounded-circle mb-3" style="max-width: 150px; object-fit: cover;">
+
+        <h4 class="mb-1">{{ match_popup.name }}</h4>
+        <p class="text-muted">You both liked each other!</p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script nonce="{{ request.csp_nonce }}">
+  document.addEventListener("DOMContentLoaded", function () {
+    const matchModalEl = document.getElementById("matchModal");
+    if (matchModalEl) {
+      const matchModal = new bootstrap.Modal(matchModalEl);
+      matchModal.show();
+
+      setTimeout(() => {
+        matchModal.hide();
+      }, 4000);
+    }
+  });
+</script>
+
+{% endif %}
+
 {% endblock %}
 
 {% block stylesheets %}
 <style>
-  .blur-overlay {
-    position: absolute;
-    top: 0;
+  .blurred-image {
+    filter: blur(8px);
+    opacity: 0.8;
+  }
+
+  .placeholder-bar {
+    background-color: #e0e0e0;
+    border-radius: 6px;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+
+  .name-bar {
+    width: 60%;
+    height: 20px;
+    margin: 0 auto;
+  }
+
+  .date-bar {
+    width: 40%;
+    height: 14px;
+    margin: 10px auto;
+  }
+
+  @keyframes pulse {
+    0% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.4;
+    }
+
+    100% {
+      opacity: 1;
+    }
+  }
+
+  .premium-overlay-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 999;
+    width: 80%;
+    max-width: 900px;
+  }
+
+  .premium-overlay-message .alert {
+    font-size: 1.1rem;
+    padding: 1rem 1.5rem;
+    background-color: #ff7f50;
+    color: white;
+    border: none;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  }
+
+  .cards-blurred-behind {
+    filter: blur(2px);
+    pointer-events: none;
+  }
+
+  .clickable-card {
+    cursor: pointer;
+    transition: transform 0.1s ease-in-out;
+  }
+
+  .clickable-card:hover {
+    transform: scale(1.02);
+  }
+
+  .fixed-pagination {
+    position: fixed;
+    bottom: 0;
     left: 0;
-    background: rgba(255,255,255,0.6);
+    right: 0;
+    background: transparent;
+    padding: 10px 0;
+    z-index: 1000;
+  }
+
+  .container {
+    padding-bottom: 90px;
+  }
+
+  .custom-wide-modal {
+    max-width: 95vw;
+    max-height: 95vh;
+    margin: 0 auto;
+  }
+
+  .custom-wide-modal .modal-content {
+    height: 90vh;
+    overflow-y: auto;
+    border-radius: 0.75rem;
+  }
+
+  .custom-close-button {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    width: 32px;
+    height: 32px;
+    background-color: #f8f9fa;
+    color: #212529;
+    border: 1.5px solid #ced4da;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+
+    display: flex;
+    align-items: center;
+    /* vertical centering */
+    justify-content: center;
+    /* horizontal centering */
+    padding: 0;
+  }
+
+
+  .custom-close-button:hover {
+    background-color: #dc3545;
+    color: #fff;
+    border-color: #dc3545;
   }
 </style>
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script nonce="{{ request.csp_nonce }}">
+
+
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".clickable-card").forEach(card => {
+      card.addEventListener("click", (event) => {
+        // 🛑 If the click came from a button or inside a form, do NOT open modal
+        if (
+          event.target.closest("button") ||
+          event.target.closest("form")
+        ) {
+          return;
+        }
+
+        handleCardClick(card);
+      });
+
+    });
+  });
+
+
+  function handleCardClick(card) {
+    const name = card.dataset.userName;
+    const age = card.dataset.userAge;
+    const date = card.dataset.userDate;
+    const image = card.dataset.userImage;
+
+    // Update modal header and image
+    document.getElementById("modalTitle").innerText = `Profile of ${name}`;
+    document.getElementById("modalDate").innerText = `Liked on ${date}`;
+    document.getElementById("modalNameAge").innerText = `${name}, ${age}`;
+
+    const modalImage = document.getElementById("modalImage");
+    modalImage.src = "";
+    modalImage.onerror = null;
+
+    modalImage.src = image || "/static/images/default-avatar.jpg";
+    modalImage.onerror = function () {
+      this.onerror = null;
+      this.src = "/static/images/default-avatar.jpg";
+    };
+
+    const profileDiv = document.getElementById(`user-${card.dataset.userId}`);
+    if (!profileDiv) return;
+
+    const get = attr => profileDiv.dataset[attr] || 'None';
+    const set = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.innerText = value;
+    };
+
+    // Set values in modal sections
+    set("info-gender", get("gender"));
+    set("info-location", get("location"));
+    set("info-pronouns", get("pronouns"));
+    set("info-sexual", get("sexual"));
+    set("info-zodiac", get("zodiac"));
+
+    set("info-smoking", get("smoking"));
+    set("info-drinking", get("drinking"));
+    set("info-drugs", get("drugs"));
+    set("info-hasKids", get("hasKids"));
+    set("info-wantsKids", get("wantsKids"));
+
+    set("info-education", get("education"));
+    set("info-occupation", get("occupation"));
+
+    set("info-religion", get("religion"));
+    set("info-politics", get("politics"));
+    set("info-ethnicity", get("ethnicity"));
+
+    set("info-height", get("height"));
+    set("info-body", get("body"));
+
+    set("info-hobbies", get("hobbies"));
+    set("info-relationship", get("relationship"));
+
+    // Set hidden input for Dislike
+    document.getElementById("modalDislikeUserId").value = card.dataset.userId;
+
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById("profileModal"));
+    modal.show();
+  }
+
+</script>
 {% endblock %}

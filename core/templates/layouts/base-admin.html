@@ -5,11 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>Django Admin | {% block title %}YourDatingApp{% endblock %}</title>
+  <title>Django Admin | {% block title %}AiSteadMai{% endblock %}</title>
 
   <link href="/static/assets/js/plugins/nucleo/css/nucleo.css" rel="stylesheet" />
   <link href="/static/assets/js/plugins/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet" />
   <link href="/static/assets/css/argon-dashboard.css?v=1.1.0" rel="stylesheet" />
+  <link href="/static/assets/css/custom-admin.css" rel="stylesheet" />
 </head>
 
 <body>
@@ -17,11 +18,29 @@
 
     <!-- ✅ Top Nav for Admin -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-3 px-4">
-      <div class="d-flex justify-content-between w-100 align-items-center">
-        <a class="navbar-brand font-weight-bold text-primary" href="{% url 'admin_dashboard' %}">
-          💘 YourDatingApp Admin
-        </a>
-        <a class="btn btn-outline-danger btn-sm" href="{% url 'logout' %}">Logout</a>
+      <div class="container-fluid d-flex justify-content-between align-items-center">
+
+        <!-- 🔹 Left: Logo + Nav Links -->
+        <div class="d-flex align-items-center gap-4">
+          <span class="navbar-brand font-weight-bold text-primary">💘 AiSteadMai</span>
+
+          <a href="{% url 'admin_dashboard' %}"
+            class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active fw-bold text-primary{% else %}text-dark{% endif %}">
+            📊 Admin Dashboard
+          </a>
+
+          <a href="{% url 'admin_report_dashboard' %}"
+            class="nav-link {% if request.resolver_match.url_name == 'admin_report_dashboard' %}active fw-bold text-danger{% else %}text-dark{% endif %}">
+            📝 Manage Reports
+          </a>
+        </div>
+
+        <!-- 🔸 Right: Logout Button -->
+        <form method="POST" action="{% url 'logout' %}" class="ms-auto">
+          {% csrf_token %}
+          <button class="btn btn-outline-danger btn-sm" type="submit">Logout</button>
+        </form>
+
       </div>
     </nav>
 
@@ -33,4 +52,5 @@
 
   {% block javascripts %}{% endblock %}
 </body>
+
 </html>

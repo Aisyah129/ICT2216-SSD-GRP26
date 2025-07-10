@@ -1,0 +1,113 @@
+<!-- Report Modal -->
+<style>
+  .modal-header .modal-title {
+    font-weight: 600;
+  }
+
+  .report-modal .form-label {
+    font-weight: 500;
+  }
+
+  .report-modal textarea,
+  .report-modal select {
+    resize: none;
+    box-shadow: none;
+  }
+
+  .report-modal select:invalid {
+    color: gray;
+  }
+
+  .report-modal .modal-footer {
+    justify-content: space-between;
+  }
+
+  .report-modal .btn-danger {
+    font-weight: 600;
+  }
+
+  .report-modal .btn-close {
+    box-shadow: none;
+  }
+</style>
+
+<div class="modal fade report-modal" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'submit_report' %}?index={{ next_index|add:'-1' }}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="reportModalLabel">🚩 Report Profile</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+
+          <!-- Hidden field for reported user -->
+          <input type="hidden" name="reported_profile_id" value="{{ profile.user_id_fk.user_id }}">
+
+          <div class="mb-3">
+            <label for="reason" class="form-label">Reason</label>
+            <select class="form-select" name="reason" id="reason" required>
+              <option value="" disabled selected>-- Select --</option>
+              <option value="Inappropriate Content">Inappropriate Content</option>
+              <option value="Fake Profile">Fake Profile</option>
+              <option value="Harassment">Harassment</option>
+              <option value="Spam">Spam</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="details" class="form-label">Description</label>
+            <textarea
+              class="form-control"
+              name="details"
+              id="details"
+              rows="3"
+              placeholder="Provide more context..."
+              minlength="10"
+              maxlength="300"
+              required
+            ></textarea>
+            <small id="detailsFeedback" class="text-error"></small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Submit Report</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form    = document.querySelector('#reportModal form');
+  const details = document.getElementById('details');
+  const feedback= document.getElementById('detailsFeedback');
+
+  const validate = () => {
+    const len = details.value.trim().length;
+    if (len < 10) {
+      details.setCustomValidity('Please enter at least 10 characters.');
+      feedback.textContent = `Minimum 10 chars required (${len}/10).`;
+    } else {
+      details.setCustomValidity('');
+      feedback.textContent = '';
+    }
+  };
+
+  // Live check on input
+  details.addEventListener('input', validate);
+
+  // Final check on submit
+  form.addEventListener('submit', e => {
+    validate();
+    if (!form.checkValidity()) {
+      e.preventDefault();
+      details.reportValidity();
+    }
+  });
+});

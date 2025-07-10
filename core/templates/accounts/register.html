@@ -2,28 +2,71 @@
 
 {% block title %} Register {% endblock title %}
 
-<!-- Specific CSS goes HERE -->
-{% block stylesheets %}{% endblock stylesheets %}
+{% block stylesheets %}
+<style>
+  .feedback-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+  }
+
+  .text-error {
+    color: red;
+    font-size: 0.875rem;
+    display: block;
+    margin-top: 0.5rem;
+  }
+
+  .password-line {
+    height: 4px;
+    border-radius: 4px;
+    margin-top: 0.25rem;
+    transition: width 0.3s ease-in-out, background-color 0.3s ease-in-out;
+  }
+
+  label {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+  }
+
+  .form-group label {
+    margin-top: 0.75rem;
+  }
+
+  select:hover,
+  input[type="range"]:hover {
+    cursor: pointer;
+  }
+</style>
+{% endblock stylesheets %}
 
 {% block content %}
-
-<!-- Page content -->
 <div class="container mt--8 pb-5">
-  <!-- Table -->
   <div class="row justify-content-center">
     <div class="col-lg-6 col-md-8">
-
       <div class="card bg-secondary shadow border-0">
         <div class="card-body px-lg-5 py-lg-5">
-          <div class="text-center text-muted mb-4">
 
-            <small>{{ msg }}</small>
-
+          {% if msg %}
+          <div class="alert alert-danger text-center mb-3">
+            {{ msg }}
           </div>
+          {% endif %}
 
           <form method="POST">
             {% csrf_token %}
 
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger text-center mb-3">
+              {% for error in form.non_field_errors %}
+              <p class="mb-0">{{ error }}</p>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Email -->
             <div class="form-group">
               <div class="input-group input-group-alternative mb-3">
                 <div class="input-group-prepend">
@@ -31,63 +74,286 @@
                 </div>
                 {{ form.email }}
               </div>
-            </div>
-            <span class="text-error">{{ form.email.errors }}</span>
 
+            </div>
+
+            <!-- Password -->
             <div class="form-group">
               <div class="input-group input-group-alternative">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
                 </div>
-                {{ form.password}}
+                <input type="password" name="password" id="id_password" class="form-control" placeholder="Password"
+                  minlength="8" maxlength="64" pattern=".{8,64}" title="8–64 characters" required>
               </div>
-            </div>
-            <span class="text-error">{{ form.password.error }}</span>
 
+              <!-- Instruction -->
+              <small class="text-muted">Use 8–64 characters; a memorable passphrase is best.</small>
+
+              <!-- Strength feedback -->
+              <div id="password-feedback" class="feedback-message" style="display: none;">
+                <span id="password-emoji">⚠️</span>
+                <span id="password-message">Too short. Must be at least 8 characters</span>
+              </div>
+              <div id="password-line" class="password-line" style="display: none; width: 5%; background-color: gray;">
+              </div>
+
+              <!-- Django validation error -->
+              {% for error in form.password.errors %}
+              <span class="text-error">{{ error }}</span>
+              {% endfor %}
+            </div>
+
+            <!-- Confirm Password -->
             <div class="form-group">
               <div class="input-group input-group-alternative">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
                 </div>
-                {{ form.password}}
+                <input type="password" name="confirm_password" id="id_confirm_password" class="form-control"
+                  placeholder="Confirm Password" minlength="8" maxlength="64" title="Repeat your password" required>
               </div>
+              <div id="match-message" class="feedback-message"></div>
+              {% for error in form.confirm_password.errors %}
+              <span class="text-error">{{ error }}</span>
+              {% endfor %}
             </div>
-            <span class="text-error">{{ form.password.error }}</span>
 
+              <hr class="my-4" />
+
+            <!-- Name -->
+            <div class="form-group">
+              <label for="id_name">Name</label>
+              <div class="input-group input-group-alternative mb-3">
+                <div class="input-group-prepend">
+                  <span class="input-group-text"><i class="ni ni-single-02"></i></span>
+                </div>
+                <input type="text" name="name" id="id_name" class="form-control" placeholder="Name"
+                  pattern="[A-Za-z\s\-]+" title="Only letters, spaces, and hyphens" required>
+              </div>
+              {% for error in form.name.errors %}
+              <span class="text-error">{{ error }}</span>
+              {% endfor %}
+            </div>
+
+              <!-- Age -->
+              <div class="form-group">
+                <label for="id_age">Age: <output id="ageOutputId">{{ form.age.value|default:18 }}</output></label>
+                {{ form.age }}
+                {% for error in form.age.errors %}
+              <span class="text-error">{{ error }}</span>
+                {% endfor %}
+              </div>
+
+              <!-- Gender -->
+              <div class="form-group">
+                <label>Gender</label>
+                <div class="input-group input-group-alternative">
+                  {{ form.gender }}
+                </div>
+                {% for error in form.gender.errors %}
+              <span class="text-error">{{ error }}</span>
+                {% endfor %}
+              </div>
+
+            <!-- Location -->
+            <div class="form-group">
+              <label for="id_location">Location</label>
+              <div class="input-group input-group-alternative mb-3">
+                <div class="input-group-prepend">
+                  <span class="input-group-text"><i class="ni ni-pin-3"></i></span>
+                </div>
+                <input type="text" name="location" id="id_location" class="form-control"
+                  placeholder="e.g. Singapore, Kuala Lumpur" pattern="[A-Za-z,\s]{2,50}"
+                  title="Only letters, commas, and spaces (2–50 chars)" maxlength="50">
+              </div>
+              {% for error in form.location.errors %}
+              <span class="text-error">{{ error }}</span>
+              {% endfor %}
+            </div>
+
+            <!-- Privacy Checkbox -->
             <div class="row my-4">
               <div class="col-12">
                 <div class="custom-control custom-control-alternative custom-checkbox">
-                  <input class="custom-control-input" id="customCheckRegister" type="checkbox">
-                  <label class="custom-control-label" for="customCheckRegister">
-                    <span class="text-muted">I agree with the <a href="#!">Privacy Policy</a></span>
+                  <input class="custom-control-input" id="customCheckConsent" name="consent" type="checkbox" required>
+                  <label class="custom-control-label" for="customCheckConsent">
+                    <span class="text-muted">
+                      I consent to the collection and use of my personal data for account creation and service use.
+                    </span>
                   </label>
                 </div>
               </div>
             </div>
-            <div class="text-center">
-              <button type="submit" class="btn btn-primary mt-4">Create account</button>
+            <div class="form-group mb-3">
+              {{ form.captcha }}
+              {% for error in form.captcha.errors %}
+              <span class="text-danger text-sm">{{ error }}</span>
+              {% endfor %}
             </div>
+
+              <!-- Submit -->
+              <div class="text-center">
+                <button type="submit" class="btn btn-primary mt-4">Create account</button>
+              </div>
           </form>
+
         </div>
       </div>
-
     </div>
   </div>
-
-  <div class="row mt-3">
-    <div class="col-3"></div>
-    <div class="col-3">
-      <a href="{% url 'login' %}" class="text-light"><small>Login</small></a>
-    </div>
-    <div class="col-3 text-right">
-      <a href="https://appseed.us/support" class="text-light"><small>Get Support</small></a>
-    </div>
-  </div>
-
 </div>
-</div>
-
 {% endblock content %}
 
-<!-- Specific JS goes HERE -->
-{% block javascripts %}{% endblock javascripts %}
+{% block javascripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Check password strength and breach status
+    const passwordInput = document.getElementById("id_password");
+    const emoji = document.getElementById("password-emoji");
+    const message = document.getElementById("password-message");
+    const line = document.getElementById("password-line");
+    const feedbackBox = document.getElementById("password-feedback");
+    const registerButton = document.querySelector("form button[type=submit]");
+    const cpwd = document.getElementById('id_confirm_password');
+
+    function hasSpecialChar(pwd) {
+      return /[^A-Za-z0-9]/.test(pwd);
+    }
+
+    function hasNumber(pwd) {
+      return /\d/.test(pwd);
+    }
+
+    async function isBreached(password) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(password);
+      const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+      const prefix = hashHex.slice(0, 5);
+      const suffix = hashHex.slice(5);
+      const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`);
+      const text = await response.text();
+      return text.includes(suffix);
+    }
+
+    passwordInput.addEventListener("input", async function () {
+      const pwd = passwordInput.value;
+
+      if (!pwd) {
+        feedbackBox.style.display = "none";
+        line.style.display = "none";
+        registerButton.disabled = true;
+        return;
+      }
+
+      feedbackBox.style.removeProperty("display");
+      line.style.removeProperty("display");
+
+      let feedback = {
+        emoji: "⚠️",
+        message: "Too short. Must be at least 8 characters",
+        color: "gray",
+        width: "5%",
+        allow: false
+      };
+
+      if (pwd.length >= 8 && (!hasNumber(pwd) || !hasSpecialChar(pwd))) {
+        feedback = {
+          emoji: "😐",
+          message: "Weak. Include a number and a special character",
+          color: "red",
+          width: "25%",
+          allow: false
+        };
+      }
+
+      if (pwd.length >= 10 && hasNumber(pwd)) {
+        feedback = {
+          emoji: "🙂",
+          message: "So-so. Add more characters and symbols",
+          color: "orange",
+          width: "50%",
+          allow: false
+        };
+      }
+
+      if (pwd.length >= 12 && hasNumber(pwd) && hasSpecialChar(pwd)) {
+        feedback = {
+          emoji: "👍",
+          message: "Strong password",
+          color: "#ffcc00",
+          width: "75%",
+          allow: true
+        };
+      }
+
+      if (pwd.length >= 16 && hasNumber(pwd) && hasSpecialChar(pwd)) {
+        feedback = {
+          emoji: "✅",
+          message: "Awesome! Very secure password",
+          color: "green",
+          width: "100%",
+          allow: true
+        };
+      }
+
+      // Breach check
+      if (pwd.length >= 8) {
+        const breached = await isBreached(pwd);
+        if (breached) {
+          feedback = {
+            emoji: "🚫",
+            message: "Password found in breaches. Choose another password",
+            color: "red",
+            width: "30%",
+            allow: false
+          };
+        }
+      }
+
+      emoji.textContent = feedback.emoji;
+      message.textContent = feedback.message;
+      line.style.backgroundColor = feedback.color;
+      line.style.width = feedback.width;
+
+      registerButton.disabled = !feedback.allow;
+    });
+
+    // Confirm password match check
+    const matchMessage = document.getElementById('match-message');
+
+    function validateMatch() {
+      const password = passwordInput.value;
+      const confirm = cpwd.value;
+
+      if (!password && confirm) {
+        matchMessage.innerHTML = `<span style="color: red;">🚫 Password is required</span>`;
+        matchMessage.style.marginTop = '10px';
+      } else if (password && confirm && password !== confirm) {
+        matchMessage.innerHTML = `<span style="color: red;">❌ Passwords don't match</span>`;
+        matchMessage.style.marginTop = '10px';
+      } else if (password && confirm && password === confirm) {
+        matchMessage.innerHTML = `<span style="color: green;">✅ Passwords match</span>`;
+        matchMessage.style.marginTop = '10px';
+      } else {
+        matchMessage.innerHTML = '';
+      }
+    }
+
+    passwordInput.addEventListener('input', validateMatch);
+    cpwd.addEventListener('input', validateMatch);
+
+    // Age slider setup
+    const ageSlider = document.getElementById("id_age");
+    const output = document.getElementById("ageOutputId");
+    if (ageSlider && output) {
+      output.value = ageSlider.value;
+    }
+  });
+</script>
+
+
+
+{% endblock javascripts %}

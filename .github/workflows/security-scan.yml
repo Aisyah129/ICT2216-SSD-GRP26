@@ -1,0 +1,75 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [ merge/all, main, develop ]
+  pull_request:
+    branches: [ merge/all, main ]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Bandit (Python security linter)
+      run: pip install bandit
+
+    - name: Run Bandit security scan
+      run: |
+        # Scan for common security issues in Python code
+        bandit -r core/ -f json -o bandit-report.json || true
+        
+        # Display results in console
+        echo "=== Bandit Security Scan Results ==="
+        bandit -r core/ || true
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+
+    - name: Run Semgrep security scan
+      continue-on-error: true
+      run: |
+        # Install semgrep
+        python -m pip install semgrep
+        
+        # Run semgrep with multiple rulesets
+        semgrep --config=auto \
+                --config=p/security-audit \
+                --config=p/python \
+                --config=p/flask \
+                --config=p/owasp-top-ten \
+                --json \
+                --output=semgrep-results.json \
+                core/ || true
+        
+        # Display summary
+        echo "=== Semgrep Security Scan Results ==="
+        semgrep --config=auto core/ || true
+
+    - name: Upload security reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-scan-reports
+        path: |
+          bandit-report.json
+          trivy-results.sarif
+          semgrep-results.json
