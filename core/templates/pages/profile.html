@@ -456,24 +456,17 @@
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const languageSelect = document.getElementById('languageSelect');
-    const editButton = document.getElementById('editButton');
 
-    let choicesInstance = new Choices(languageSelect, {
-      removeItemButton: true,
-      shouldSort: false,
-      searchEnabled: true,
-      placeholderValue: 'Select languages...'
-    });
-
-    // Disable it on load (Choices way)
-    choicesInstance.disable();
-
-    editButton.addEventListener('click', function () {
-      choicesInstance.enable();  // ✅ This enables the rendered Choices UI
-    });
+    if (languageSelect && !languageSelect.disabled) {
+      new Choices(languageSelect, {
+        removeItemButton: true,
+        shouldSort: false,
+        searchEnabled: true,
+        placeholderValue: 'Select languages...'
+      });
+    }
   });
 </script>
-
 
 
 
