@@ -24,3 +24,18 @@
 ```bash
 git clone https://github.com/YOUR-USERNAME/ICT2216-SSD-GRP26.git
 cd ICT2216-SSD-GRP26
+<!-- Create and Activate a Virtual Environment -->
+python -m venv venv
+.\venv\Scripts\activate
+<!-- Install Required Python Packages -->
+pip install -r requirements.txt
+<!-- Apply Database Migrations -->
+python manage.py makemigrations
+python manage.py migrate
+<!-- Run the Development Server -->
+python manage.py runserver
+```
+
+🔗 Live Production Site: https://www.aisteadmai.shop/login/
+
+
