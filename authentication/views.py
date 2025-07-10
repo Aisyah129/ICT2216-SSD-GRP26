@@ -108,12 +108,6 @@ def login_view(request):
             # 🔒 Check lock AFTER valid form, BEFORE querying user
             if AxesProxyHandler.is_locked(request):
                 msg = "🚫 Too many failed login attempts. Please try again later."
-
-                raw_ip = get_client_ip(request)
-
-                log_action(user=None, action_type="IP blocked after too many failed login attempts", severity="CRITICAL",
-                    request=request, metadata={"blocked_ip": raw_ip})
-
                 return render(request, "accounts/login.html", {
                     "form": form,
                     "msg": msg,
@@ -491,37 +485,6 @@ def profile_view(request):
             'relationship_goals', 'hobbies', 'bio'
         ]
         
-        # validation
-        h = request.POST.get('hobbies', '').strip()
-        if h and (len(h) > 200 or not re.match(r'^[A-Za-z,\s]+$', h)):
-            messages.error(request,
-                "Hobbies may only contain letters, commas, and spaces (up to 200 characters)."
-            )
-            return redirect('profile')
-        
-        b = request.POST.get('bio', '').strip()
-        if len(b) > 500:
-            messages.error(request, "About Me must be at most 500 characters.")
-            return redirect('profile')
-        
-        occ = request.POST.get('occupation', '').strip()
-        if occ and not re.match(r'^[A-Za-z0-9\s\-\.\&]{2,100}$', occ):
-            messages.error(request, "Occupation must be 2–100 characters (letters, numbers, spaces, - . &).")
-            return redirect('profile')
-        
-        loc = request.POST.get('location', '').strip()
-        if loc and len(loc) > 50:
-            messages.error(request, "Location must be at most 50 characters.")
-            return redirect('profile')
-        
-        try:
-            age = int(request.POST.get('age', 0))
-            if not (18 <= age <= 90):
-                raise ValueError
-        except ValueError:
-            messages.error(request, "Age must be a number between 18 and 90.")
-            return redirect('profile')
-
         for field in editable_fields:
             if field in request.POST:
                 value = request.POST.get(field).strip()
