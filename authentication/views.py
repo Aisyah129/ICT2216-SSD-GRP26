@@ -7,7 +7,6 @@ import random
 import uuid
 from datetime import datetime, timezone as dt_timezone, timedelta
 from typing import Optional  # ← used in a few type-hints
-import re
 
 # ✦ Third-party libraries
 import boto3
@@ -108,12 +107,6 @@ def login_view(request):
             # 🔒 Check lock AFTER valid form, BEFORE querying user
             if AxesProxyHandler.is_locked(request):
                 msg = "🚫 Too many failed login attempts. Please try again later."
-
-                raw_ip = get_client_ip(request)
-
-                log_action(user=None, action_type="IP blocked after too many failed login attempts", severity="CRITICAL",
-                    request=request, metadata={"blocked_ip": raw_ip})
-
                 return render(request, "accounts/login.html", {
                     "form": form,
                     "msg": msg,
@@ -478,97 +471,6 @@ def user_dashboard(request):
 @login_required
 def profile_view(request):
     profile = get_object_or_404(Profile, user_id_fk=request.user)
-
-    # Common context pieces your template needs on both GET and POST
-    def build_context(form_data=None):
-        primary_image      = profile.profileimage_set.filter(is_primary=True).first()
-        primary_image_url  = get_safe_profile_image_url(primary_image, True)
-        all_images         = [
-            {"id": img.image_id,
-             "url": get_safe_profile_image_url(img, True),
-             "is_primary": img.is_primary}
-            for img in profile.profileimage_set.order_by('-uploaded_at')
-        ]
-        all_languages      = Language.objects.all()
-        selected_language_ids = list(profile.languages.values_list('language_id_fk__language_id', flat=True))
-        ctx = {
-            "profile": profile,
-            "primary_image": primary_image_url,
-            "images": all_images,
-            "all_languages": all_languages,
-            "selected_language_ids": selected_language_ids,
-        }
-        if form_data:
-            ctx.update(form_data)
-        return ctx
-
-    if request.method == "POST":
-        errors = []
-        data   = request.POST
-
-        # 1) Custom validations
-        h = data.get('hobbies', '').strip()
-        if h and (len(h) > 200 or not re.match(r'^[A-Za-z,\s]+$', h)):
-            errors.append("Hobbies may only contain letters, commas, and spaces (up to 200 characters).")
-
-        b = data.get('bio', '').strip()
-        if len(b) > 500:
-            errors.append("About Me must be at most 500 characters.")
-
-        occ = data.get('occupation', '').strip()
-        if occ and not re.match(r'^[A-Za-z0-9\s\-\.\&]{2,100}$', occ):
-            errors.append("Occupation must be 2–100 characters (letters, numbers, spaces, -, ., &).")
-
-        loc = data.get('location', '').strip()
-        if loc and len(loc) > 50:
-            errors.append("Location must be at most 50 characters.")
-
-        try:
-            age = int(data.get('age', 0))
-            if not (18 <= age <= 90):
-                raise ValueError
-        except ValueError:
-            errors.append("Age must be a number between 18 and 90.")
-
-        if errors:
-            for msg in errors:
-                messages.error(request, msg)
-            # Re-render with the same POST values so the user doesn’t lose them:
-            return render(request, "pages/profile.html", build_context(form_data={
-                "old": data  # you can use `old.age`, `old.hobbies` in your template
-            }))
-
-        # 2) No validation errors → save all fields
-        editable_fields = [
-            'age', 'gender', 'height_cm', 'sexual_orientation', 'pronouns',
-            'body_type', 'location', 'education_level', 'occupation',
-            'religion', 'ethnicity', 'politics', 'smoking', 'drinking',
-            'drug_use', 'has_kids', 'wants_kids', 'zodiac_sign',
-            'relationship_goals', 'hobbies', 'bio'
-        ]
-        for f in editable_fields:
-            if f in data:
-                setattr(profile, f, data[f].strip() or None)
-        profile.last_updated = timezone.now()
-        profile.save(update_fields=editable_fields + ['last_updated'])
-
-        # 3) Languages (many-to-many)
-        profile.languages.all().delete()
-        for lang_id in data.getlist("languages"):
-            try:
-                lang = Language.objects.get(language_id=lang_id)
-                ProfileLanguage.objects.create(profile_id_fk=profile, language_id_fk=lang)
-            except Language.DoesNotExist:
-                pass
-
-        log_action(request.user, "Updated profile information", "INFO", request)
-        messages.success(request, "Your profile has been saved.")
-        return redirect('profile')
-
-    # GET
-    return render(request, "pages/profile.html", build_context())
-
-    profile = get_object_or_404(Profile, user_id_fk=request.user)
     if not has_permission(request.user, "edit_own_profile", profile):
         return redirect('login')
 
@@ -581,37 +483,6 @@ def profile_view(request):
             'drug_use', 'has_kids', 'wants_kids', 'zodiac_sign',
             'relationship_goals', 'hobbies', 'bio'
         ]
-        
-        # validation
-        h = request.POST.get('hobbies', '').strip()
-        if h and (len(h) > 200 or not re.match(r'^[A-Za-z,\s]+$', h)):
-            messages.error(request,
-                "Hobbies may only contain letters, commas, and spaces (up to 200 characters)."
-            )
-            return redirect('profile')
-        
-        b = request.POST.get('bio', '').strip()
-        if len(b) > 500:
-            messages.error(request, "About Me must be at most 500 characters.")
-            return redirect('profile')
-        
-        occ = request.POST.get('occupation', '').strip()
-        if occ and not re.match(r'^[A-Za-z0-9\s\-\.\&]{2,100}$', occ):
-            messages.error(request, "Occupation must be 2–100 characters (letters, numbers, spaces, - . &).")
-            return redirect('profile')
-        
-        loc = request.POST.get('location', '').strip()
-        if loc and len(loc) > 50:
-            messages.error(request, "Location must be at most 50 characters.")
-            return redirect('profile')
-        
-        try:
-            age = int(request.POST.get('age', 0))
-            if not (18 <= age <= 90):
-                raise ValueError
-        except ValueError:
-            messages.error(request, "Age must be a number between 18 and 90.")
-            return redirect('profile')
 
         for field in editable_fields:
             if field in request.POST:
