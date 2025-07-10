@@ -196,6 +196,12 @@ class SignUpForm(forms.Form):
         if not re.match(r'^[A-Za-z\s]+$', name):
             raise forms.ValidationError("Name can only contain letters and spaces.")
         return name
+    
+    def clean_age(self):
+        age = self.cleaned_data.get('age')
+        if age is None or age < 18 or age > 90:
+            raise forms.ValidationError("Age must be between 18 and 90.")
+        return age
 
 
 class ProfileForm(forms.ModelForm):
@@ -220,3 +226,40 @@ class ProfileForm(forms.ModelForm):
             'bio':     forms.Textarea(attrs={'rows': 4, 'class': 'form-control form-control-alternative'}),
             'hobbies': forms.Textarea(attrs={'rows': 3, 'class': 'form-control form-control-alternative'})
         })
+
+    def clean_age(self):
+        age = self.cleaned_data.get('age')
+        if age is None or age < 18 or age > 90:
+            raise forms.ValidationError("Age must be between 18 and 90.")
+        return age
+
+    def clean_height_cm(self):
+        h = self.cleaned_data.get('height_cm')
+        if h is None or h < 100 or h > 250:
+            raise forms.ValidationError("Height must be between 100cm and 250cm.")
+        return h
+
+    def clean_location(self):
+        loc = self.cleaned_data.get('location', '').strip()
+        if loc and len(loc) > 50:
+            raise forms.ValidationError("Location must be under 50 characters.")
+        return loc
+
+    def clean_occupation(self):
+        occ = self.cleaned_data.get('occupation', '').strip()
+        if occ and not re.match(r'^[A-Za-z0-9\s\-\.\&]{2,100}$', occ):
+            raise forms.ValidationError("Occupation can only contain letters, numbers, spaces, and - . & (2–100 chars).")
+        return occ
+
+    def clean_hobbies(self):
+        h = self.cleaned_data.get('hobbies', '').strip()
+        if h and (len(h) > 200 or not re.match(r'^[A-Za-z,\s]+$', h)):
+            raise forms.ValidationError("Hobbies must be under 200 chars and only letters, commas, and spaces.")
+        return h
+
+    def clean_bio(self):
+        bio = self.cleaned_data.get('bio', '').strip()
+        if len(bio) > 500:
+            raise forms.ValidationError("Bio must be under 500 characters.")
+        return bio
+

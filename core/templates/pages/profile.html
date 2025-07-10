@@ -413,6 +413,7 @@
                 class="form-control form-control-alternative"
                 maxlength="200"
                 placeholder="e.g. Photography, Reading"
+                pattern="^[A-Za-z,\s]{0,200}$"
                 title="Only letters, commas, and spaces (max 200 chars)"
               >{{ profile.hobbies|default:'' }}</textarea>
               <small id="hobbiesCharCount" class="text-muted char-counter d-none">0/200 characters</small>
