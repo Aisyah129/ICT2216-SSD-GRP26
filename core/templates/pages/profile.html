@@ -773,13 +773,32 @@ document.addEventListener('DOMContentLoaded', () => {
 {% endblock javascripts %}
 
 <style>
+  /* When disabled, show tags but make them look muted */
   .choices[data-type*="select-multiple"].is-disabled .choices__inner {
     background-color: #f8f9fa;
     cursor: not-allowed;
-    opacity: 0.8;
+    opacity: 0.9;
+    border: 1px solid #dee2e6;
+    min-height: 44px;
   }
-  .choices.is-disabled .choices__input {
+
+  .choices[data-type*="select-multiple"].is-disabled .choices__item {
+    background-color: #e9ecef;
+    color: #6c757d;
+    border: none;
+    border-radius: 20px;
+    padding: 3px 10px;
+    margin: 3px 5px 3px 0;
+    font-size: 0.85rem;
+  }
+
+  .choices[data-type*="select-multiple"].is-disabled .choices__input {
     display: none !important;
   }
+
+  .choices[data-type*="select-multiple"].is-disabled .choices__button {
+    display: none !important; /* Hide the "x" button */
+  }
 </style>
+
 
