@@ -98,6 +98,7 @@ from authentication.models import (
     PreferencesRelationship
 )
 from .forms import ReportForm
+from authentication.models import Match
 
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
@@ -524,13 +525,19 @@ def profile_view(request):
     if request.method == "POST":
         form = ProfileUpdateForm(request.POST, instance=profile)
         if form.is_valid():
-            form.save()
+            profile = form.save()  # Save profile fields
+
+            # ✅ Save languages (ManyToMany)
+            languages = form.cleaned_data.get('languages')
+            if languages:
+                profile.languages.set(languages)  # Overwrite old languages
+            else:
+                profile.languages.clear()  # Clear if nothing selected
+
             messages.success(request, "✅ Profile updated successfully.")
             return redirect('profile')
         else:
             messages.error(request, "❌ Please correct the errors below.")
-    else:
-        form = ProfileUpdateForm(instance=profile)
 
     primary_image = profile.profileimage_set.filter(is_primary=True).first()
     primary_image_url = get_safe_profile_image_url(primary_image, True)
