@@ -68,7 +68,7 @@ from .forms import (
     VerificationCodeForm,
 )
 
-from .models import User, Report
+from .models import User, Report, ProfileLanguage
 from authentication.decorators import user_only
 from .utils import has_permission
 from authentication.middleware import get_client_ip
@@ -550,7 +550,9 @@ def profile_view(request):
         for img in profile.profileimage_set.order_by('-uploaded_at')
     ]
     all_languages = Language.objects.all()
-    selected_language_ids = list(profile.languages.values_list('language_id_fk__language_id', flat=True))
+    selected_language_ids = list(
+        ProfileLanguage.objects.filter(profile_id_fk=profile).values_list('language_id_fk', flat=True)
+    )
 
     return render(request, "pages/profile.html", {
         "form": form,
