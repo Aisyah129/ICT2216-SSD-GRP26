@@ -166,7 +166,7 @@
                   <select name="sexual_orientation" class="form-select">
                     <option value="">-- Select Sexual Orientation --</option>
                     <option value="straight" {% if profile.sexual_orientation == "straight" %}selected{% endif %}>Straight</option>
-                    <option value="gay" {% if profile.sexual_orientation == "gay" %}selected{% endif %}>Homosexual</option>
+                    <option value="gay" {% if profile.sexual_orientation == "gay" %}selected{% endif %}>Gay</option>
                     <option value="bisexual" {% if profile.sexual_orientation == "bisexual" %}selected{% endif %}>Bisexual</option>
                   </select>
                 </div>
@@ -353,7 +353,7 @@
                   <select name="wants_kids" class="form-select" {% if not is_editing %}disabled{% endif %}>
                     <option value="">-- Select Option --</option>
                     <option value="don't want kids" {% if profile.wants_kids == "don't want kids" %}selected{% endif %}>Don't want kids</option>
-                    <option value="open to kids" {% if profile.wants_kids == "open to kids" %}selected{% endif %}>Open to having kids</option>
+                    <option value="open to kids" {% if profile.wants_kids == "open to kids" %}selected{% endif %}>Open to kids</option>
                     <option value="want kids" {% if profile.wants_kids == "want kids" %}selected{% endif %}>Want kids</option>
                   </select>
                 </div>
@@ -395,14 +395,19 @@
               </div>
             </div>
 
-            <select name="languages" id="languageSelect" class="form-control" multiple>
-              {% for language in all_languages %}
-                <option value="{{ language.language_id }}"
-                  {% if language.language_id in selected_language_ids %}selected{% endif %}>
-                  {{ language.language_name|title }}
-                </option>
-              {% endfor %}
-            </select>
+            <div class="form-group">
+              <label for="languageSelect">Languages</label>
+              <select name="languages" id="languageSelect" class="form-select" multiple {% if not is_editing %}disabled{% endif %}>
+                {% for language in all_languages %}
+                  <option value="{{ language.language_id }}"
+                    {% if language.language_id in selected_language_ids %}selected{% endif %}>
+                    {{ language.language_name }}
+                  </option>
+                {% endfor %}
+              </select>
+              <small class="text-muted">Hold Ctrl (Windows) or ⌘ Cmd (Mac) to select multiple.</small>
+            </div>
+
 
             <div class="form-group">
               <label>Hobbies</label>
@@ -413,7 +418,6 @@
                 class="form-control form-control-alternative"
                 maxlength="200"
                 placeholder="e.g. Photography, Reading"
-                pattern="^[A-Za-z,\s]{0,200}$"
                 title="Only letters, commas, and spaces (max 200 chars)"
               >{{ profile.hobbies|default:'' }}</textarea>
               <small id="hobbiesCharCount" class="text-muted char-counter d-none">0/200 characters</small>
@@ -448,84 +452,65 @@
 
 <!-- Choices.js JS -->
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const languageSelect = document.getElementById('languageSelect');
-
-   const languageChoices = new Choices(languageSelect, {
-  removeItemButton: true,
-  shouldSort: false,
-  searchEnabled: true,
-  placeholderValue: 'Select languages...'
-});
-
-// ⛔ But keep the <select> disabled on load
-languageSelect.setAttribute('disabled', '');  // Prevent editing until user clicks "Edit"
+    
+    if (languageSelect && !languageSelect.disabled) {
+      new Choices(languageSelect, {
+        removeItemButton: true,
+        shouldSort: false,
+        searchEnabled: true,
+        placeholderValue: 'Select languages...'
+      });
+    }
   });
 </script>
-
 
 {% endblock content %}
 
 <!-- Specific JS goes HERE -->
 {% block javascripts %}
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('profile-form');
-  const editBtn = document.getElementById('editProfileBtn');
-  const saveBtn = document.getElementById('saveProfileBtn');
-  const cancelBtn = document.getElementById('cancelProfileBtn');
-  const inputs = form.querySelectorAll('input, textarea, select');
-  const counters  = document.querySelectorAll('.char-counter');
-  const languageSelect = document.getElementById('languageSelect');
+<script nonce="{{ request.csp_nonce }}">
+  /* ─────────────────────────────────────────────────────────────
+     1.  PROFILE “EDIT / SAVE / CANCEL” TOGGLE
+     ────────────────────────────────────────────────────────────*/
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('profile-form');
+    const editBtn = document.getElementById('editProfileBtn');
+    const saveBtn = document.getElementById('saveProfileBtn');
+    const cancelBtn = document.getElementById('cancelProfileBtn');
+    const inputs = form.querySelectorAll('input, textarea, select');
+    const counters  = document.querySelectorAll('.char-counter');
 
-  // ✅ Choices.js init
-  const languageChoices = new Choices(languageSelect, {
-    removeItemButton: true,
-    shouldSort: false,
-    searchEnabled: true,
-    placeholderValue: 'Select languages...'
-  });
+    const setDisabled = (state) => {
+      inputs.forEach(el => state
+        ? el.setAttribute('disabled', '')
+        : el.removeAttribute('disabled'));
+    };
 
-  // 🔒 Disable on page load
-  languageSelect.setAttribute('disabled', '');
-
-  // 🛠 Enable before submit so Django gets it
-  form.addEventListener('submit', () => {
-    languageSelect.removeAttribute('disabled');
-  });
-
-  const setDisabled = (state) => {
-    inputs.forEach(el => state
-      ? el.setAttribute('disabled', '')
-      : el.removeAttribute('disabled'));
-  };
-
-  setDisabled(true);
-  counters.forEach(c => c.classList.add('d-none'));
-
-  // ✏️ Edit button
-  editBtn.addEventListener('click', () => {
-    setDisabled(false);
-    languageSelect.removeAttribute('disabled'); // ✅ make language editable
-    editBtn.classList.add('d-none');
-    saveBtn.classList.remove('d-none');
-    cancelBtn.classList.remove('d-none');
-    counters.forEach(c => c.classList.remove('d-none'));
-  });
-
-  // ❌ Cancel button
-  cancelBtn.addEventListener('click', () => {
-    form.reset();
+    /* start page in read-only mode */
     setDisabled(true);
-    languageSelect.setAttribute('disabled', ''); // 🔒 lock again
-    saveBtn.classList.add('d-none');
-    cancelBtn.classList.add('d-none');
-    editBtn.classList.remove('d-none');
     counters.forEach(c => c.classList.add('d-none'));
-  });
-});
 
+    editBtn.addEventListener('click', () => {
+      setDisabled(false);
+      editBtn.classList.add('d-none');
+      saveBtn.classList.remove('d-none');
+      cancelBtn.classList.remove('d-none');
+      counters.forEach(c => c.classList.remove('d-none'));
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      form.reset();                 // discard unsaved edits
+      setDisabled(true);
+      saveBtn.classList.add('d-none');
+      cancelBtn.classList.add('d-none');
+      editBtn.classList.remove('d-none');
+      counters.forEach(c => c.classList.add('d-none'));
+    });
+  });
 
   /* ─────────────────────────────────────────────────────────────
      2.  IMAGE UPLOAD (+), DELETE, SET-PRIMARY
@@ -762,5 +747,3 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 {% endblock javascripts %}
-
-
