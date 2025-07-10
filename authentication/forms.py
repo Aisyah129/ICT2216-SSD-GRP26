@@ -8,22 +8,12 @@ from django_recaptcha.fields import ReCaptchaField
 from django_recaptcha.widgets import ReCaptchaV2Checkbox
 import hashlib
 import requests
-
-# authentication/forms.py
-
-from django import forms
-from django.contrib.auth.password_validation import validate_password
-from authentication.models import Profile
-import re
-from django_recaptcha.fields import ReCaptchaField
-from django_recaptcha.widgets import ReCaptchaV2Checkbox
-import hashlib
-import requests
 from authentication.models import Preferences
 from authentication.models import Report
 from django import forms
 from django import forms
 from django.utils.html import strip_tags
+from django.conf import settings
 
 
 class LoginForm(forms.Form):
@@ -171,6 +161,11 @@ class SignUpForm(forms.Form):
     )
 
     captcha = ReCaptchaField(widget=ReCaptchaV2Checkbox())
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if getattr(settings, 'TESTING', False):
+            self.fields.pop('captcha', None)
 
     def clean_email(self):
         from django.contrib.auth import get_user_model

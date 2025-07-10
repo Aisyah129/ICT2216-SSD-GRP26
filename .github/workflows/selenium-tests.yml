@@ -25,5 +25,7 @@ jobs:
         pip install -r requirements.txt
         pip install selenium pytest pytest-django
 
+    - name: Run Selenium tests
+      run: pytest tests/selenium/
  
 
