@@ -523,20 +523,31 @@ def profile_view(request):
     try:
         profile = get_object_or_404(Profile, user_id_fk=request.user)
 
+        # ✅ Security: Only allow users to edit their own profile
+        if not has_permission(request.user, "edit_own_profile", profile):
+            return redirect('login')
+
         if request.method == "POST":
             form = ProfileUpdateForm(request.POST, instance=profile)
             if form.is_valid():
-                profile = form.save()
+                profile = form.save(commit=False)
+                profile.last_updated = timezone.now()
+                profile.save()
 
-                # ✅ Save languages manually
+                # ✅ Save languages manually (fix that actually works)
                 submitted_language_ids = request.POST.getlist('languages')
                 ProfileLanguage.objects.filter(profile_id_fk=profile).delete()
                 for lang_id in submitted_language_ids:
-                    ProfileLanguage.objects.create(
-                        profile_id_fk=profile,
-                        language_id_fk_id=lang_id
-                    )
+                    try:
+                        lang_obj = Language.objects.get(language_id=lang_id)
+                        ProfileLanguage.objects.create(
+                            profile_id_fk=profile,
+                            language_id_fk=lang_obj
+                        )
+                    except Language.DoesNotExist:
+                        continue
 
+                log_action(request.user, "Updated profile information", "INFO", request)
                 messages.success(request, "✅ Profile updated successfully.")
                 return redirect('profile')
             else:
@@ -544,6 +555,7 @@ def profile_view(request):
         else:
             form = ProfileUpdateForm(instance=profile)
 
+        # Display image, language, etc.
         primary_image = profile.profileimage_set.filter(is_primary=True).first()
         primary_image_url = get_safe_profile_image_url(primary_image, True)
         all_images = [
@@ -569,10 +581,10 @@ def profile_view(request):
         })
 
     except Exception as e:
-        # Print full traceback in the server log
         import traceback
         traceback.print_exc()
         return JsonResponse({"error": str(e)}, status=500)
+
 
 
 MAX_IMAGES = 6  # ← adjust if needed
