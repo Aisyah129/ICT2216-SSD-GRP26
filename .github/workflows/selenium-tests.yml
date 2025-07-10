@@ -20,6 +20,9 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install selenium pytest pytest-django
+      - name: Create .env file
+        run: |
+          echo "AES_KEY=bW9ja19rZXlfMTIzNDU2Nzg=" >> .env
       - name: Start Django server
         run: |
           python manage.py migrate --no-input
@@ -28,6 +31,3 @@ jobs:
         env:
           DJANGO_LIVE_SERVER_URL: "http://127.0.0.1:8000"
         run: pytest --maxfail=1 --disable-warnings -q
-
- 
-
