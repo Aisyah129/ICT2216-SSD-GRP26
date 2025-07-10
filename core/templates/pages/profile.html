@@ -397,7 +397,7 @@
 
             <div class="form-group">
               <label>Languages</label>
-              <select name="languages" id="languageSelect" class="form-control" multiple>
+              <select name="languages" id="languageSelect" class="form-control" multiple disabled>
                 {% for language in all_languages %}
                   <option value="{{ language.language_id }}"
                     {% if language.language_id in selected_language_ids %}selected{% endif %}>
@@ -451,22 +451,36 @@
 </div>
 </div>
 
-<!-- Choices.js JS -->
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const languageSelect = document.getElementById('languageSelect');
+    const editButton = document.getElementById('editButton');
+    let choicesInstance = null;
 
-    if (languageSelect && !languageSelect.disabled) {
-      new Choices(languageSelect, {
-        removeItemButton: true,
-        shouldSort: false,
-        searchEnabled: true,
-        placeholderValue: 'Select languages...'
+    // Wait for user to click Edit
+    if (editButton) {
+      editButton.addEventListener('click', function () {
+        // Enable the select box
+        languageSelect.removeAttribute('disabled');
+
+        // If not already initialized, apply Choices.js
+        if (!choicesInstance) {
+          choicesInstance = new Choices(languageSelect, {
+            removeItemButton: true,
+            shouldSort: false,
+            searchEnabled: true,
+            placeholderValue: 'Select languages...'
+          });
+        } else {
+          // Already initialized? Just enable interaction
+          choicesInstance.enable();
+        }
       });
     }
   });
 </script>
+
 
 
 
