@@ -16,11 +16,13 @@ def driver():
 
 def open_register_page(driver):
     driver.get("https://www.aisteadmai.shop/register/")
-    time.sleep(10) 
+    time.sleep(10)
+    print(driver.page_source)  # Debug fallback to check what HTML was actually loaded
 
 # ✅ Test 1: Weak password (no special character)
 def test_register_weak_password(driver):
     open_register_page(driver)
+    print(driver.page_source)  # Add here to debug this specific test
     driver.find_element(By.CSS_SELECTOR, '[data-testid="email-input"]').send_keys("weakpass@example.com")
     driver.find_element(By.ID, "id_password").send_keys("Password123")  # no special char
     driver.find_element(By.ID, "id_confirm_password").send_keys("Password123")
