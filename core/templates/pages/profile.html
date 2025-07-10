@@ -407,14 +407,6 @@
               </select>
             </div>
 
-            {{ selected_language_ids|json_script:"original-language-ids" }}
-            <script nonce="{{ request.csp_nonce }}">
-              const originalSelectedLanguageIds = JSON.parse(
-                document.getElementById('original-language-ids').textContent
-              );
-            </script>
-
-
 
 
             <div class="form-group">
