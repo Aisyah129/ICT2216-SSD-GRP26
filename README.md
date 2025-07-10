@@ -24,8 +24,6 @@
 
 ## 🛠️ Setup Instructions
 
-### 1. Clone the Repository
-
 ```bash
 # Clone the repository
 git clone https://github.com/YOUR-USERNAME/ICT2216-SSD-GRP26.git
@@ -44,6 +42,3 @@ python manage.py migrate
 
 # Run the Development Server
 python manage.py runserver
-
-
-
