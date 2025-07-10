@@ -67,6 +67,7 @@ CSP_FRAME_ANCESTORS = ["'none'"]
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_AGE = 1800  #30 minutes
 
 # Referrer Policy
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
