@@ -174,7 +174,7 @@ class ProfileLanguage(models.Model):
         Profile,
         on_delete=models.CASCADE,
         db_column='profile_id_fk',
-        related_name='profile_languages'
+        related_name='languages'
     )
     language_id_fk = models.ForeignKey(
         Language,
