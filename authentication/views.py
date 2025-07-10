@@ -98,8 +98,6 @@ from authentication.models import (
     PreferencesRelationship
 )
 from .forms import ReportForm
-from .forms import MessageForm
-from django.contrib import messages
 
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
@@ -1163,14 +1161,12 @@ def messages_with(request, user_id):
     # 2️⃣  POST ⇒ send a new message to Mongo
     # ------------------------------------------------------------------
     if request.method == "POST":
-        form = MessageForm(request.POST)
-        if form.is_valid():
-            body = form.cleaned_data['content']
+        body = request.POST.get("message", "").strip()
+        if body:
             append_message(match, str(request.user.user_id), body)
             log_action(request.user, f"Sent message to user {user_id}", "INFO", request,
                        metadata={"message_length": len(body)})
-        else:
-            messages.error(request, "❌ " + "; ".join(form.errors.get("content", [])))
+        # after sending, redirect to GET avoids resubmission on refresh
         return redirect("messages_with", user_id=other_user.user_id)
 
     # ------------------------------------------------------------------
