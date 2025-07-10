@@ -49,6 +49,10 @@ def log_action(user, action_type, severity='INFO', request=None, target_id=None,
     # Pseudonymise the IP (mask the last octet)
     pseudonymised_ip = mask_ip(raw_ip) if raw_ip else None
 
+    # Sanitize target_id and target_type (prevents script injection in DB)
+    safe_target_id = escape(str(target_id)) if target_id else None
+    safe_target_type = escape(str(target_type)) if target_type else None
+
     # Sanitize metadata
     if metadata and not isinstance(metadata, str):
         metadata = json.dumps(sanitize_metadata(metadata), default=str)
@@ -60,10 +64,10 @@ def log_action(user, action_type, severity='INFO', request=None, target_id=None,
     ActionLog.objects.create(
         log_id=str(uuid.uuid4()),
         user=user if user and user.is_authenticated else None,
-        action_type=action_type,
+        action_type=escape(action_type),
         severity=severity,
-        target_id=target_id,
-        target_type=target_type,
+        target_id=safe_target_id,
+        target_type=safe_target_type,
         ip_address=pseudonymised_ip,
         metadata = metadata,
         log_hash=log_hash
