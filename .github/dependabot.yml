@@ -2,30 +2,16 @@
 
 version: 2
 updates:
-  # App dependencies
+  # Enable version updates for Python dependencies
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
+    open-pull-requests-limit: 10
     labels:
       - "dependencies"
       - "python"
-
-  # CI/dev dependencies
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    labels:
-      - "dev-dependencies"
-      - "ci"
-    allow:
-      - dependency-type: "all"
-    ignore:
-      - dependency-name: "*"  
-
 
   # Enable version updates for GitHub Actions
   - package-ecosystem: "github-actions"
