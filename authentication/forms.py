@@ -121,6 +121,7 @@ class SignUpForm(forms.Form):
 
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
+            'id': 'id_password',
             'class': 'form-control',
             'placeholder': 'Password',
             'minlength': '8',
@@ -133,6 +134,7 @@ class SignUpForm(forms.Form):
 
     confirm_password = forms.CharField(
         widget=forms.PasswordInput(attrs={
+            'id': 'id_confirm_password',
             'class': 'form-control',
             'placeholder': 'Confirm Password',
             'minlength': '8',
@@ -144,6 +146,7 @@ class SignUpForm(forms.Form):
     name = forms.CharField(
         max_length=255,
         widget=forms.TextInput(attrs={
+            'id': 'id_name',
             'class': 'form-control',
             'placeholder': 'Name'
         })
@@ -171,6 +174,7 @@ class SignUpForm(forms.Form):
     location = forms.CharField(
         max_length=255,
         widget=forms.TextInput(attrs={
+            'id': 'id_location',
             'class': 'form-control',
             'placeholder': 'Location'
         })
