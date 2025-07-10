@@ -1,68 +1,26 @@
-# [Django Boilerplate](https://www.youtube.com/watch?v=bGGDGltRT_g)
+# AiSteadMai - Group 26
 
-**Open-Source Web App** coded in **Django Framework** on top of **Argon Dashboard** design. **Features**:
-
-- SQLite, Django native ORM
-- Modular design
-- Session-Based authentication (login, register)
-- Forms validation
-- UI Kit: **Argon Dashboard** provided by **Creative-Tim**
-
-<br />
-
-![Django Boilerplate - Open-Source Web App.](https://raw.githubusercontent.com/app-generator/static/master/products/django-boilerplate-intro.gif)
-
-<br />
-
-## How to use it
-
-```bash
-$ # Get the code
-$ git clone https://github.com/app-generator/django-boilerplate.git
-$ cd django-boilerplate
-$
-$ # Virtualenv modules installation (Unix based systems)
-$ virtualenv --no-site-packages env
-$ source env/bin/activate
-$
-$ # Virtualenv modules installation (Windows based systems)
-$ # virtualenv --no-site-packages env
-$ # .\env\Scripts\activate
-$ 
-$ # Install modules
-$ # SQLIte version
-$ pip3 install -r requirements.txt
-$
-$ # Create tables
-$ python manage.py makemigrations
-$ python manage.py migrate
-$
-$ # Start the application (development mode)
-$ python manage.py runserver
-$
-$ # Access the web app in browser: http://127.0.0.1:8000/
-```
-
-<br />
-
-## Docker execution
-
-@WIP
-
-<br />
-
-## Credits & Links
-
-- [Django Boilerplate](https://www.youtube.com/watch?v=bGGDGltRT_g) - yTube presentation
-- [Django Framework](https://www.djangoproject.com/) - Offcial website
-
-<br />
-
-## License
-
-@MIT
-
-<br />
+🔐 A full-stack Django application with **custom user authentication**, **session management**, and a **modular structure** — designed for the **ICT2216 Secure Software Development** project.
 
 ---
-[Django Boilerplate](https://www.youtube.com/watch?v=bGGDGltRT_g) - provided by **AppSeed**
+
+## 🚀 Features
+
+- 🔐 Custom login, registration, password reset
+- 🛡️ Middleware for session and auth validation
+- 🧩 Modular project structure (`core`, `authentication`)
+- ✅ Django Forms validation
+- 💾 SQLite + Django ORM
+- 📦 Environment config via `.env`
+- 💡 Styled with [Argon Dashboard](https://www.creative-tim.com/product/argon-dashboard)
+- 🧪 GitHub Actions CI/CD workflow ready
+
+---
+
+## 🛠️ Setup Instructions
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/YOUR-USERNAME/ICT2216-SSD-GRP26.git
+cd ICT2216-SSD-GRP26
