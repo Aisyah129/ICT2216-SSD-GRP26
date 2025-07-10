@@ -1,41 +1,60 @@
+import os
+import time
 import pytest
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 import time
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 @pytest.fixture
 def driver():
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    driver = webdriver.Chrome(options=options)
+    opts = webdriver.ChromeOptions()
+    opts.add_argument("--headless")
+    driver = webdriver.Remote(
+        command_executor="http://localhost:4444/wd/hub",
+        options=opts
+    )
     yield driver
     driver.quit()
 
 def open_register_page(driver):
+    print("🟡 Opening register page...")
     driver.get("https://www.aisteadmai.shop/register/")
-    time.sleep(10)
-    print(driver.page_source)  # Debug fallback to check what HTML was actually loaded
+
+    try:
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "id_email"))
+        )
+        print("✅ Email input found.")
+    except Exception as e:
+        print("❌ Failed to load form. Possible CAPTCHA or protection?")
+        print(driver.page_source)
+        raise e
 
 # ✅ Test 1: Weak password (no special character)
 def test_register_weak_password(driver):
+    print("🧪 Starting test_register_weak_password")
     open_register_page(driver)
-    print(driver.page_source)  # Add here to debug this specific test
-    # driver.find_element(By.CSS_SELECTOR, '[data-testid="email-input"]').send_keys("weakpass@example.com")
-    driver.find_element(By.ID, 'id_email').send_keys("weakpass@example.com")
-    driver.find_element(By.ID, "id_password").send_keys("Password123")  # no special char
-    driver.find_element(By.ID, "id_confirm_password").send_keys("Password123")
-    driver.find_element(By.ID, "id_name").send_keys("Valid Name")
-    driver.find_element(By.ID, "id_location").send_keys("Singapore")
-    driver.find_element(By.ID, "customCheckConsent").click()
-    time.sleep(1)
-    assert "Weak" in driver.page_source or "special character" in driver.page_source
+    try:
+        driver.find_element(By.ID, 'id_email').send_keys("weakpass@example.com")
+        driver.find_element(By.ID, "id_password").send_keys("Password123")
+        driver.find_element(By.ID, "id_confirm_password").send_keys("Password123")
+        driver.find_element(By.ID, "id_name").send_keys("Valid Name")
+        driver.find_element(By.ID, "id_location").send_keys("Singapore")
+        driver.find_element(By.ID, "customCheckConsent").click()
+        time.sleep(1)
+        print("✅ Submitted form, checking validation message...")
+        assert "Weak" in driver.page_source or "special character" in driver.page_source
+    except Exception as e:
+        print("❌ Test failed:", e)
+        print(driver.page_source)
+        raise e
 
 # ✅ Test 2: Mismatched passwords
 def test_register_mismatched_passwords(driver):
-    open_register_page(driver)
+    open_register(driver)
     driver.find_element(By.ID, 'id_email').send_keys("weakpass@example.com")
     driver.find_element(By.ID, "id_password").send_keys("ValidPass!1")
     driver.find_element(By.ID, "id_confirm_password").send_keys("InvalidPass!2")
@@ -47,7 +66,7 @@ def test_register_mismatched_passwords(driver):
 
 # ✅ Test 3: Invalid name
 def test_register_invalid_name(driver):
-    open_register_page(driver)
+    open_register(driver)
     driver.find_element(By.ID, 'id_email').send_keys("weakpass@example.com")
     driver.find_element(By.ID, "id_password").send_keys("ValidPass!1")
     driver.find_element(By.ID, "id_confirm_password").send_keys("ValidPass!1")
@@ -59,7 +78,7 @@ def test_register_invalid_name(driver):
 
 # ✅ Test 4: Exceeding location length
 def test_register_long_location(driver):
-    open_register_page(driver)
+    open_register(driver)
     driver.find_element(By.ID, 'id_email').send_keys("weakpass@example.com")
     driver.find_element(By.ID, "id_password").send_keys("ValidPass!1")
     driver.find_element(By.ID, "id_confirm_password").send_keys("ValidPass!1")
