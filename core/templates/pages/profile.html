@@ -456,17 +456,26 @@
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const languageSelect = document.getElementById('languageSelect');
+    const editButton = document.getElementById('editButton');
 
-    if (languageSelect && !languageSelect.disabled) {
-      new Choices(languageSelect, {
-        removeItemButton: true,
-        shouldSort: false,
-        searchEnabled: true,
-        placeholderValue: 'Select languages...'
-      });
-    }
+    let choicesInstance = null;
+
+    editButton.addEventListener('click', function () {
+      languageSelect.disabled = false;
+
+      // Only initialize Choices if it hasn’t already been initialized
+      if (!choicesInstance) {
+        choicesInstance = new Choices(languageSelect, {
+          removeItemButton: true,
+          shouldSort: false,
+          searchEnabled: true,
+          placeholderValue: 'Select languages...'
+        });
+      }
+    });
   });
 </script>
+
 
 
 {% endblock content %}
