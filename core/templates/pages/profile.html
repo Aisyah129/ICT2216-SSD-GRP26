@@ -9,18 +9,28 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
 
 <style>
+  /* Disable the tag 'X' buttons */
   .choices__disabled .choices__list--multiple .choices__item {
     pointer-events: none;
     opacity: 0.65;
   }
 
+  /* Prevent typing or dropdown selection */
+  .choices__disabled,
+  .choices__disabled .choices__inner,
   .choices__disabled .choices__input,
-  .choices__disabled .choices__inner {
+  .choices__disabled .choices__list--dropdown {
     pointer-events: none;
     background-color: #f8f9fa;
     opacity: 0.6;
   }
+
+  /* Hide the dropdown completely */
+  .choices__disabled .choices__list--dropdown {
+    display: none !important;
+  }
 </style>
+
 
 <!-- Header -->
 <div class="header pb-8 pt-5 pt-lg-8 d-flex align-items-center justify-content-center text-center"
