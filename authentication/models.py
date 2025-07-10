@@ -106,7 +106,7 @@ class Profile(models.Model):
     hobbies = models.TextField(blank=True, null=True)
     last_updated = models.DateTimeField()
     relationship_goals = models.CharField(max_length=23, blank=True, null=True)
-
+    languages = models.ManyToManyField('Language',through='ProfileLanguage',related_name='profiles')
     class Meta:
         managed = False
         db_table = 'Profile'
