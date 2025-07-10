@@ -108,6 +108,12 @@ def login_view(request):
             # 🔒 Check lock AFTER valid form, BEFORE querying user
             if AxesProxyHandler.is_locked(request):
                 msg = "🚫 Too many failed login attempts. Please try again later."
+
+                raw_ip = get_client_ip(request)
+
+                log_action(user=None, action_type="IP blocked after too many failed login attempts", severity="CRITICAL",
+                    request=request, metadata={"blocked_ip": raw_ip})
+
                 return render(request, "accounts/login.html", {
                     "form": form,
                     "msg": msg,
