@@ -204,11 +204,10 @@ class SignUpForm(forms.Form):
         return age
 
 
-# authentication/forms.py
-
-class ProfileUpdateForm(forms.ModelForm):
+class ProfileForm(forms.ModelForm):
     class Meta:
-        model = Profile
+        model  = Profile
+        
         fields = [
             'age', 'gender', 'height_cm', 'sexual_orientation', 'pronouns',
             'body_type', 'location', 'education_level', 'occupation',
@@ -217,47 +216,50 @@ class ProfileUpdateForm(forms.ModelForm):
             'relationship_goals', 'hobbies', 'bio'
         ]
 
-    def clean_gender(self):
-        gender = self.cleaned_data.get('gender')
-        allowed = [c[0] for c in Profile._meta.get_field('gender').choices]
-        if gender and gender not in allowed:
-            raise forms.ValidationError("Invalid gender selected.")
-        return gender
+        widgets = {
+            # style every widget with Bootstrap classes
+            field: forms.TextInput(attrs={'class': 'form-control form-control-alternative'})
+            for field in fields
+        }
+
+        widgets.update({
+            'bio':     forms.Textarea(attrs={'rows': 4, 'class': 'form-control form-control-alternative'}),
+            'hobbies': forms.Textarea(attrs={'rows': 3, 'class': 'form-control form-control-alternative'})
+        })
 
     def clean_age(self):
         age = self.cleaned_data.get('age')
-        if age and not (18 <= age <= 90):
+        if age is None or age < 18 or age > 90:
             raise forms.ValidationError("Age must be between 18 and 90.")
         return age
 
     def clean_height_cm(self):
-        height = self.cleaned_data.get('height_cm')
-        if height and not (100 <= height <= 250):
+        h = self.cleaned_data.get('height_cm')
+        if h is None or h < 100 or h > 250:
             raise forms.ValidationError("Height must be between 100cm and 250cm.")
-        return height
+        return h
 
     def clean_location(self):
         loc = self.cleaned_data.get('location', '').strip()
-        if len(loc) > 50:
+        if loc and len(loc) > 50:
             raise forms.ValidationError("Location must be under 50 characters.")
         return loc
 
     def clean_occupation(self):
         occ = self.cleaned_data.get('occupation', '').strip()
         if occ and not re.match(r'^[A-Za-z0-9\s\-\.\&]{2,100}$', occ):
-            raise forms.ValidationError("Invalid occupation format.")
+            raise forms.ValidationError("Occupation can only contain letters, numbers, spaces, and - . & (2–100 chars).")
         return occ
 
     def clean_hobbies(self):
-        hobbies = self.cleaned_data.get('hobbies', '').strip()
-        if hobbies and (len(hobbies) > 200 or not re.match(r'^[A-Za-z,\s]+$', hobbies)):
-            raise forms.ValidationError("Hobbies must be letters, commas, and spaces (max 200 chars).")
-        return hobbies
+        h = self.cleaned_data.get('hobbies', '').strip()
+        if h and (len(h) > 200 or not re.match(r'^[A-Za-z,\s]+$', h)):
+            raise forms.ValidationError("Hobbies must be under 200 chars and only letters, commas, and spaces.")
+        return h
 
     def clean_bio(self):
         bio = self.cleaned_data.get('bio', '').strip()
         if len(bio) > 500:
             raise forms.ValidationError("Bio must be under 500 characters.")
         return bio
-
 
