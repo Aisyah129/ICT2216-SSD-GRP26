@@ -395,14 +395,18 @@
               </div>
             </div>
 
-            <select name="languages" id="languageSelect" class="form-control" multiple>
-  {% for language in all_languages %}
-    <option value="{{ language.language_id }}"
-      {% if language.language_id in selected_language_ids %}selected{% endif %}>
-      {{ language.language_name|title }}
-    </option>
-  {% endfor %}
-</select>
+            <div class="form-group">
+  <label>Languages</label>
+  <select name="languages" id="languageSelect" class="form-control" multiple disabled>
+    {% for language in all_languages %}
+      <option value="{{ language.language_id }}"
+        {% if language.language_id in selected_language_ids %}selected{% endif %}>
+        {{ language.language_name|title }}
+      </option>
+    {% endfor %}
+  </select>
+</div>
+
 
 
             <div class="form-group">
@@ -481,11 +485,28 @@
     const inputs = form.querySelectorAll('input, textarea, select');
     const counters  = document.querySelectorAll('.char-counter');
 
+    // Explicitly also enable Choices.js-enhanced <select> manually
+    const languageSelect = document.getElementById('languageSelect');
+    const languageChoices = new Choices(languageSelect, {
+      removeItemButton: true,
+      shouldSort: false,
+      searchEnabled: true,
+      placeholderValue: 'Select languages...'
+    });
+
+
     const setDisabled = (state) => {
       inputs.forEach(el => state
         ? el.setAttribute('disabled', '')
         : el.removeAttribute('disabled'));
     };
+
+    // Choices.js renders a separate element — so we must sync the real <select>
+    if (state) {
+      languageSelect.setAttribute('disabled', '');
+    } else {
+      languageSelect.removeAttribute('disabled');
+    }
 
     /* start page in read-only mode */
     setDisabled(true);
