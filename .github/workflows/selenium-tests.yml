@@ -1,0 +1,35 @@
+name: Django Selenium Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      selenium:
+        image: selenium/standalone-chrome
+        ports:
+          - 4444:4444
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install selenium pytest pytest-django
+
+    - name: Wait for live server to be ready
+      run: |
+        for i in {1..10}; do
+          curl -A "Mozilla/5.0" -sSf https://www.aisteadmai.shop/login/ && break || sleep 5
+        done
+
+    - name: Run Selenium tests
+      run: pytest tests/selenium/
