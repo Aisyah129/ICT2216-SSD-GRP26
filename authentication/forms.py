@@ -6,6 +6,8 @@ from authentication.models import Profile
 import re
 from django_recaptcha.fields import ReCaptchaField
 from django_recaptcha.widgets import ReCaptchaV2Checkbox
+import hashlib
+import requests
 
 class LoginForm(forms.Form):
     email = forms.EmailField(widget=forms.EmailInput(attrs={
@@ -66,6 +68,23 @@ class SetNewPasswordForm(forms.Form):
         validate_password(pwd)
         return cleaned_data
 
+def is_pwned_password(password):
+    sha1pwd = hashlib.sha1(password.encode('utf-8')).hexdigest().upper()
+    prefix = sha1pwd[:5]
+    suffix = sha1pwd[5:]
+    url = f"https://api.pwnedpasswords.com/range/{prefix}"
+    
+    try:
+        res = requests.get(url, timeout=5)
+        if res.status_code == 200:
+            hashes = (line.split(':') for line in res.text.splitlines())
+            for hash_suffix, count in hashes:
+                if hash_suffix == suffix:
+                    return True  # Found in breached DB
+    except requests.RequestException:
+        pass  # Optional: log or handle connection errors
+    
+    return False
 
 class SignUpForm(forms.Form):
     email = forms.EmailField(
@@ -157,6 +176,10 @@ class SignUpForm(forms.Form):
             raise forms.ValidationError("Password must include at least one special character.")
         
         validate_password(pwd)
+
+        # Check if password has been breached
+        if is_pwned_password(pwd):
+            raise forms.ValidationError("This password has appeared in a known data breach. Please choose a different one.")
         
         return pwd
 
