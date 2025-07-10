@@ -8,6 +8,20 @@ from django_recaptcha.fields import ReCaptchaField
 from django_recaptcha.widgets import ReCaptchaV2Checkbox
 import hashlib
 import requests
+
+from authentication.models import Language
+# authentication/forms.py
+
+from django import forms
+from django.contrib.auth.password_validation import validate_password
+from authentication.models import Profile
+import re
+from django_recaptcha.fields import ReCaptchaField
+from django_recaptcha.widgets import ReCaptchaV2Checkbox
+import hashlib
+import requests
+>> >> >> > Stashed
+changes
 from authentication.models import Preferences
 from authentication.models import Report
 from django import forms
@@ -161,7 +175,7 @@ class SignUpForm(forms.Form):
     )
 
     captcha = ReCaptchaField(widget=ReCaptchaV2Checkbox())
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if getattr(settings, 'TESTING', False):
@@ -218,6 +232,13 @@ class SignUpForm(forms.Form):
 
 
 class ProfileUpdateForm(forms.ModelForm):
+    # Add a field for selecting multiple languages
+    languages = forms.ModelMultipleChoiceField(
+        queryset=Language.objects.all(),
+        widget=forms.CheckboxSelectMultiple,  # You can also use SelectMultiple for a dropdown
+        required=False
+    )
+
     class Meta:
         model = Profile
         fields = [
@@ -225,7 +246,7 @@ class ProfileUpdateForm(forms.ModelForm):
             'body_type', 'location', 'education_level', 'occupation',
             'religion', 'ethnicity', 'politics', 'smoking', 'drinking',
             'drug_use', 'has_kids', 'wants_kids', 'zodiac_sign',
-            'relationship_goals', 'hobbies', 'bio'
+            'relationship_goals', 'hobbies', 'bio', 'languages'  # ✅ Add here
         ]
 
     def clean_age(self):
