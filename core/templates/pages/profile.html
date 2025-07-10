@@ -395,7 +395,7 @@
               </div>
             </div>
 
-            <select name="languages" id="languageSelect" class="form-control" multiple disabled>
+            <select name="languages" id="languageSelect" class="form-control" multiple>
               {% for language in all_languages %}
                 <option value="{{ language.language_id }}"
                   {% if language.language_id in selected_language_ids %}selected{% endif %}>
@@ -448,33 +448,20 @@
 
 <!-- Choices.js JS -->
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-<script nonce="{{ request.csp_nonce }}">
-  let languageChoices = null;
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const languageSelect = document.getElementById('languageSelect');
 
-  function initLanguageChoices() {
-    const select = document.getElementById('languageSelect');
-    if (!select) return;
-
-    // Destroy previous Choices instance if exists
-    if (languageChoices) {
-      languageChoices.destroy();
-      languageChoices = null;
-    }
-
-    // Only enable if not disabled
-    if (!select.disabled) {
-      languageChoices = new Choices(select, {
+    if (languageSelect && !languageSelect.disabled) {
+      new Choices(languageSelect, {
         removeItemButton: true,
         shouldSort: false,
         searchEnabled: true,
         placeholderValue: 'Select languages...'
       });
     }
-  }
-
-  document.addEventListener('DOMContentLoaded', initLanguageChoices);
+  });
 </script>
-
 
 
 {% endblock content %}
@@ -494,25 +481,10 @@
     const counters  = document.querySelectorAll('.char-counter');
 
     const setDisabled = (state) => {
-      inputs.forEach(el => {
-        // Skip language select so we can handle it manually
-        if (el.id !== 'languageSelect') {
-          state ? el.setAttribute('disabled', '') : el.removeAttribute('disabled');
-        }
-      });
-
-      // Handle language select + Choices.js
-      const langSelect = document.getElementById('languageSelect');
-      if (state) {
-        langSelect.setAttribute('disabled', '');
-      } else {
-        langSelect.removeAttribute('disabled');
-      }
-
-      // Reinitialize Choices.js based on the new disabled state
-      initLanguageChoices();
+      inputs.forEach(el => state
+        ? el.setAttribute('disabled', '')
+        : el.removeAttribute('disabled'));
     };
-
 
     /* start page in read-only mode */
     setDisabled(true);
@@ -771,34 +743,5 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 {% endblock javascripts %}
-
-<style>
-  /* When disabled, show tags but make them look muted */
-  .choices[data-type*="select-multiple"].is-disabled .choices__inner {
-    background-color: #f8f9fa;
-    cursor: not-allowed;
-    opacity: 0.9;
-    border: 1px solid #dee2e6;
-    min-height: 44px;
-  }
-
-  .choices[data-type*="select-multiple"].is-disabled .choices__item {
-    background-color: #e9ecef;
-    color: #6c757d;
-    border: none;
-    border-radius: 20px;
-    padding: 3px 10px;
-    margin: 3px 5px 3px 0;
-    font-size: 0.85rem;
-  }
-
-  .choices[data-type*="select-multiple"].is-disabled .choices__input {
-    display: none !important;
-  }
-
-  .choices[data-type*="select-multiple"].is-disabled .choices__button {
-    display: none !important; /* Hide the "x" button */
-  }
-</style>
 
 
