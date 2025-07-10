@@ -2,6 +2,10 @@
 
 🔐 A full-stack Django application with **custom user authentication**, **session management**, and a **modular structure** — designed for the **ICT2216 Secure Software Development** project.
 
+💘AiSteadMai is a secure and user-friendly Django web application that helps individuals connect meaningfully through an intelligent matching system. It features a clean UI, robust session-based authentication, and customizable preferences — all built with a focus on security, modularity, and scalability.
+
+🔗 Live Production Site: https://www.aisteadmai.shop/login/
+
 ---
 
 ## 🚀 Features
@@ -34,8 +38,5 @@ python manage.py makemigrations
 python manage.py migrate
 <!-- Run the Development Server -->
 python manage.py runserver
-```
-
-🔗 Live Production Site: https://www.aisteadmai.shop/login/
 
 
