@@ -28,10 +28,22 @@ class SessionTimeoutMiddleware:
         return self.get_response(request)
     
 def get_client_ip(request):
+    """
+    Safely extract client IP address from request headers.
+    Handles proxies/CDNs that set X-Forwarded-For.
+    """
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
-        return x_forwarded_for.split(',')[0]
-    return request.META.get('REMOTE_ADDR')
+        # Take the first IP in X-Forwarded-For (original client IP)
+        ip = x_forwarded_for.split(',')[0].strip()
+    else:
+        # Fallback to REMOTE_ADDR
+        ip = request.META.get('REMOTE_ADDR')
+    
+    # Validate IP (basic check for IPv4 format)
+    if ip and len(ip.split('.')) == 4 and all(part.isdigit() for part in ip.split('.')):
+        return ip
+    return "0.0.0.0"  # Fallback if invalid
 
 class SessionValidationMiddleware:
     def __init__(self, get_response):

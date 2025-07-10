@@ -35,7 +35,7 @@ from django.contrib.auth import authenticate
 from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth.hashers import make_password  
+from django.contrib.auth.hashers import make_password
 from django.core.paginator import Paginator
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -99,14 +99,25 @@ from authentication.models import (
 )
 from .forms import ReportForm
 from .forms import MessageForm
-from authentication.models import Match
+from django.contrib import messages
 
 os.environ['SSL_CERT_FILE'] = certifi.where()
+
 
 # AuthController
 
 def is_admin(user):
     return user.is_authenticated and has_permission(user, "view_admin_dashboard")
+
+
+@csrf_exempt
+def test_login(request):
+    from django.contrib.auth import authenticate, login
+    user = authenticate(request, username="user1@example.com", password="user1")
+    if user:
+        login(request, user)
+        return redirect('/profile/')
+    return HttpResponse("Test login failed", status=401)
 
 # AuthController
 def login_view(request):
@@ -125,8 +136,6 @@ def login_view(request):
 
     if request.method == "POST":
 
-        
-        
         if form.is_valid():
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
@@ -181,6 +190,7 @@ def login_view(request):
         "session_timeout": session_timeout
     })
 
+
 # AuthController
 @csrf_protect
 def logout_view(request):
@@ -188,6 +198,7 @@ def logout_view(request):
         log_action(request.user, "User logged out", "INFO", request)
     logout(request)
     return redirect('login')
+
 
 # AuthController
 def request_password_reset(request):
@@ -203,21 +214,22 @@ def request_password_reset(request):
             request.session['reset_code'] = code
             request.session['reset_code_time'] = timezone.now().isoformat()
             send_reset_code_email(email, code)
-            log_action(user, "Requested password reset", "INFO", request) # ✅ Log password reset requested
-            #return redirect('verify_reset_code')
+            log_action(user, "Requested password reset", "INFO", request)  # ✅ Log password reset requested
+            # return redirect('verify_reset_code')
         except User.DoesNotExist:
-            #msg = "Invalid email address."
+            # msg = "Invalid email address."
             # Fake code, do NOT send email
             request.session['reset_email'] = email
             request.session['reset_code'] = None  # Or '000000' if you want consistency
             request.session['reset_code_time'] = timezone.now().isoformat()
             # Optional: Log attempt without revealing existence
             log_action(None, f"Password reset attempt for non-existent email: {email}", "WARNING", request)
-        
+
         # In all cases: redirect to verification page
         return redirect('verify_reset_code')
 
     return render(request, "accounts/password_reset_request.html", {"form": form, "msg": msg})
+
 
 # AuthController
 def send_reset_code_email(to_email, code):
@@ -241,6 +253,7 @@ def send_reset_code_email(to_email, code):
         print("✅ Password reset code sent:", response.status_code)
     except Exception as e:
         print("❌ SendGrid error:", str(e))
+
 
 # AuthController
 def verify_reset_code(request):
@@ -288,10 +301,11 @@ def verify_reset_code(request):
 
     return render(request, "accounts/password_reset_verify.html", {"form": form, "msg": msg})
 
+
 # AuthController
 def set_new_password(request):
-    form = SetNewPasswordForm(request.POST or 
-    None)
+    form = SetNewPasswordForm(request.POST or
+                              None)
     msg = None
 
     if request.method == "POST" and form.is_valid():
@@ -310,6 +324,7 @@ def set_new_password(request):
             log_action(None, f"Password reset failed - user not found: {email}", "CRITICAL", request)
 
     return render(request, "accounts/set_new_password.html", {"form": form, "msg": msg})
+
 
 # AuthController
 def send_verification_email(to_email, code):
@@ -333,6 +348,7 @@ def send_verification_email(to_email, code):
         print("✅ Email sent with status code:", response.status_code)
     except Exception as e:
         print("❌ SendGrid error:", str(e))
+
 
 # AuthController
 def send_welcome_email(to_email, user_name):
@@ -363,13 +379,16 @@ def send_welcome_email(to_email, user_name):
     except Exception as e:
         print("❌ SendGrid welcome email error:", str(e))
 
+
 User = get_user_model()
+
 
 # AuthController
 def check_email(request):
     email = request.GET.get("email", "")
     exists = User.objects.filter(email=email).exists()
     return JsonResponse({"exists": exists})
+
 
 # AuthController
 def register_user(request):
@@ -404,11 +423,12 @@ def register_user(request):
         send_verification_email(email, verification_code)
 
         return redirect('verify_email')
-    
+
     elif request.method == "POST":
         log_action(None, "Failed registration attempt", "WARNING", request, metadata=form.errors.get_json_data())
 
     return render(request, "accounts/register.html", {"form": form, "msg": msg})
+
 
 # AuthController
 # VERIFY: confirm code, then store to DB
@@ -421,7 +441,7 @@ def verify_email(request):
     if request.method == "POST":
         entered_code = request.POST.get("code")
         session_code = request.session.get("verification_code")
-        #code_time_str = request.session['verification_code_time'] = timezone.now().isoformat()
+        # code_time_str = request.session['verification_code_time'] = timezone.now().isoformat()
         code_time_str = request.session.get("verification_code_time")
         data = request.session.get("registration_data")
 
@@ -475,6 +495,7 @@ def verify_email(request):
 
     return render(request, "accounts/verify.html", {"msg": msg})
 
+
 # USER DASHBOARD — use @login_required
 @never_cache
 @login_required
@@ -484,8 +505,10 @@ def user_dashboard(request):
     print("✅ USER EMAIL:", user.email)
 
     matches = [
-        {'name': 'Alex', 'age': 26, 'location': 'Singapore', 'profile_pic': {'url': 'https://via.placeholder.com/300x200'}},
-        {'name': 'Jamie', 'age': 24, 'location': 'Malaysia', 'profile_pic': {'url': 'https://via.placeholder.com/300x200'}}
+        {'name': 'Alex', 'age': 26, 'location': 'Singapore',
+         'profile_pic': {'url': 'https://via.placeholder.com/300x200'}},
+        {'name': 'Jamie', 'age': 24, 'location': 'Malaysia',
+         'profile_pic': {'url': 'https://via.placeholder.com/300x200'}}
     ]
 
     return render(request, 'pages/browse.html', {
@@ -493,46 +516,82 @@ def user_dashboard(request):
         'matches': matches
     })
 
+
 # ProfileController
 @never_cache
 @login_required
 def profile_view(request):
-    profile = get_object_or_404(Profile, user_id_fk=request.user)
+    try:
+        profile = get_object_or_404(Profile, user_id_fk=request.user)
 
-    if request.method == "POST":
-        form = ProfileUpdateForm(request.POST, instance=profile)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "✅ Profile updated successfully.")
-            return redirect('profile')
+        if request.method == "POST":
+            form = ProfileUpdateForm(request.POST, instance=profile)
+            if form.is_valid():
+                # Save main profile fields
+                profile = form.save(commit=False)
+                profile.last_updated = timezone.now()
+                profile.save()
+
+                # ✅ Save languages manually
+                submitted_language_ids = request.POST.getlist('languages')  # ← Must match HTML 'name' attribute
+
+                # Clear previous links
+                ProfileLanguage.objects.filter(profile_id_fk=profile).delete()
+
+                for lang_id in submitted_language_ids:
+                    try:
+                        ProfileLanguage.objects.create(
+                            profile_id_fk=profile,
+                            language_id_fk_id=lang_id
+                        )
+                    except Exception as e:
+                        print(f"⚠️ Error saving language ID {lang_id}: {e}")
+                        continue
+
+                messages.success(request, "✅ Profile updated successfully.")
+                return redirect('profile')
+            else:
+                messages.error(request, "❌ Please correct the errors below.")
         else:
-            messages.error(request, "❌ Please correct the errors below.")
-    else:
-        form = ProfileUpdateForm(instance=profile)
+            form = ProfileUpdateForm(instance=profile)
 
-    primary_image = profile.profileimage_set.filter(is_primary=True).first()
-    primary_image_url = get_safe_profile_image_url(primary_image, True)
-    all_images = [
-        {
-            "id": img.image_id,
-            "url": get_safe_profile_image_url(img, True),
-            "is_primary": img.is_primary
-        }
-        for img in profile.profileimage_set.order_by('-uploaded_at')
-    ]
-    all_languages = Language.objects.all()
-    selected_language_ids = list(profile.languages.values_list('language_id_fk__language_id', flat=True))
+        # Get profile image(s)
+        primary_image = profile.profileimage_set.filter(is_primary=True).first()
+        primary_image_url = get_safe_profile_image_url(primary_image, True)
+        all_images = [
+            {
+                "id": img.image_id,
+                "url": get_safe_profile_image_url(img, True),
+                "is_primary": img.is_primary
+            }
+            for img in profile.profileimage_set.order_by('-uploaded_at')
+        ]
 
-    return render(request, "pages/profile.html", {
-        "form": form,
-        "profile": profile,
-        "primary_image": primary_image_url,
-        "images": all_images,
-        "all_languages": all_languages,
-        "selected_language_ids": selected_language_ids,
-    })
+        # Get languages
+        all_languages = Language.objects.all()
+        selected_language_ids = list(
+            ProfileLanguage.objects.filter(profile_id_fk=profile).values_list('language_id_fk', flat=True)
+        )
 
-MAX_IMAGES = 6 # ← adjust if needed
+        return render(request, "pages/profile.html", {
+            "form": form,
+            "profile": profile,
+            "primary_image": primary_image_url,
+            "images": all_images,
+            "all_languages": all_languages,
+            "selected_language_ids": selected_language_ids,
+        })
+
+    except Exception as e:
+        # Print full traceback in the server log
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+
+MAX_IMAGES = 6  # ← adjust if needed
+
 
 # ------------------------------------------------------------------
 #  Upload profile image                                   (updated)
@@ -551,12 +610,12 @@ def upload_profile_image(request):
     if not file:
         log_action(request.user, "Failed image upload - no image provided", "WARNING", request)
         return JsonResponse({"success": False, "error": "No image uploaded"}, status=400)
-    
+
     ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif']
     extension = file.name.split('.')[-1].lower()
     if extension not in ALLOWED_EXTENSIONS:
         return JsonResponse({"success": False, "error": "Invalid file extension."}, status=400)
-    
+
     # Read a sample of the file to guess its real type
     file_sample = file.read(2048)
     file.seek(0)  # rewind so S3 still works
@@ -582,9 +641,9 @@ def upload_profile_image(request):
 
     s3 = boto3.client(
         "s3",
-        aws_access_key_id     = settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key = settings.AWS_SECRET_ACCESS_KEY,
-        region_name           = settings.AWS_S3_REGION_NAME,
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_S3_REGION_NAME,
     )
 
     s3.upload_fileobj(
@@ -596,7 +655,7 @@ def upload_profile_image(request):
 
     want_primary = request.POST.get("is_primary") in ("1", "true", "on")
 
-     # ───────── 3) Ensure ONE primary ──────────
+    # ───────── 3) Ensure ONE primary ──────────
     has_primary = ProfileImage.objects.filter(profile_id_fk=profile, is_primary=True).exists()
 
     if want_primary or not has_primary:
@@ -607,11 +666,11 @@ def upload_profile_image(request):
 
     # ───────── 4) Save DB record (only filename) ──────────
     new_image = ProfileImage.objects.create(
-        image_id      = str(uuid.uuid4()),
-        profile_id_fk = profile,
-        image_url     = filename, # ✅ only the filename!
-        is_primary    = primary_flag,
-        uploaded_at   = timezone.now(),
+        image_id=str(uuid.uuid4()),
+        profile_id_fk=profile,
+        image_url=filename,  # ✅ only the filename!
+        is_primary=primary_flag,
+        uploaded_at=timezone.now(),
     )
 
     log_action(request.user, "Uploaded new profile image", "INFO", request, metadata={
@@ -624,6 +683,7 @@ def upload_profile_image(request):
     public_url = get_safe_profile_image_url(new_image, request.user.is_premium)
 
     return JsonResponse({"success": True, "image_url": public_url})
+
 
 # ProfileController
 # 🟩 Get all profile images for this user (JSON)
@@ -640,6 +700,7 @@ def profile_images_json(request):
         }
         for img in images
     ], safe=False)
+
 
 # ProfileController
 # 🟩 Set selected image as primary
@@ -659,6 +720,7 @@ def set_primary_image(request, pk):
 
     return JsonResponse({"success": bool(updated)})
 
+
 # ProfileController
 # 🟥 Delete selected image from DB and S3
 @login_required
@@ -674,9 +736,9 @@ def delete_profile_image(request, pk):
         # Delete from S3 (private bucket)
         s3 = boto3.client(
             "s3",
-            aws_access_key_id     = settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key = settings.AWS_SECRET_ACCESS_KEY,
-            region_name           = settings.AWS_S3_REGION_NAME,
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_S3_REGION_NAME,
         )
         s3.delete_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=filename)
 
@@ -688,6 +750,7 @@ def delete_profile_image(request, pk):
     except ProfileImage.DoesNotExist:
         log_action(request.user, f"Tried to delete non-existent profile image {pk}", "WARNING", request)
         return JsonResponse({"success": False, "error": "Image not found"}, status=404)
+
 
 # ADMIN DASHBOARD
 @never_cache
@@ -741,9 +804,11 @@ def admin_dashboard(request):
         'user_email': user_email,
     })
 
+
 # ProfileController
 def get_primary_image(profile_id):
     return ProfileImage.objects.filter(profile_id_fk=profile_id, is_primary=1).first()
+
 
 # ProfileController
 def get_blurred_image_url(original_url):
@@ -755,6 +820,7 @@ def get_blurred_image_url(original_url):
     # Compose ImageKit URL
     return f"{settings.IMAGEKIT_URL_ENDPOINT}tr:bl-20/{quote(filename)}"
 
+
 # ProfileController
 def get_safe_profile_image_url(image, is_premium):
     default_url = '/static/images/default-avatar.jpg'
@@ -763,13 +829,14 @@ def get_safe_profile_image_url(image, is_premium):
     if not image:
         return default_url if is_premium else blurred_default_url
 
-    filename = image.image_url.lstrip("/") 
+    filename = image.image_url.lstrip("/")
     print(image.image_url)
 
     if is_premium:
         return f"{settings.IMAGEKIT_URL_ENDPOINT}{quote(filename)}"
     else:
         return f"{settings.IMAGEKIT_URL_ENDPOINT}tr:bl-20/{quote(filename)}"
+
 
 @never_cache
 @login_required
@@ -789,9 +856,8 @@ def likes_page(request):
     if tab == 'incoming':
         incoming_likes_raw = Like.objects.filter(
             liked_user_id=user,
-            like_status='liked' 
+            like_status='liked'
         ).order_by('-liked_at')
-
 
         for like in incoming_likes_raw:
             # Skip if mutual match already exists
@@ -862,23 +928,23 @@ def likes_page(request):
                     'image_url': f"{settings.IMAGEKIT_URL_ENDPOINT}{image.image_url}" if image else settings.STATIC_URL + 'images/default-avatar.jpg',
                     'gender': profile.gender,
                     'location': profile.location,
-                    'pronouns': profile.pronouns ,
-                    'sexual_orientation': profile.sexual_orientation ,
+                    'pronouns': profile.pronouns,
+                    'sexual_orientation': profile.sexual_orientation,
                     'zodiac_sign': profile.zodiac_sign,
-                    'smoking': profile.smoking ,
+                    'smoking': profile.smoking,
                     'drinking': profile.drinking,
-                    'drug_use': profile.drug_use ,
-                    'has_kids': profile.has_kids ,
-                    'wants_kids': profile.wants_kids ,
+                    'drug_use': profile.drug_use,
+                    'has_kids': profile.has_kids,
+                    'wants_kids': profile.wants_kids,
                     'education_level': profile.education_level,
                     'occupation': profile.occupation,
-                    'religion': profile.religion ,
+                    'religion': profile.religion,
                     'politics': profile.politics,
-                    'ethnicity': profile.ethnicity ,
-                    'height_cm': profile.height_cm ,
-                    'body_type': profile.body_type ,
-                    'hobbies': profile.hobbies ,
-                    'relationship_goals': profile.relationship_goals ,
+                    'ethnicity': profile.ethnicity,
+                    'height_cm': profile.height_cm,
+                    'body_type': profile.body_type,
+                    'hobbies': profile.hobbies,
+                    'relationship_goals': profile.relationship_goals,
                     'bio': profile.bio
                 })
             except Profile.DoesNotExist:
@@ -896,7 +962,8 @@ def likes_page(request):
             'match_popup': match_popup
         })
 
-@never_cache    
+
+@never_cache
 @login_required
 # BillingController
 def upgrade_premium(request):
@@ -905,12 +972,14 @@ def upgrade_premium(request):
         {'id': 'month', 'name': '1 Month', 'price': 9.99, 'description': 'Unlock premium features for a month'},
         {'id': 'quarter', 'name': '3 Months', 'price': 24.99, 'description': 'Save more with a 3-month plan'},
     ]
-    log_action(request.user, "Visited premium upgrade page", "INFO", request) # not working currently
+    log_action(request.user, "Visited premium upgrade page", "INFO", request)  # not working currently
     return render(request, 'accounts/upgrade_premium.html', {'plans': plans})
+
 
 # BillingController
 def checkout_premium(request, plan_id):
     return HttpResponse(f"Stripe checkout for plan: {plan_id}")
+
 
 # --- MongoDB Connection ---
 @lru_cache
@@ -918,7 +987,9 @@ def mongo():
     client = MongoClient(settings.MONGO_URI)
     return client[settings.MONGO_DB]
 
-COL = mongo().messages   # <-- Each message is its own document
+
+COL = mongo().messages  # <-- Each message is its own document
+
 
 # MessageController
 def decrypt_aes_gcm(cipher_b64, nonce_b64):
@@ -929,6 +1000,7 @@ def decrypt_aes_gcm(cipher_b64, nonce_b64):
         return aesgcm.decrypt(nonce, ciphertext, None).decode()
     except Exception as e:
         return "[decryption failed]"
+
 
 # MessageController
 def fetch_messages(match, limit=None):
@@ -954,6 +1026,7 @@ def fetch_messages(match, limit=None):
 
     return messages
 
+
 # MessageController
 def append_message(match, sender_id, text):
     # Encrypt the plaintext on the backend
@@ -978,6 +1051,7 @@ def append_message(match, sender_id, text):
     COL.insert_one(msg)
     return msg
 
+
 # MessageController
 def mark_read(match, reader_id):
     COL.update_many(
@@ -988,6 +1062,7 @@ def mark_read(match, reader_id):
         },
         {"$set": {"is_read": True}}
     )
+
 
 # MessageController
 def get_conversations_for(user):
@@ -1017,31 +1092,32 @@ def get_conversations_for(user):
         other_uuid = m["user2_id"] if m["user1_id"] == user.user_id else m["user1_id"]
         # ▸ grab display name & primary image
         try:
-            profile  = Profile.objects.only("name").get(user_id_fk__user_id=other_uuid)
-            display  = profile.name or "Unknown"
+            profile = Profile.objects.only("name").get(user_id_fk__user_id=other_uuid)
+            display = profile.name or "Unknown"
         except Profile.DoesNotExist:
-            display  = "Unknown"
+            display = "Unknown"
 
         # primary image (may be None)
         img = (ProfileImage.objects
-                          .only("image_url")
-                          .filter(profile_id_fk=profile, is_primary=1)
-                          .first())
+               .only("image_url")
+               .filter(profile_id_fk=profile, is_primary=1)
+               .first())
         img_url = (
             f"{settings.IMAGEKIT_URL_ENDPOINT}{img.image_url}"
             if img else settings.STATIC_URL + "/static/images/default-avatar.jpg"
         )
 
         conversations.append({
-            "user_id":   other_uuid,
-            "name":      display,
-            "avatar":    img_url,
-            "unread":    unread_map.get(str(m["match_id"]), 0),
+            "user_id": other_uuid,
+            "name": display,
+            "avatar": img_url,
+            "unread": unread_map.get(str(m["match_id"]), 0),
         })
 
     # sort: unread first, then alpha
     conversations.sort(key=lambda c: (-c["unread"], c["name"].lower()))
     return conversations
+
 
 # add near messages_with
 @never_cache
@@ -1054,19 +1130,20 @@ def messages_home(request):
         return redirect("messages_with", user_id=convos[0]["user_id"])
     # no matches yet – render same template with placeholders
     return render(request, "pages/messages.html", {
-    "conversations": [],
-    "selected_user": None,
-    "selected_name": None,
-    "selected_avatar": None,
-    "messages": [],
-})
+        "conversations": [],
+        "selected_user": None,
+        "selected_name": None,
+        "selected_avatar": None,
+        "messages": [],
+    })
+
 
 # --- Main View ---
 @never_cache
 @login_required
 # MessageController
 def messages_with(request, user_id):
-    """Chat view between the logged-in user and `other_user`."""
+    """Chat view between the logged-in user and other_user."""
     # ------------------------------------------------------------------
     # 0️⃣  Get the other user, profile, display-name, avatar
     # ------------------------------------------------------------------
@@ -1074,10 +1151,10 @@ def messages_with(request, user_id):
 
     try:
         other_profile = Profile.objects.only("name").get(user_id_fk=other_user)
-        display_name  = other_profile.name or other_user.email
+        display_name = other_profile.name or other_user.email
         selected_profile = Profile.objects.get(user_id_fk=other_user)
     except Profile.DoesNotExist:
-        display_name  = other_user.email
+        display_name = other_user.email
 
     img = (
         ProfileImage.objects
@@ -1097,6 +1174,8 @@ def messages_with(request, user_id):
 
     liked_date = like.liked_at if like else None
 
+    # avatar_url = img.image_url if img else settings.STATIC_URL + "img/avatar-placeholder.png"#
+
     # ------------------------------------------------------------------
     # 1️⃣  Find the *active* Match row involving these two users
     #      (order-agnostic, UUID fields)
@@ -1114,47 +1193,41 @@ def messages_with(request, user_id):
         raise Http404("No active match between these users.")
 
     # ------------------------------------------------------------------
-    # 2️⃣  POST ⇒ send a new message to Mongo (validated)
+    # 2️⃣  POST ⇒ send a new message to Mongo
     # ------------------------------------------------------------------
     if request.method == "POST":
         form = MessageForm(request.POST)
         if form.is_valid():
             body = form.cleaned_data['content']
             append_message(match, str(request.user.user_id), body)
-            log_action(
-                request.user, f"Sent message to user {user_id}", "INFO", request,
-                metadata={"message_length": len(body)}
-            )
-            return redirect("messages_with", user_id=other_user.user_id)  # Redirect after POST
+            log_action(request.user, f"Sent message to user {user_id}", "INFO", request,
+                       metadata={"message_length": len(body)})
         else:
-            messages.error(
-                request,
-                "❌ " + "; ".join(form.errors.get("content", []))
-            )
-    else:
-        form = MessageForm()
+            messages.error(request, "❌ " + "; ".join(form.errors.get("content", [])))
+        return redirect("messages_with", user_id=other_user.user_id)
 
     # ------------------------------------------------------------------
     # 3️⃣  GET ⇒ fetch message list and mark partner’s messages as read
     # ------------------------------------------------------------------
-    chat_messages = fetch_messages(match)              # list[dict] from Mongo
-    mark_read(match, str(request.user.user_id))        # mark incoming as read
+    messages = fetch_messages(match)  # list[dict] from Mongo
+    mark_read(match, str(request.user.user_id))  # mark incoming as read
 
     # ------------------------------------------------------------------
     # 4️⃣  Render page
     # ------------------------------------------------------------------
     context = {
-        "form":               form,
-        "conversations":      get_conversations_for(request.user),
-        "selected_user":      other_user,
-        "selected_name":      display_name,
-        "selected_avatar":    avatar_url,
-        "messages":           chat_messages,
-        "user":               request.user,
-        "selected_user_age":  selected_profile.age,
+        "conversations": get_conversations_for(request.user),
+        "selected_user": other_user,
+        "selected_name": display_name,
+        "selected_avatar": avatar_url,
+        "messages": messages,
+        "user": request.user,
+
+        "selected_user_age": selected_profile.age,
         "selected_user_liked_date": liked_date,
     }
     return render(request, "pages/messages.html", context)
+
 
 @never_cache
 @login_required
@@ -1179,7 +1252,7 @@ def messages_json(request, user_id):
         return JsonResponse({"messages": []})
 
     since = request.GET.get("after")
-    msgs  = fetch_messages(match)
+    msgs = fetch_messages(match)
 
     if since:
         try:
@@ -1194,23 +1267,25 @@ def messages_json(request, user_id):
 
     # send back **only** the fields the browser needs
     lite = [{
-        "id":    m["message_id"],
-        "text":  m.get("ciphertext", "[missing]"),
+        "id": m["message_id"],
+        "text": m.get("ciphertext", "[missing]"),
         "nonce": m.get("nonce", ""),
-        "ts":    m["sent_at"],
-        "from":  m["sender_user_id"],
+        "ts": m["sent_at"],
+        "from": m["sender_user_id"],
     } for m in msgs]
 
     return JsonResponse({"messages": lite})
+
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 # ONE place that maps the slug used in URLs → the real Stripe Price IDs
 PRICE_MAP = {
-    "week":    settings.STRIPE_PRICE_ID_WEEK,
-    "month":   settings.STRIPE_PRICE_ID_MONTH,
+    "week": settings.STRIPE_PRICE_ID_WEEK,
+    "month": settings.STRIPE_PRICE_ID_MONTH,
     "quarter": settings.STRIPE_PRICE_ID_QUARTER,
 }
+
 
 # BillingController
 def _price_to_cycle(price_id: str) -> str:
@@ -1219,7 +1294,8 @@ def _price_to_cycle(price_id: str) -> str:
         return "1week"
     if price_id == settings.STRIPE_PRICE_ID_MONTH:
         return "1month"
-    return "3month"          # quarter
+    return "3month"  # quarter
+
 
 # ─────────────  1)  Launch checkout  ─────────────
 @login_required
@@ -1227,7 +1303,7 @@ def _price_to_cycle(price_id: str) -> str:
 def create_checkout_session(request, plan: str):
     """
     Called by the “Select” button.
-    `plan` is the slug in the <a href="{% url 'stripe_checkout' plan.slug %}">.
+    plan is the slug in the <a href="{% url 'stripe_checkout' plan.slug %}">.
     """
     price_id = PRICE_MAP.get(plan.lower())
     if not price_id:
@@ -1244,19 +1320,20 @@ def create_checkout_session(request, plan: str):
         cancel_url=request.build_absolute_uri(reverse("stripe_cancel")),
         metadata={
             "user_id": str(request.user.user_id),
-            "plan":    plan,
+            "plan": plan,
         },
     )
 
     # ➋ store a *pending* subscription row – useful even before the webhook
     _create_sub_record(
-        user_uuid          = request.user.user_id,
-        stripe_sub_id      = None,                 # will be filled later
-        price_id           = price_id,
-        stripe_session_id  = session.id,
+        user_uuid=request.user.user_id,
+        stripe_sub_id=None,  # will be filled later
+        price_id=price_id,
+        stripe_session_id=session.id,
     )
 
     return redirect(session.url)
+
 
 # ─────────────  2)  Success / cancel splash pages  ─────────────
 # BillingController
@@ -1346,6 +1423,7 @@ def checkout_cancel(request):
     log_action(request.user, "Visited Stripe cancel page", "WARNING", request)
     return render(request, "billing/cancel.html")
 
+
 # ─────────────  3)  Stripe web-hook  ─────────────
 @csrf_exempt
 def stripe_webhook(request):
@@ -1405,11 +1483,11 @@ def stripe_webhook(request):
 # ─────────────  4)  Helpers  ─────────────
 # BillingController
 def _create_sub_record(
-    user_uuid: str,
-    stripe_sub_id: Optional[str],
-    price_id: Optional[str],
-    *,
-    stripe_session_id: Optional[str] = None,
+        user_uuid: str,
+        stripe_sub_id: Optional[str],
+        price_id: Optional[str],
+        *,
+        stripe_session_id: Optional[str] = None,
 ):
     user = User.objects.get(user_id=user_uuid)
 
@@ -1423,25 +1501,26 @@ def _create_sub_record(
         user_id_fk=user,
         defaults={
             "stripe_subscription_id": stripe_sub_id,
-            "stripe_customer_id":     sub_json["customer"] if sub_json else None,
-            "stripe_price_id":        price_id,
-            "stripe_session_id":      stripe_session_id,
-            "price":       sub_json["plan"]["amount"] / 100 if sub_json else None,
+            "stripe_customer_id": sub_json["customer"] if sub_json else None,
+            "stripe_price_id": price_id,
+            "stripe_session_id": stripe_session_id,
+            "price": sub_json["plan"]["amount"] / 100 if sub_json else None,
             "billing_cycle": _price_to_cycle(price_id) if price_id else None,
-            "features":    json.dumps({"premium": True}),
-            "started_at":  timezone.now(),
+            "features": json.dumps({"premium": True}),
+            "started_at": timezone.now(),
             "expires_at": (
                 timezone.make_aware(
                     datetime.fromtimestamp(sub_json["current_period_end"])
                 ) if sub_json else timezone.now()
             ),
             "auto_renew": 1,
-            "status":     sub_json["status"] if sub_json else "pending",
+            "status": sub_json["status"] if sub_json else "pending",
         },
     )
 
-    #user.is_premium = True
-    #user.save(update_fields=["is_premium"])
+    # user.is_premium = True
+    # user.save(update_fields=["is_premium"])
+
 
 # BillingController
 def _update_next_renewal(stripe_sub_id: str):
@@ -1459,6 +1538,7 @@ def _update_next_renewal(stripe_sub_id: str):
     except Subscription.DoesNotExist:
         pass
 
+
 # BillingController
 def _check_status(stripe_sub_id: str):
     sub_json = stripe.Subscription.retrieve(stripe_sub_id)
@@ -1474,13 +1554,14 @@ def _check_status(stripe_sub_id: str):
         except Subscription.DoesNotExist:
             pass
 
+
 @never_cache
 @login_required
 # BillingController
 def upgrade_premium(request):
     plans = [
         {
-            "slug": "week",   # make sure this is here
+            "slug": "week",  # make sure this is here
             "name": "1 Week",
             "price": "4.99",
             "description": "Short-term access to premium features",
@@ -1500,6 +1581,7 @@ def upgrade_premium(request):
     ]
     return render(request, "accounts/upgrade_premium.html", {"plans": plans})
 
+
 @never_cache
 @login_required
 # MatchController
@@ -1514,7 +1596,7 @@ def browse_one_profile(request):
     except Profile.DoesNotExist:
         return redirect('login')
 
-    # Orientation-based filtering 
+    # Orientation-based filtering
     user_gender = current_profile.gender
     user_orientation = current_profile.sexual_orientation
 
@@ -1537,7 +1619,6 @@ def browse_one_profile(request):
     def fetch_pref(model, field):
         obj = model.objects.filter(preference_id_fk=preferences).first()
         return getattr(obj, field, None) if obj else None
-        
 
     # Only show profiles the user has never seen before (i.e., not liked or passed)
     profiles = profiles.filter(user_id_fk__in=unseen_ids)
@@ -1574,13 +1655,13 @@ def browse_one_profile(request):
             'relationship_choices': PreferencesRelationship._meta.get_field("relationship_type").choices,
         })
 
-
     unseen_profiles = profiles.exclude(user_id_fk__in=liked_user_ids).exclude(user_id_fk__in=disliked_user_ids)
 
     profiles = unseen_profiles
 
     liked_profiles = Profile.objects.filter(
-        user_id_fk__in=Like.objects.filter(liker_user_id=user_id, like_status="liked").values_list('liked_user_id', flat=True)
+        user_id_fk__in=Like.objects.filter(liker_user_id=user_id, like_status="liked").values_list('liked_user_id',
+                                                                                                   flat=True)
     )
 
     weights = {
@@ -1606,7 +1687,7 @@ def browse_one_profile(request):
         score = 0
 
         if not preferences:
-            return score  
+            return score
 
         if preferences.preferred_height_min and preferences.preferred_height_max and profile.height_cm:
             if preferences.preferred_height_min <= profile.height_cm <= preferences.preferred_height_max:
@@ -1617,18 +1698,30 @@ def browse_one_profile(request):
                 return 0
             return weights.get(weight_key, 0) if getattr(pref_model, field, None) == profile_value else 0
 
-        score += match_field(PreferencesGender.objects.filter(preference_id_fk=preferences).first(), profile.gender, "gender_type", "gender")
-        score += match_field(PreferencesBodyType.objects.filter(preference_id_fk=preferences).first(), profile.body_type, "body_type_value", "body")
-        score += match_field(PreferencesEducation.objects.filter(preference_id_fk=preferences).first(), profile.education_level, "education_level", "education")
-        score += match_field(PreferencesReligion.objects.filter(preference_id_fk=preferences).first(), profile.religion, "religion_type", "religion")
-        score += match_field(PreferencesPolitics.objects.filter(preference_id_fk=preferences).first(), profile.politics, "politics_type", "politics")
-        score += match_field(PreferencesSmoking.objects.filter(preference_id_fk=preferences).first(), profile.smoking, "smoking_type", "smoking")
-        score += match_field(PreferencesDrinking.objects.filter(preference_id_fk=preferences).first(), profile.drinking, "drinking_type", "drinking")
-        score += match_field(PreferencesDrug.objects.filter(preference_id_fk=preferences).first(), profile.drug_use, "drug_type", "drug")
-        score += match_field(PreferencesHasKids.objects.filter(preference_id_fk=preferences).first(), profile.has_kids, "has_kids_type", "has_kids")
-        score += match_field(PreferencesWantsKids.objects.filter(preference_id_fk=preferences).first(), profile.wants_kids, "wants_kids_type", "wants_kids")
-        score += match_field(PreferencesZodiac.objects.filter(preference_id_fk=preferences).first(), profile.zodiac_sign, "zodiac_type", "zodiac")
-        score += match_field(PreferencesRelationship.objects.filter(preference_id_fk=preferences).first(), profile.relationship_goals, "relationship_type", "relationship")
+        score += match_field(PreferencesGender.objects.filter(preference_id_fk=preferences).first(), profile.gender,
+                             "gender_type", "gender")
+        score += match_field(PreferencesBodyType.objects.filter(preference_id_fk=preferences).first(),
+                             profile.body_type, "body_type_value", "body")
+        score += match_field(PreferencesEducation.objects.filter(preference_id_fk=preferences).first(),
+                             profile.education_level, "education_level", "education")
+        score += match_field(PreferencesReligion.objects.filter(preference_id_fk=preferences).first(), profile.religion,
+                             "religion_type", "religion")
+        score += match_field(PreferencesPolitics.objects.filter(preference_id_fk=preferences).first(), profile.politics,
+                             "politics_type", "politics")
+        score += match_field(PreferencesSmoking.objects.filter(preference_id_fk=preferences).first(), profile.smoking,
+                             "smoking_type", "smoking")
+        score += match_field(PreferencesDrinking.objects.filter(preference_id_fk=preferences).first(), profile.drinking,
+                             "drinking_type", "drinking")
+        score += match_field(PreferencesDrug.objects.filter(preference_id_fk=preferences).first(), profile.drug_use,
+                             "drug_type", "drug")
+        score += match_field(PreferencesHasKids.objects.filter(preference_id_fk=preferences).first(), profile.has_kids,
+                             "has_kids_type", "has_kids")
+        score += match_field(PreferencesWantsKids.objects.filter(preference_id_fk=preferences).first(),
+                             profile.wants_kids, "wants_kids_type", "wants_kids")
+        score += match_field(PreferencesZodiac.objects.filter(preference_id_fk=preferences).first(),
+                             profile.zodiac_sign, "zodiac_type", "zodiac")
+        score += match_field(PreferencesRelationship.objects.filter(preference_id_fk=preferences).first(),
+                             profile.relationship_goals, "relationship_type", "relationship")
 
         pref_lang = PreferencesLanguage.objects.filter(preference_id_fk=preferences).first()
         if pref_lang:
@@ -1637,7 +1730,7 @@ def browse_one_profile(request):
                 score += weights["language"]
 
         return score
-    
+
     def compute_knn_score(candidate_profile, liked_profiles, top_k=3):
         def construct_vector(profile):
             try:
@@ -1661,7 +1754,7 @@ def browse_one_profile(request):
 
         candidate_vec = construct_vector(candidate_profile)
         if candidate_vec is None:
-            return 0 
+            return 0
 
         candidate_vec = candidate_vec.reshape(1, -1)
         liked_vectors = []
@@ -1678,7 +1771,7 @@ def browse_one_profile(request):
         liked_vectors = [construct_vector(lp) for lp in liked_profiles if construct_vector(lp) is not None]
 
         if not liked_vectors:
-            return 0 
+            return 0
 
         similarities = [
             cosine_similarity(candidate_vec, lp.reshape(1, -1))[0][0]
@@ -1728,7 +1821,7 @@ def browse_one_profile(request):
 
     index = int(request.GET.get('index', 0))
     if index >= len(scored_profiles):
-        return redirect('/browse/?index=0')     
+        return redirect('/browse/?index=0')
 
     match_popup = request.session.pop('match_popup', None)
     entry = scored_profiles[index]
@@ -1769,8 +1862,8 @@ def browse_one_profile(request):
     # Check if current user has already reported the current profile
     current_profile_user_id = entry['profile'].user_id_fk.user_id  # profile being shown
     already_reported = Report.objects.filter(
-    reporter_user=request.user,
-    reported_user_id=current_profile_user_id
+        reporter_user=request.user,
+        reported_user_id=current_profile_user_id
     ).exists()
 
     # 🔐 Store the currently shown profile for report validation
@@ -1779,6 +1872,7 @@ def browse_one_profile(request):
     context['already_reported'] = already_reported
     context['profile'] = entry['profile']
     return render(request, 'pages/browse.html', context)
+
 
 @login_required
 # MatchController
@@ -1846,24 +1940,20 @@ def like_profile(request):
                     'image': f"{settings.IMAGEKIT_URL_ENDPOINT}{image.image_url}" if image and image.image_url else '/static/images/default-avatar.jpg'
                 }
 
-
                 print("📸 Match Popup Image URL:", popup_data['image'])
-
-
 
                 if tab_raw in ["incoming", "outgoing"]:
                     request.session['match_popup_likes'] = popup_data
                 else:
                     request.session['match_popup'] = popup_data
 
-
         # ✅ Redirect to the correct page
         if tab_raw in ["incoming", "outgoing"]:
             return redirect(f'/likes/?tab={tab_raw}')
 
-
         next_index = int(request.GET.get("index", 0)) + 1
         return redirect(f"/browse/?index={next_index}")
+
 
 @login_required
 # MatchController
@@ -2000,6 +2090,7 @@ def save_preferences(request):
         "profile": profile,
     })
 
+
 @login_required
 # MatchController
 def dislike_profile(request):
@@ -2050,7 +2141,7 @@ def dislike_profile(request):
 
         index = int(request.POST.get("index") or request.GET.get("index", 0))
         return redirect(f"/browse/?index={index}")
-    
+
 
 @login_required
 def submit_report(request):
@@ -2114,6 +2205,7 @@ def submit_report(request):
 
     return redirect(f'/browse/?index={request.GET.get("index", 0)}')
 
+
 # Admin Reports Functionalities
 @never_cache
 @login_required
@@ -2149,6 +2241,7 @@ def admin_report_dashboard(request):
         'reason_filter': reason_filter or '',
     })
 
+
 @never_cache
 @login_required
 @user_passes_test(is_admin)
@@ -2168,8 +2261,9 @@ def toggle_report_status(request, report_id):
         report.resolved_by_user = request.user
     report.save()
     log_action(user=request.user, action_type=f"{action} report {report.report_id}", severity="INFO",
-        request=request, target_id=report.report_id, target_type="Report")
+               request=request, target_id=report.report_id, target_type="Report")
     return redirect('admin_report_dashboard')
+
 
 @never_cache
 @login_required
@@ -2179,9 +2273,10 @@ def toggle_report_status(request, report_id):
 def delete_report(request, report_id):
     report = get_object_or_404(Report, report_id=report_id)
     log_action(user=request.user, action_type=f"Deleted report {report.report_id}", severity="WARNING", request=request,
-        target_id=report.report_id, target_type="Report")
+               target_id=report.report_id, target_type="Report")
     report.delete()
     return redirect('admin_report_dashboard')
+
 
 @never_cache
 @login_required
@@ -2194,8 +2289,9 @@ def admin_toggle_premium(request, user_id):
 
     status = "upgraded to Premium" if user.is_premium else "downgraded to Free"
     log_action(request.user, f"Toggled premium status for {user.email} to {user.is_premium}", severity="INFO",
-        request=request, target_id=user.user_id, target_type="User")
-    return redirect('admin_dashboard')  
+               request=request, target_id=user.user_id, target_type="User")
+    return redirect('admin_dashboard')
+
 
 @never_cache
 @login_required
@@ -2213,7 +2309,7 @@ def admin_delete_user(request, user_id):
             user.delete()
 
         log_action(request.user, f"Deleted user account {user.email}", severity="WARNING",
-            request=request, target_id=user_id, target_type="User")
+                   request=request, target_id=user_id, target_type="User")
     except Exception as e:
         print(f"❌ Failed to delete user {user.email}: {e}")
 

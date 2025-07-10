@@ -106,10 +106,17 @@ class Profile(models.Model):
     hobbies = models.TextField(blank=True, null=True)
     last_updated = models.DateTimeField()
     relationship_goals = models.CharField(max_length=23, blank=True, null=True)
-
     class Meta:
         managed = False
         db_table = 'Profile'
+
+    @property
+    def languages(self):
+        """
+        Returns a queryset of languages for this profile.
+        """
+        return Language.objects.filter(profilelanguage__profile_id_fk=self)
+
 
 class ProfileImage(models.Model):
     image_id = models.CharField(primary_key=True, max_length=36)

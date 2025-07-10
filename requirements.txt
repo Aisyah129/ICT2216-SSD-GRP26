@@ -8,6 +8,7 @@ charset-normalizer==3.4.2
 cryptography==45.0.3
 dill==0.4.0
 Django==4.2.21
+django-axes==8.0.0
 django-csp==4.0
 django-recaptcha==4.1.0
 dnspython==2.7.0

@@ -8,6 +8,29 @@
 <!-- Choices.js CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
 
+<style>
+  /* Disable the tag 'X' buttons */
+  .choices__disabled .choices__list--multiple .choices__item {
+    pointer-events: none;
+    opacity: 0.65;
+  }
+
+  /* Prevent typing or dropdown selection */
+  .choices__disabled,
+  .choices__disabled .choices__inner,
+  .choices__disabled .choices__input,
+  .choices__disabled .choices__list--dropdown {
+    pointer-events: none;
+    background-color: #f8f9fa;
+    opacity: 0.6;
+  }
+
+  /* Hide the dropdown completely */
+  .choices__disabled .choices__list--dropdown {
+    display: none !important;
+  }
+</style>
+
 
 <!-- Header -->
 <div class="header pb-8 pt-5 pt-lg-8 d-flex align-items-center justify-content-center text-center"
@@ -395,14 +418,19 @@
               </div>
             </div>
 
-            <select name="languages" id="languageSelect" class="form-control" multiple>
-              {% for language in all_languages %}
-                <option value="{{ language.language_id }}"
-                  {% if language.language_id in selected_language_ids %}selected{% endif %}>
-                  {{ language.language_name|title }}
-                </option>
-              {% endfor %}
-            </select>
+            <div class="form-group">
+              <label>Languages</label>
+              <select name="languages" id="languageSelect" class="form-control" multiple>
+                {% for language in all_languages %}
+                  <option value="{{ language.language_id }}"
+                    {% if language.language_id in selected_language_ids %}selected{% endif %}>
+                    {{ language.language_name|title }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+
 
             <div class="form-group">
               <label>Hobbies</label>
@@ -413,6 +441,7 @@
                 class="form-control form-control-alternative"
                 maxlength="200"
                 placeholder="e.g. Photography, Reading"
+                pattern="^[A-Za-z,\s]{0,200}$"
                 title="Only letters, commas, and spaces (max 200 chars)"
               >{{ profile.hobbies|default:'' }}</textarea>
               <small id="hobbiesCharCount" class="text-muted char-counter d-none">0/200 characters</small>
@@ -471,41 +500,59 @@
   /* ─────────────────────────────────────────────────────────────
      1.  PROFILE “EDIT / SAVE / CANCEL” TOGGLE
      ────────────────────────────────────────────────────────────*/
-  document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('profile-form');
-    const editBtn = document.getElementById('editProfileBtn');
-    const saveBtn = document.getElementById('saveProfileBtn');
-    const cancelBtn = document.getElementById('cancelProfileBtn');
-    const inputs = form.querySelectorAll('input, textarea, select');
-    const counters  = document.querySelectorAll('.char-counter');
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('profile-form');
+  const editBtn = document.getElementById('editProfileBtn');
+  const saveBtn = document.getElementById('saveProfileBtn');
+  const cancelBtn = document.getElementById('cancelProfileBtn');
+  const inputs = form.querySelectorAll('input, textarea, select');
 
-    const setDisabled = (state) => {
-      inputs.forEach(el => state
-        ? el.setAttribute('disabled', '')
-        : el.removeAttribute('disabled'));
-    };
+  const languageSelect = document.getElementById('languageSelect');
 
-    /* start page in read-only mode */
-    setDisabled(true);
-    counters.forEach(c => c.classList.add('d-none'));
-
-    editBtn.addEventListener('click', () => {
-      setDisabled(false);
-      editBtn.classList.add('d-none');
-      saveBtn.classList.remove('d-none');
-      cancelBtn.classList.remove('d-none');
-      counters.forEach(c => c.classList.remove('d-none'));
-    });
-
-    cancelBtn.addEventListener('click', () => {
-      form.reset();                 // discard unsaved edits
-      setDisabled(true);
-      saveBtn.classList.add('d-none');
-      cancelBtn.classList.add('d-none');
-      editBtn.classList.remove('d-none');
-      counters.forEach(c => c.classList.add('d-none'));
-    });
+  // Initialize Choices.js on the disabled select
+  const languageChoices = new Choices(languageSelect, {
+    removeItemButton: true,
+    shouldSort: false,
+    searchEnabled: true,
+    placeholderValue: 'Select languages...'
   });
+
+  // Set all fields to read-only on page load
+  const setDisabled = (state) => {
+    inputs.forEach(el => {
+      el.disabled = state;
+    });
+
+    // Choices.js won't reflect 'disabled' properly, so handle manually:
+    const container = languageSelect.closest('.choices');
+    if (container) {
+      if (state) {
+        container.classList.add('choices__disabled');
+        languageSelect.setAttribute('disabled', 'disabled');
+      } else {
+        container.classList.remove('choices__disabled');
+        languageSelect.removeAttribute('disabled');
+      }
+    }
+  };
+
+  setDisabled(true); // page loads in view-only mode
+
+  editBtn.addEventListener('click', () => {
+    setDisabled(false); // enable all inputs
+    editBtn.classList.add('d-none');
+    saveBtn.classList.remove('d-none');
+    cancelBtn.classList.remove('d-none');
+  });
+
+  cancelBtn.addEventListener('click', () => {
+    form.reset();
+    setDisabled(true);
+    saveBtn.classList.add('d-none');
+    cancelBtn.classList.add('d-none');
+    editBtn.classList.remove('d-none');
+  });
+});
 
   /* ─────────────────────────────────────────────────────────────
      2.  IMAGE UPLOAD (+), DELETE, SET-PRIMARY

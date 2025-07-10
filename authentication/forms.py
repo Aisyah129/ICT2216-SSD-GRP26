@@ -1,8 +1,9 @@
+
 # authentication/forms.py
 
 from django import forms
 from django.contrib.auth.password_validation import validate_password
-from authentication.models import Profile  
+from authentication.models import Profile
 import re
 from django_recaptcha.fields import ReCaptchaField
 from django_recaptcha.widgets import ReCaptchaV2Checkbox
@@ -134,7 +135,7 @@ class SignUpForm(forms.Form):
         max_value=90,
         initial=18,
         widget=forms.NumberInput(attrs={
-            'type': 'range',            # Slider input
+            'type': 'range',  # Slider input
             'min': '18',
             'max': '90',
             'step': '1',
@@ -158,28 +159,27 @@ class SignUpForm(forms.Form):
 
     captcha = ReCaptchaField(widget=ReCaptchaV2Checkbox())
 
-
     def clean_email(self):
         from django.contrib.auth import get_user_model
         User = get_user_model()
 
         email = self.cleaned_data.get('email')
         if User.objects.filter(email=email).exists():
-            #raise forms.ValidationError("Unable to process your request. Please try a different email.")
+            # raise forms.ValidationError("Unable to process your request. Please try a different email.")
             self.add_error(None, "Unable to process your request. Please try again.")
         return email
 
     def clean_password(self):
         pwd = self.cleaned_data.get('password')
-        
+
         # Check for at least one number
         if not re.search(r'\d', pwd):
             raise forms.ValidationError("Password must include at least one number.")
-        
+
         # Check for at least one special character
         if not re.search(r'[^A-Za-z0-9]', pwd):
             raise forms.ValidationError("Password must include at least one special character.")
-        
+
         validate_password(pwd)
 
         # Check if password has been breached
@@ -188,9 +188,8 @@ class SignUpForm(forms.Form):
         
         return pwd
 
-
     def clean_confirm_password(self):
-        pwd  = self.cleaned_data.get('password')
+        pwd = self.cleaned_data.get('password')
         cpwd = self.cleaned_data.get('confirm_password')
         if pwd and cpwd and pwd != cpwd:
             raise forms.ValidationError("Passwords do not match.")
@@ -201,12 +200,6 @@ class SignUpForm(forms.Form):
         if not re.match(r'^[A-Za-z\s]+$', name):
             raise forms.ValidationError("Name can only contain letters and spaces.")
         return name
-    
-    def clean_age(self):
-        age = self.cleaned_data.get('age')
-        if age is None or age < 18 or age > 90:
-            raise forms.ValidationError("Age must be between 18 and 90.")
-        return age
 
 
 class ProfileUpdateForm(forms.ModelForm):
