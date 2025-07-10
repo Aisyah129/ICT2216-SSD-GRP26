@@ -524,20 +524,32 @@ def profile_view(request):
     try:
         profile = get_object_or_404(Profile, user_id_fk=request.user)
 
+        # ✅ Security check
+        if not has_permission(request.user, "edit_own_profile", profile):
+            return redirect('login')
+
         if request.method == "POST":
             form = ProfileUpdateForm(request.POST, instance=profile)
             if form.is_valid():
-                profile = form.save()
+                profile = form.save(commit=False)
+                profile.last_updated = timezone.now()
+                profile.save()
 
-                # ✅ Save languages manually
+                # ✅ Clear previous languages and save new ones
+                profile.languages.all().delete()
                 submitted_language_ids = request.POST.getlist('languages')
-                ProfileLanguage.objects.filter(profile_id_fk=profile).delete()
-                for lang_id in submitted_language_ids:
-                    ProfileLanguage.objects.create(
-                        profile_id_fk=profile,
-                        language_id_fk_id=lang_id
-                    )
 
+                for lang_id in submitted_language_ids:
+                    try:
+                        lang_obj = Language.objects.get(language_id=lang_id)
+                        ProfileLanguage.objects.create(
+                            profile_id_fk=profile,
+                            language_id_fk=lang_obj
+                        )
+                    except Language.DoesNotExist:
+                        continue
+
+                log_action(request.user, "Updated profile information", "INFO", request)
                 messages.success(request, "✅ Profile updated successfully.")
                 return redirect('profile')
             else:
@@ -545,6 +557,7 @@ def profile_view(request):
         else:
             form = ProfileUpdateForm(instance=profile)
 
+        # ✅ Image and language setup
         primary_image = profile.profileimage_set.filter(is_primary=True).first()
         primary_image_url = get_safe_profile_image_url(primary_image, True)
         all_images = [
@@ -555,25 +568,25 @@ def profile_view(request):
             }
             for img in profile.profileimage_set.order_by('-uploaded_at')
         ]
+
         all_languages = Language.objects.all()
-        selected_language_ids = list(
-            ProfileLanguage.objects.filter(profile_id_fk=profile).values_list('language_id_fk', flat=True)
-        )
+        selected_language_ids = list(profile.languages.values_list('language_id_fk__language_id', flat=True))
 
         return render(request, "pages/profile.html", {
             "form": form,
             "profile": profile,
             "primary_image": primary_image_url,
             "images": all_images,
+            "languages": [pl.language_id_fk.language_name for pl in profile.languages.all()],
             "all_languages": all_languages,
             "selected_language_ids": selected_language_ids,
         })
 
     except Exception as e:
-        # Print full traceback in the server log
         import traceback
         traceback.print_exc()
         return JsonResponse({"error": str(e)}, status=500)
+
 
 
 MAX_IMAGES = 6  # ← adjust if needed
