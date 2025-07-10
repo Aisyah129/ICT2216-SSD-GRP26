@@ -520,20 +520,23 @@ def user_dashboard(request):
 @never_cache
 @login_required
 def profile_view(request):
+    # Get the current user's profile
     profile = get_object_or_404(Profile, user_id_fk=request.user)
 
+    # If POST request, handle profile update
     if request.method == "POST":
         form = ProfileUpdateForm(request.POST, instance=profile)
         if form.is_valid():
-            profile = form.save()  # Save profile fields
+            # Save profile fields (excluding languages)
+            profile = form.save()
 
             # ✅ Save languages manually via ProfileLanguage
-            submitted_language_ids = request.POST.getlist('languages')  # get list of selected IDs
+            submitted_language_ids = request.POST.getlist('languages')  # Get list of selected language IDs
 
-            # Clear old languages
+            # 🗑 Clear all existing language entries for this profile
             ProfileLanguage.objects.filter(profile_id_fk=profile).delete()
 
-            # Add new languages
+            # ➕ Add new language entries
             for lang_id in submitted_language_ids:
                 ProfileLanguage.objects.create(
                     profile_id_fk=profile,
@@ -544,9 +547,15 @@ def profile_view(request):
             return redirect('profile')
         else:
             messages.error(request, "❌ Please correct the errors below.")
+    else:
+        # GET request - prefill the form with current profile data
+        form = ProfileUpdateForm(instance=profile)
 
+    # Fetch primary image
     primary_image = profile.profileimage_set.filter(is_primary=True).first()
     primary_image_url = get_safe_profile_image_url(primary_image, True)
+
+    # Fetch all profile images
     all_images = [
         {
             "id": img.image_id,
@@ -555,11 +564,16 @@ def profile_view(request):
         }
         for img in profile.profileimage_set.order_by('-uploaded_at')
     ]
+
+    # Fetch all possible languages
     all_languages = Language.objects.all()
+
+    # Fetch selected languages for this profile
     selected_language_ids = list(
         ProfileLanguage.objects.filter(profile_id_fk=profile).values_list('language_id_fk', flat=True)
     )
 
+    # Render profile page
     return render(request, "pages/profile.html", {
         "form": form,
         "profile": profile,
