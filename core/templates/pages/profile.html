@@ -772,4 +772,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 {% endblock javascripts %}
 
+<style>
+  .choices[data-type*="select-multiple"].is-disabled .choices__inner {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+    opacity: 0.8;
+  }
+  .choices.is-disabled .choices__input {
+    display: none !important;
+  }
+</style>
 
