@@ -24,7 +24,7 @@ jobs:
         target: "~/ICT2216-SSD-GRP26"
 
     - name: 🔤 Run deploy script on EC2
-      uses: appleboy/ssh-action@v1.0.0
+      uses: appleboy/ssh-action@v1.2.2
       with:
         host: 3.129.248.34
         username: student26
