@@ -16,7 +16,7 @@ ecdsa==0.19.1
 graphviz==0.21
 idna==3.10
 iso8601==2.1.0
-isort==6.0.1
+isort==7.0.0
 jmespath==1.0.1
 joblib==1.5.1
 MarkupSafe==3.0.2
